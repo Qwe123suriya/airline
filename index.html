@@ -110,6 +110,7 @@ canvas#map:active{cursor:grabbing}
 .rankbtn .num{font-size:12.5px}
 .rankbtn.on{border-color:var(--accent);color:var(--accent)}
 .rankpanel{position:absolute;right:54px;top:calc(var(--barh,8px) + 46px);z-index:7;width:min(250px,calc(100% - 70px));background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 26px rgba(10,20,40,.2);padding:10px 12px;display:flex;flex-direction:column;gap:8px;max-height:60%;overflow:auto;animation:popin .18s both}
+[hidden]{display:none!important}
 .rlist{display:flex;flex-direction:column;gap:2px}
 .rk{display:grid;grid-template-columns:20px minmax(0,1fr) 30px auto;gap:6px;align-items:center;font-size:13px;padding:5px 6px;border-radius:8px}
 .rk.me{background:color-mix(in srgb,var(--accent) 14%,var(--paper));font-weight:700}
@@ -798,12 +799,12 @@ function migrate(s){
 let fate=null, justRolled=true;
 function rollFate(keepName){
   const hub=rnd(CITIES);
-  const cap=rnd([120e6,160e6,220e6,300e6,420e6,600e6]);
+  const cap=rnd([60e6,80e6,100e6,130e6,160e6]);   // enough for 1–2 small aircraft: start small, grow from profit
   const fuel=+(0.8+Math.random()*0.5).toFixed(2);
   fate={hub:hub.c,cap,fuel,name:keepName&&fate?fate.name:rnd(NAMES),code:keepName&&fate?fate.code:String.fromCharCode(65+Math.random()*26|0,65+Math.random()*26|0)};
   justRolled=true;
 }
-function difficulty(f){let s=0;const h=city(f.hub);s+=h.w>=16?0:h.w>=12?1:h.w>=8?2:3;s+=f.cap>=420e6?0:f.cap>=220e6?1:2;s+=f.fuel>1.1?1:0;return clamp(s,0,4)+1}
+function difficulty(f){let s=0;const h=city(f.hub);s+=h.w>=16?0:h.w>=12?1:h.w>=8?2:3;s+=f.cap>=130e6?0:f.cap>=90e6?1:2;s+=f.fuel>1.1?1:0;return clamp(s,0,4)+1}
 function fuelText(f){return f>=1.15?"ยุคน้ำมันแพง":f<=.92?"ยุคน้ำมันถูก":"ราคาน้ำมันปกติ"}
 function flap(el,final,ms){
   const chars="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -1777,7 +1778,7 @@ function todayHTML(){const T=S.today||blankT();
    <div class="muted small">เงินเข้าทุกครั้งที่เครื่องบินลงจอด ส่วนค่าดูแลเครื่อง ค่าลูกเรือ และดอกเบี้ย หักรวมตอนขึ้นวันใหม่</div>`}
 function svcProj(i){const sv=S.service,rp=S.rep;S.service=i;S.rep=SERVICE[i].rep;let pax=0,profit=0;
   for(const r of S.routes){const c=calc(r);pax+=c.pax;profit+=c.profit}S.service=sv;S.rep=rp;return {pax:Math.round(pax),profit}}
-function maxLoan(){return Math.max(0,Math.floor((fleetValue()*.8+100e6)/50e6)*50e6)}
+function maxLoan(){return Math.max(0,Math.floor((fleetValue()*.6+50e6)/50e6)*50e6)}
 function moneyHTML(){
   const L=S.last||{tix:0,crev:0,fuelC:0,feeC:0,fixed:0,svc:0,interest:0,cost:0,rev:0};
   const ml=maxLoan(),hedgeFee=Math.max(5e6,(L.fuelC||0)*60*.03);
