@@ -93,6 +93,12 @@ canvas#map:active{cursor:grabbing}
 .mapbox.full .maplegend{white-space:nowrap;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:8px;max-width:calc(100% - 96px)}
 .mapbox.full .maplegend::-webkit-scrollbar{display:none}
 .fkseg button{flex:1;padding:10px 6px;font-weight:600}
+.bmrow{padding-bottom:10px;display:block!important}
+.bmode{width:100%}
+.bmode{display:flex;gap:4px;padding:3px;border-radius:12px;background:var(--sky);border:1px solid var(--line)}
+.bmode button{flex:1;white-space:nowrap;height:34px;border:0;border-radius:9px;background:transparent;color:var(--muted);font-weight:700;font-size:14px}
+.bmode button.on{background:var(--route);color:#fff;box-shadow:0 1px 4px rgba(10,20,40,.18)}
+.bmode button.on.cg{background:var(--cargo)}
 .aptraf{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 .aptraf>div{background:var(--sky);border-radius:8px;padding:6px 8px;min-width:0}
 .aptraf .k{font-size:11.5px;color:var(--muted)}.aptraf .v{font-size:15px;font-weight:700}
@@ -1081,15 +1087,16 @@ function renderApp(){
      <button class="badge" id="badge" style="background:${S.livery.tail};border:0;padding:0" aria-label="ลายเครื่องบินและโลโก้">${logoSVG(S.livery,24,onCol(S.livery.tail))}</button>
      <div class="brand"><b>${esc(S.name)} <span id="hstar" class="hstar"></span></b><small id="dt"></small></div>
      <div class="cash"><div class="v" id="cs"></div><div class="d num" id="cd"></div></div>
-   </div><div class="wrap" style="padding-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px">
+   </div><div class="wrap" style="padding-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:10px">
      <span class="muted" style="font-size:12.5px;min-width:0" id="hubl"></span>
      <div class="clock"><button class="qbtn" id="themebtn" aria-label="โหมดแสง" title="โหมดแสง">${themeIcon()}</button><button class="qbtn afkb" id="afkbtn" aria-label="โหมด AFK" title="โหมด AFK">💤</button><button class="qbtn" id="restart" aria-label="เริ่มเกมใหม่" title="เริ่มเกมใหม่"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 3.5v5h5"/></svg></button><button class="qbtn" id="help" aria-label="คู่มือระบบ">?</button><button id="pp" aria-label="หยุด/เล่น"></button>${SPEEDS.map(s=>`<button data-sp="${s}">${s}×</button>`).join("")}</div>
-   </div></header>
+   </div><div class="wrap bmrow">${bmHTML()}</div></header>
    <main><div class="wrap" id="view"></div></main>
    <nav class="tabs"><div class="wrap">${TABS.map(([k,n])=>`<button data-tab="${k}">${ICONS[k]}<span>${n}</span></button>`).join("")}</div></nav>
    <div id="sheet"></div>`;
   $("#pp").onclick=()=>{if(S.over)return;paused=!paused;updateTop()};
   $("#help").onclick=()=>openSheet(guideSheet);
+  $$("[data-bm]").forEach(b=>b.onclick=()=>setBM(b.dataset.bm));
   $("#restart").onclick=()=>openSheet(resetSheet);
   $("#afkbtn").onclick=()=>startAfk();
   $("#themebtn").onclick=cycleTheme;
@@ -1138,16 +1145,22 @@ function mapCtlHTML(withFull){return `<div class="mapctl"><button data-cam="in" 
     <button data-cam="fit" aria-label="ซูมไปที่เส้นทางของฉัน" class="${camMode==="fit"?"on":""}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><circle cx="12" cy="12" r="6"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>
     ${withFull?`<button data-cam="full" aria-label="เปิดแผนที่เต็มจอ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>`:""}</div>`}
 let airborne=0;
-const vmode=()=>S.vm||"all";
-const VMODES=[["air","✈ เครื่องบิน"],["sea","🚢 เรือ"],["all","ทั้งหมด"]];
-function modeHTML(){return `<div class="mapmode" role="group" aria-label="โหมดแผนที่">${VMODES.map(([k,n])=>`<button data-vm="${k}" class="${vmode()===k?"on":""}" aria-pressed="${vmode()===k}">${n}</button>`).join("")}</div>`}
+// Business mode: everything (map, routes, fleet, pop-ups) shows either the passenger side or the cargo side
+const bm=()=>S&&S.bmode==="cargo"?"cargo":"pax";
+const visRoutes=()=>S.routes.filter(r=>rkind(r)===bm());
+const vmode=()=>bm()==="pax"?"air":(S.vm||"all");
+const VMODES=[["air","✈ อากาศ"],["sea","🚢 เรือ"],["all","ทั้งหมด"]];
+function bmHTML(){return `<div class="bmode" role="group" aria-label="โหมดธุรกิจ"><button data-bm="pax" class="${bm()==="pax"?"on":""}" aria-pressed="${bm()==="pax"}">👥 โหมดคน</button><button data-bm="cargo" class="${bm()==="cargo"?"on cg":""}" aria-pressed="${bm()==="cargo"}">📦 โหมดสินค้า</button></div>`}
+function setBM(k){if(!S||bm()===k)return;S.bmode=k;S.ui_fk=k;rseg=k;if(k==="cargo"&&!S.vm)S.vm="all";save();closePop&&closePop();selCity=null;renderApp();
+  toast(k==="cargo"?"📦 โหมดสินค้า · แสดงเฉพาะเครื่องบินขนสินค้า เส้นทางสินค้า และเรือ":"👥 โหมดคน · แสดงเฉพาะเครื่องบินโดยสารและเส้นทางผู้โดยสาร")}
+function modeHTML(){if(bm()==="pax")return "";return `<div class="mapmode" role="group" aria-label="โหมดแผนที่">${VMODES.map(([k,n])=>`<button data-vm="${k}" class="${vmode()===k?"on":""}" aria-pressed="${vmode()===k}">${n}</button>`).join("")}</div>`}
 function setMode(k){S.vm=k;save();$$("[data-vm]").forEach(b=>{b.classList.toggle("on",b.dataset.vm===k);b.setAttribute("aria-pressed",b.dataset.vm===k)});
   const lg=$("#legend");if(lg)lg.innerHTML=legendHTML();const hd=$("#maphud");if(hd)hd.innerHTML=mapHudHTML();selCity=null;refreshAirports();
   toast(k==="air"?"โหมดเครื่องบิน: แสดงเฉพาะเส้นทางบินและสนามบิน":k==="sea"?"โหมดเรือ: แสดงเฉพาะเส้นทางเรือและท่าเรือ":"แสดงทั้งเครื่องบินและเรือ")}
 let shipsAtSea=0;
 function mapHudHTML(){if(vmode()==="sea"){const tpd=S.lanes.reduce((a,l)=>a+laneCalc(l).teu,0);return `<span>🚢 อยู่กลางทะเล <b class="num">${shipsAtSea}</b> ลำ</span><span>📦 <b class="num">${Math.round(tpd).toLocaleString()}</b> TEU/วัน</span><span>เส้นทางเรือ <b class="num">${S.lanes.length}</b></span>`}
   return _airHud()}
-function _airHud(){const T=S.today||blankT();return `<span>✈ บินอยู่ <b class="num">${airborne}</b> ลำ</span><span>👥 วันนี้ <b class="num">${T.pax.toLocaleString()}</b> คน</span><span>เที่ยวลงจอด <b class="num">${T.legs}</b></span>`}
+function _airHud(){const T=S.today||blankT();return `<span>✈ บินอยู่ <b class="num">${airborne}</b> ลำ</span>${bm()==="cargo"?`<span>📦 วันนี้ <b class="num">${Math.round(T.cargo||0).toLocaleString()}</b> ตัน</span>`:`<span>👥 วันนี้ <b class="num">${T.pax.toLocaleString()}</b> คน</span>`}<span>เที่ยวลงจอด <b class="num">${T.legs}</b></span>`}
 function mapTabHTML(){return `<div class="mapbox full" id="mapfull"><canvas id="map" aria-label="แผนที่โลกเต็มจอ ลากเพื่อเลื่อน บีบหรือกดปุ่มเพื่อซูม"></canvas><canvas id="mapbase" aria-hidden="true"></canvas>
    <div class="maplegend" id="legend">${legendHTML()}</div>${mapCtlHTML(false)}
    <button class="rankbtn ${S.ui_rank?"on":""}" id="rankbtn" aria-expanded="${!!S.ui_rank}" aria-label="อันดับการแข่งขัน">🏆<span class="num" id="rankno">#${rank()}</span></button>
@@ -1163,7 +1176,7 @@ function rankPanelHTML(){const B=standings(),mine=myScoreParts();
    <div class="rlist">${B.map((b,i)=>{const mv=b.prev?b.prev-(i+1):0;return `<div class="rk ${b.me?"me":""}"><span class="rkn num">${i+1}</span><span class="rkname">${esc(b.n)}</span><span class="rkmv ${mv>0?"good":mv<0?"bad":"muted"}">${mv>0?"▲"+mv:mv<0?"▼"+(-mv):"–"}</span><span class="num rksc">${b.sc.toLocaleString()}</span></div>`}).join("")}</div>
    <details class="more"><summary>คะแนนของคุณมาจากอะไร ▾</summary><div class="rparts">${mine.map(([n,v])=>`<div class="row between small"><span class="muted">${n}</span><span class="num">${Math.round(v).toLocaleString()}</span></div>`).join("")}</div></details>`}
 const niceShort=v=>v>=1e6?(v/1e6).toFixed(1)+"M":v>=1e4?Math.round(v/1e3)+"K":v>=1e3?(v/1e3).toFixed(1)+"K":Math.round(v).toString();
-function legendHTML(){const v=vmode();return `${v!=="sea"?`<span><i style="background:var(--accent)"></i>ฐาน</span>`:""}${v!=="air"?`<span><i style="background:var(--port);border-radius:2px"></i>ท่าเรือ</span>`:""}${v!=="sea"?`<span><i style="background:var(--route)"></i>ปลายทาง</span><span><i style="background:var(--cargo);border-radius:2px;height:3px;vertical-align:2px"></i>สินค้า</span><span><i style="background:var(--cargo);border-radius:1px"></i>ฮับสินค้า</span>`:""}<span><i style="background:var(--fog);outline:1px solid var(--border)"></i>ยังล็อก</span>${S.events.length?`<span><i style="background:var(--bad)"></i>เหตุการณ์</span>`:""}`}
+function legendHTML(){const v=vmode();return `${v!=="sea"?`<span><i style="background:var(--accent)"></i>ฐาน</span>`:""}${v!=="air"?`<span><i style="background:var(--port);border-radius:2px"></i>ท่าเรือ</span>`:""}${v!=="sea"?(bm()==="cargo"?`<span><i style="background:var(--cargo)"></i>ปลายทางสินค้า</span><span><i style="background:var(--cargo);border-radius:1px"></i>ฮับสินค้า</span>`:`<span><i style="background:var(--route)"></i>ปลายทาง</span>`):""}<span><i style="background:var(--fog);outline:1px solid var(--border)"></i>ยังล็อก</span>${S.events.length?`<span><i style="background:var(--bad)"></i>เหตุการณ์</span>`:""}`}
 function refreshHome(){const r=$("#homeRest");if(!r){renderView();return}r.innerHTML=homeRestHTML();$("#legend").innerHTML=legendHTML();
   $("#regbtn").innerHTML=`🔓 ปลดล็อกแผนที่ <span class="num">${S.unlocked.length}/${REGIONS.length}</span>`;bindView(true);if(pop)renderPop()}
 function homeRestHTML(){
@@ -1291,11 +1304,12 @@ function popApHTML(code){const c=city(code),hub=city(S.hub),isB=S.bases.includes
    ${apTrafficHTML(code)}`;
   const evs=S.events.filter(e=>e.city===code&&e.until>S.day);if(evs.length)h+=`<div class="small warn">${evs.map(e=>e.type==="storm"?"🌀 พายุ งดบิน":e.type==="fest"?"🎉 เทศกาล คนเพิ่ม":e.type==="comp"?"✈️ คู่แข่งเข้ามา":e.type==="cboost"?"📦 สินค้าด่วนเพิ่ม":"").join(" · ")}</div>`;
   if(!open)return h+`<div class="small muted">ภูมิภาค${R.n}ยังล็อกอยู่</div><button class="btn primary sm" data-popunl="${R.id}">🔓 ปลดล็อก ${money(regionCost(R),true)}</button>`;
-  const r=S.routes.find(x=>x.dest===code&&rkind(x)==="pax")||S.routes.find(x=>x.dest===code);
-  if(r){const cc=calc(r);h+=`<div class="popdem"><div class="row between small"><span>เส้นทาง ${fno(r)} จาก ${r.from}</span><span class="num ${cc.profit<0?"bad":"good"}">${money(cc.profit,true)}/วัน</span></div>
-     <div class="row between small"><span>👥 ${cc.demand.toLocaleString()} คนอยากบิน</span><span>💺 ${cc.cap.toLocaleString()} ที่นั่ง</span></div></div>
+  if(!aptTakes(code,bm())&&!isB)return h+`<div class="panel small">${aptKind(code)==="cargo"?"สนามบินนี้รับเฉพาะสินค้า":"สนามบินนี้รับเฉพาะผู้โดยสาร"} ใช้ใน${bm()==="cargo"?"โหมดสินค้า":"โหมดคน"}ไม่ได้</div><button class="btn sm" data-popbm="${aptKind(code)}">สลับไป${aptKind(code)==="cargo"?"📦 โหมดสินค้า":"👥 โหมดคน"}</button>`;
+  const r=S.routes.find(x=>x.dest===code&&rkind(x)===bm());
+  if(r){const cc=calc(r),KC=rkind(r)==="cargo";h+=`<div class="popdem"><div class="row between small"><span>${KC?"📦":"✈"} เส้นทาง ${fno(r)} จาก ${r.from}</span><span class="num ${cc.profit<0?"bad":"good"}">${money(cc.profit,true)}/วัน</span></div>
+     <div class="row between small">${KC?`<span>📦 สินค้า ${Math.round(cc.cdem).toLocaleString()} ตัน/วัน</span><span>🛩 ความจุ ${Math.round(cc.ccap).toLocaleString()} ตัน</span>`:`<span>👥 ${cc.demand.toLocaleString()} คนอยากบิน</span><span>💺 ${cc.cap.toLocaleString()} ที่นั่ง</span>`}</div></div>
      <div class="row" style="gap:6px"><button class="btn primary sm" style="flex:1" data-popgo="${r.id}">+ เพิ่มเครื่องบิน</button><button class="btn sm" style="flex:1" data-poproute="${r.id}">ดูเส้นทาง</button></div>`}
-  else if(!isB){const kc=aptKind(code)==="cargo",est=calc({id:-9,kind:kc?"cargo":"pax",from:S.hub,dest:code,price:baseFare(dist(hub,c)),planes:[],h:[]});
+  else if(!isB){const kc=bm()==="cargo",est=calc({id:-9,kind:kc?"cargo":"pax",from:S.hub,dest:code,price:baseFare(dist(hub,c)),planes:[],h:[]});
     h+=`<div class="popdem small">${kc?`ถ้าเปิดเส้นทางสินค้าจาก ${S.hub}: สินค้าราว <b class="num">${Math.round(est.cdem).toLocaleString()}</b> ตัน/วัน`:`ถ้าเปิดเส้นทางจาก ${S.hub}: คนอยากบินราว <b class="num">${est.demand.toLocaleString()}</b> คน/วัน ที่ราคา ${money(est.base,true)}`}</div>
      <div class="row" style="gap:6px"><button class="btn primary sm" style="flex:1" data-popnew="${code}">เปิดเส้นทาง</button><button class="btn sm" style="flex:1" data-popbr="${code}" ${S.cash<branchCost(c)?"disabled":""}>เปิดสาขา ${money(branchCost(c),true)}</button></div>`}
   if(isB)h+=`<div class="row" style="gap:6px"><button class="btn primary sm" style="flex:1" data-popfrom="${code}">+ เส้นทางจากที่นี่</button><button class="btn sm" style="flex:1" data-popbranch>ดูสาขา</button></div>`;
@@ -1317,7 +1331,8 @@ function renderPop(){const box=$(tab==="map"?"#mapfull":".mapbox");if(!pop||!box
   q("[data-popgo]").forEach(b=>b.onclick=()=>{pop={type:"route",id:+b.dataset.popgo,x:pop.x,y:pop.y,add:true};selCity=null;refreshAirports();renderPop()});
   q("[data-popas]").forEach(b=>b.onclick=()=>{const p=plane(+b.dataset.popas);if(!p||!r)return;r.planes.push(p.id);p.route=r.id;r.last=null;save();toast(`${p.reg} เข้าประจำ ${fno(r)} แล้ว`);pop.add=false;renderPop()});
   q("[data-popbuy]").forEach(b=>b.onclick=()=>{const keep={...pop},np=buy(b.dataset.popbuy);if(!np||!r)return;r.planes.push(np.id);np.route=r.id;r.last=null;save();toast(`ซื้อ ${model(np.m).name} เข้าประจำ ${fno(r)} แล้ว`);pop={...keep,add:false};renderPop()});
-  q("[data-popnew]").forEach(b=>b.onclick=()=>{const code=b.dataset.popnew;closePop();openSheet(newRouteSheet({from:S.hub,dest:code,kind:aptKind(code)==="cargo"?"cargo":"pax"}))});
+  q("[data-popnew]").forEach(b=>b.onclick=()=>{const code=b.dataset.popnew;closePop();openSheet(newRouteSheet({from:S.hub,dest:code,kind:bm()}))});
+  q("[data-popbm]").forEach(b=>b.onclick=()=>setBM(b.dataset.popbm));
   q("[data-popbr]").forEach(b=>b.onclick=()=>{openBranch(b.dataset.popbr);renderPop()});
   q("[data-popfrom]").forEach(b=>b.onclick=()=>{const code=b.dataset.popfrom;closePop();openSheet(newRouteSheet({from:code}))});
   q("[data-popbranch]").forEach(b=>b.onclick=()=>{closePop();tab="branch";brSeg="air";renderView(true)});
@@ -1729,7 +1744,7 @@ function openBranch(code){const c=city(code),cost=branchCost(c);if(S.cash<cost||
   S.cash-=cost;S.bases.push(code);S.blv[code]=1;addNews(`🏢 เปิดสาขาใหม่ที่${c.n} (${code}) เปิดเส้นทางออกจากที่นี่ได้แล้ว`);celebrate("สาขาใหม่",c.n);save();
   if(tab==="branch")renderView();else refreshAirports()}
 let rseg="pax";
-function routesHTML(){const RL=S.routes.filter(r=>rkind(r)===rseg),np=S.routes.filter(r=>rkind(r)==="pax").length,nc=S.routes.length-np;
+function routesHTML(){rseg=bm();const RL=S.routes.filter(r=>rkind(r)===rseg),np=S.routes.filter(r=>rkind(r)==="pax").length,nc=S.routes.length-np;
   return `<div class="row between"><h2>เส้นทางบิน</h2><button class="btn primary sm" id="newr">+ เปิดเส้นทาง${rseg==="cargo"?"สินค้า":""}</button></div>
   <div class="seg"><button data-rseg="pax" class="${rseg==="pax"?"on":""}">✈ ผู้โดยสาร <span class="num muted small">${np}</span></button><button data-rseg="cargo" class="${rseg==="cargo"?"on":""}">📦 ขนสินค้า <span class="num muted small">${nc}</span></button></div>
   ${RL.length?`<div class="strips">${RL.map(r=>{const c=r.last||calc(r),dc=city(r.dest);
@@ -1803,7 +1818,7 @@ function planeArt(m,lv){lv=lv||S.livery;const A=m.a,id="pa"+(artSeq++);
   return `<svg class="art" viewBox="0 0 200 80" role="img" aria-label="${m.name}">${g}</svg>`}
 let mktCat="all";
 function fleetHTML(){
-  const FK=S.ui_fk==="cargo"?"cargo":"pax",KC=FK==="cargo";if(KC)mktCat="cargo";else if(mktCat==="cargo")mktCat="all";
+  const FK=bm(),KC=FK==="cargo";if(KC)mktCat="cargo";else if(mktCat==="cargo")mktCat="all";
   const list=MODELS.filter(m=>KC?!m.seats:m.seats&&(mktCat==="all"||m.cat===mktCat)).sort((a,b)=>KC?a.price-b.price:0);
   const nP=S.fleet.filter(p=>model(p.m).seats).length,nC=S.fleet.length-nP,mine=KC?nC:nP;
   return `<div class="seg fkseg"><button data-fk="pax" class="${!KC?"on":""}">✈ เครื่องบินโดยสาร <span class="num">${nP}</span></button><button data-fk="cargo" class="${KC?"on":""}">📦 เครื่องบินขนสินค้า <span class="num">${nC}</span></button></div>
@@ -1898,13 +1913,13 @@ function bindView(rest){
   $$("[data-claim]").forEach(b=>b.onclick=()=>claimMission(+b.dataset.claim,b));
   $$("[data-go]").forEach(b=>b.onclick=()=>{tab=b.dataset.go;renderView(true)});
   const nr=$("#newr");if(nr)nr.onclick=()=>openSheet(newRouteSheet({from:S.hub,kind:rseg}));
-  $$("[data-rseg]").forEach(b=>b.onclick=()=>{rseg=b.dataset.rseg;renderView()});
+  $$("[data-rseg]").forEach(b=>b.onclick=()=>setBM(b.dataset.rseg));
   const gb=$("#gobranch");if(gb)gb.onclick=()=>{tab="branch";renderView(true);window.scrollTo(0,0)};
   $$("[data-route]").forEach(b=>b.onclick=()=>openSheet(routeSheet(+b.dataset.route,{})));
   $$("[data-plane]").forEach(b=>b.onclick=()=>openSheet(planeSheet(+b.dataset.plane,{})));
   $$("[data-buy]").forEach(b=>b.onclick=()=>buy(b.dataset.buy));
   $$("[data-cat]").forEach(b=>b.onclick=()=>{mktCat=b.dataset.cat;renderView()});
-  $$("[data-fk]").forEach(b=>b.onclick=()=>{S.ui_fk=b.dataset.fk;mktCat=S.ui_fk==="cargo"?"cargo":"all";save();renderView()});
+  $$("[data-fk]").forEach(b=>b.onclick=()=>{mktCat=b.dataset.fk==="cargo"?"cargo":"all";setBM(b.dataset.fk)});
   const lvb=$("#livery");if(lvb)lvb.onclick=()=>openSheet(liverySheet({}));
   $$("[data-svc]").forEach(b=>b.onclick=()=>{S.service=+b.dataset.svc;save();renderView();const own=S.routes.filter(r=>r.svc!=null).length;toast(own?`ตั้งค่าเริ่มต้นแล้ว · ${own} เส้นทางที่ตั้งบริการเองไม่เปลี่ยน`:"เปลี่ยนระดับบริการทุกเส้นทางแล้ว")});
   $$("[data-mkt]").forEach(b=>b.onclick=()=>{const m=MKT.find(x=>x.id===b.dataset.mkt);S.cash-=m.cost;S.mkt={n:m.n,mult:m.mult,until:S.day+m.days};S.rep=clamp(S.rep+m.rep,0,100);addNews(`📣 เริ่ม${m.n} ${m.days} วัน`);toast(`เริ่ม${m.n}แล้ว`);save();renderView()});
@@ -1932,7 +1947,7 @@ const head=(t,sub)=>`<div class="row between" style="align-items:flex-start"><di
 
 function newRouteSheet(st){
   const fn=()=>{
-    st.kind=st.kind||"pax";const KC=st.kind==="cargo",from=city(st.from),open=new Set(S.routes.filter(r=>r.from===st.from&&rkind(r)===st.kind).map(r=>r.dest));
+    st.kind=st.kind||bm();const KC=st.kind==="cargo",from=city(st.from),open=new Set(S.routes.filter(r=>r.from===st.from&&rkind(r)===st.kind).map(r=>r.dest));
     const idle=S.fleet.filter(p=>!p.route&&(KC?!model(p.m).seats:!!model(p.m).seats));
     const list=CITIES.filter(c=>c.c!==st.from&&!open.has(c.c)&&isOpen(c.c)&&aptTakes(c.c,st.kind)).map(c=>({c,d:dist(from,c)})).sort((a,b)=>a.d-b.d);
     const locked=REGIONS.length-S.unlocked.length;
@@ -1955,7 +1970,7 @@ function newRouteSheet(st){
   fn.bind=()=>{$$("[data-rk]").forEach(b=>b.onclick=()=>{st.kind=b.dataset.rk;st.dest=null;drawSheet()});const gu=$("#gounlock");if(gu)gu.onclick=()=>openSheet(regionSheet({}));$$("[data-from]").forEach(b=>b.onclick=()=>{st.from=b.dataset.from;st.dest=null;drawSheet()});
     $$("[data-dest]").forEach(b=>b.onclick=()=>{st.dest=b.dataset.dest;drawSheet();const s=$(".sheet");s.scrollTop=s.scrollHeight});
     const o=$("#openr");if(o)o.onclick=()=>{const d=dist(city(st.from),city(st.dest));
-      const r={id:S.nid++,kind:st.kind||"pax",from:st.from,dest:st.dest,price:baseFare(d),pmode:"auto",planes:[],h:[]};S.cash-=3e6;S.routes.push(r);rseg=r.kind;
+      const r={id:S.nid++,kind:st.kind||"pax",from:st.from,dest:st.dest,price:baseFare(d),pmode:"auto",planes:[],h:[]};S.cash-=3e6;S.routes.push(r);rseg=r.kind;if(bm()!==r.kind){S.bmode=r.kind;S.ui_fk=r.kind;$$("[data-bm]").forEach(b=>{const on=b.dataset.bm===r.kind;b.classList.toggle("on",on);b.classList.toggle("cg",on&&r.kind==="cargo")})}
       const pid=$("#np")&&+$("#np").value;if(pid){r.planes.push(pid);plane(pid).route=r.id}
       addNews(`🛫 เปิดเส้นทางใหม่ ${fno(r)} ${st.from} → ${st.dest} (${city(st.dest).n})`);save();tab="routes";openSheet(routeSheet(r.id,{}))}};
   return fn}
@@ -2126,6 +2141,7 @@ function guideSheet(){return head("คู่มือระบบ","ทุกร
 <details class="g"><summary>ชื่อเสียงและระดับบริการ</summary><div><p>ชื่อเสียงจะค่อย ๆ เคลื่อนเข้าหาค่าเป้าหมายของระดับบริการ ประหยัด 35 มาตรฐาน 60 พรีเมียม 85 คลิปไวรัลและแคมเปญใหญ่ช่วยดันขึ้น เครื่องเสียกลางทางทำให้ลดลง</p></div></details>
 <details class="g"><summary>การตลาดและล็อกราคาน้ำมัน</summary><div><p>แคมเปญการตลาดเพิ่มคนบินทุกเส้นทางชั่วคราว เปิดได้ทีละแคมเปญ</p><p>ดัชนีน้ำมันขึ้นลงทุกวันและพุ่งแรงได้จากเหตุการณ์ การล็อกราคาจะตรึงดัชนีไว้ 60 วัน ค่าธรรมเนียมประมาณ 3% ของค่าน้ำมันช่วงนั้น เหมาะตอนน้ำมันถูก</p></div></details>
 <details class="g"><summary>เงินกู้และการล้มละลาย</summary><div><p>กู้ได้ทีละ ฿50 ล้าน วงเงินขึ้นกับมูลค่าฝูงบิน ถ้าเงินสดติดลบต่อเนื่อง 30 วัน สายการบินล้มละลายและต้องเริ่มชะตาใหม่</p></div></details>
+<details class="g"><summary>โหมดคน และ โหมดสินค้า</summary><div><p>ปุ่มใต้แถบด้านบนสลับทั้งเกมระหว่าง 2 โหมด</p><ul><li>👥 โหมดคน: แผนที่ เส้นทาง ฝูงบิน และกล่องข้อมูลสนามบิน แสดงเฉพาะเครื่องบินโดยสารและเส้นทางผู้โดยสาร ป้ายบนแผนที่บอกจำนวนคนขึ้นเครื่อง</li><li>📦 โหมดสินค้า: แสดงเฉพาะเครื่องบินขนสินค้า เส้นทางสินค้า และเรือ ป้ายบนแผนที่บอกสินค้าเป็นตัน กดสนามบินแล้ว + เพิ่มเครื่องบิน จะขึ้นเฉพาะเครื่องขนสินค้า</li></ul><p>เงิน สาขา และเวลาใช้ร่วมกันทั้ง 2 โหมด เครื่องบินทุกลำยังบินและทำเงินตลอด ไม่ว่าจะเปิดโหมดไหน</p></div></details>
 <details class="g"><summary>ประเภทสนามบิน</summary><div><ul><li>✈📦 สนามบินส่วนใหญ่รับทั้งผู้โดยสารและสินค้า</li><li>✈ สนามบินเล็กเมืองท่องเที่ยว เช่น สมุย ฟูก๊วก ควีนส์ทาวน์ รับเฉพาะผู้โดยสาร</li><li>📦 ฮับสินค้า เช่น เมมฟิส หลุยส์วิลล์ ลีแยฌ ไลพ์ซิก เออโจว ดูไบเวิลด์เซ็นทรัล รับเฉพาะสินค้า (จุดสี่เหลี่ยมสีม่วงบนแผนที่)</li></ul><p>ป้าย 👥 บนแผนที่ข้างสนามบินของคุณคือจำนวนคนที่ขึ้นเครื่องที่นั่นวันนี้ แตะสนามบินเพื่อดูคนขึ้น คนลง และสินค้าเข้าออก เทียบกับเมื่อวาน</p></div></details>
 <details class="g"><summary>โหมด AFK และรายได้ตอนไม่อยู่</summary><div><p>กดปุ่ม 💤 บนแถบด้านบนเพื่อเข้าโหมด AFK เกมจะเดินต่อเอง ตัดสินใจเหตุการณ์แบบปลอดภัย และรับรางวัลภารกิจให้ โดยไม่วาดแผนที่เพื่อประหยัดแบต</p><p>ถ้าไม่แตะจอ 10 วินาที (หรือกด 🌙 หรี่จอเลย) จอจะมืดเหมือนโหมดนอนหลับ เหลือแค่นาฬิกาจางๆ กับเงิน แตะจอครั้งเดียวเพื่อปลุก</p><p>ถ้าปิดเกมหรือสลับไปแอปอื่นเกิน 2 นาที กลับมาจะได้รายได้ตามกำไรเฉลี่ย 7 วันล่าสุด</p><ul><li>ปกติ: 12 วันของกำไรต่อชั่วโมง สูงสุด 8 ชม.</li><li>เปิด AFK ไว้ก่อนออก: 24 วันต่อชั่วโมง สูงสุด 12 ชม.</li><li>ถ้ากำไรเฉลี่ยติดลบจะไม่ได้รายได้ แต่ก็ไม่หักเงิน</li><li>เวลาในเกมไม่เดินระหว่างที่ไม่อยู่</li></ul></div></details>
 <details class="g"><summary>การแข่งขันและคะแนน</summary><div><p>แข่งกับสายการบินคู่แข่ง 5 เจ้าด้วยคะแนนรวม ดูได้จากปุ่ม 🏆 มุมขวาบนของแผนที่ หรือในหน้าภาพรวม</p><ul><li>มูลค่ากิจการ 1 คะแนนต่อ ฿2 ล้าน</li><li>ผู้โดยสารสะสม 1 คะแนนต่อ 100 คน</li><li>สินค้าทางอากาศ 1 คะแนนต่อ 2 ตัน</li><li>ตู้ทางเรือ 1 คะแนนต่อ 10 TEU</li><li>เรตติ้ง 1,000 คะแนนต่อดาว</li><li>ภารกิจ 300 คะแนนต่อภารกิจ</li></ul><p>ลูกศร ▲▼ บอกว่าอันดับเปลี่ยนไปเท่าไรจากเมื่อวาน</p></div></details>
@@ -2184,7 +2200,7 @@ function drawMap(){
   if(cv.width!==W*dpr||cv.height!==H*dpr){cv.width=W*dpr;cv.height=H*dpr}
   const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);
   const hub=city(S.hub),asp=W/H;
-  const routes=S.routes.map(r=>({r,pts:gcPath(city(r.from),city(r.dest))}));
+  const routes=visRoutes().map(r=>({r,pts:gcPath(city(r.from),city(r.dest))}));
   let tgt=null;
   if(camMode==="world")tgt={cx:hub.lon,cy:18,w:360*kOf(18)};
   else if(camMode==="fit"||camMode==="focus"){
@@ -2243,7 +2259,7 @@ function drawMap(){
         f.fillStyle=g;f.beginPath();f.arc(px,py,rad,0,7);f.fill()}}}
     f.globalCompositeOperation="source-over"}
   // static layers (land, fog, night) go on a separate canvas under the animated one; it only redraws when something there changes
-  const bcv=$("#mapbase"),nightOn=S.night!==false&&speed<10,nightKey=nightOn?Math.floor(animDay*48):"n",rsig=vmode()+"|"+S.routes.map(r=>r.id+"."+r.planes.length+(grounded(r.dest)||grounded(r.from)?"g":"")).join()+"|"+S.lanes.map(l=>l.id+"."+l.ships.length).join()+"|"+suezShut()+"|"+S.livery.tail,bkey=landKey+"|"+fogKey+"|"+nightKey+"|"+rsig;let SX=null;
+  const bcv=$("#mapbase"),nightOn=S.night!==false&&speed<10,nightKey=nightOn?Math.floor(animDay*48):"n",rsig=bm()+vmode()+"|"+S.routes.map(r=>r.id+"."+r.planes.length+(grounded(r.dest)||grounded(r.from)?"g":"")).join()+"|"+S.lanes.map(l=>l.id+"."+l.ships.length).join()+"|"+suezShut()+"|"+S.livery.tail,bkey=landKey+"|"+fogKey+"|"+nightKey+"|"+rsig;let SX=null;
   if(bcv&&camIdle&&(bkey!==baseKey||bcv!==baseCv||bcv.width!==W*dpr||bcv.height!==H*dpr)){baseKey=bkey;baseCv=bcv;baseView={cx,cy,w,k};bcv.style.transform="";bcv.width=W*dpr;bcv.height=H*dpr;const bx=bcv.getContext("2d");bx.setTransform(1,0,0,1,0,0);bx.drawImage(landCv,0,0);bx.drawImage(fogCv,0,0);bx.setTransform(dpr,0,0,dpr,0,0);
     if(nightOn){
   // day / night — sun position from the game clock (hub local time)
@@ -2295,14 +2311,14 @@ function drawMap(){
     else{for(let i=0;i<2;i++){const t=(ph+i/2)%1;x.globalAlpha=1-t;x.beginPath();x.arc(px,py,6+t*16,0,7);x.stroke()}x.globalAlpha=1}}
   for(const b of S.bases){const c=city(b),[px,py]=PX(ulon(c.lon),c.lat);const t=(animDay*4)%1;x.strokeStyle=acc;x.lineWidth=1.5;x.globalAlpha=(1-t)*.8;x.beginPath();x.arc(px,py,6+t*18,0,7);x.stroke();x.globalAlpha=1}
   x.font="600 11px 'IBM Plex Mono', monospace";x.textBaseline="middle";
-  const shown=new Set([...S.bases,...S.routes.map(r=>r.dest)]);mapHits=portHitsTmp;
+  const shown=new Set([...S.bases,...visRoutes().map(r=>r.dest)]);mapHits=portHitsTmp;
   for(const c of CITIES){const [px,py]=PX(ulon(c.lon),c.lat);if(px<-10||px>W+10||py<-10||py>H+10)continue;const isB=S.bases.includes(c.c),on=shown.has(c.c),open=isOpen(c.c);
-    const ak=aptKind(c.c);x.beginPath();if(ak==="cargo"&&!isB){const q=isB?6:on?4.4:open?3.2:2.4;x.rect(px-q,py-q,q*2,q*2)}else x.arc(px,py,isB?6:on?4:open?2.8:2,0,7);x.fillStyle=isB?acc:ak==="cargo"?cargoCol:on?routeCol:mut;x.globalAlpha=(on?1:open?.7:.35)*(vmode()==='sea'?.22:1);x.fill();
+    const ak=aptKind(c.c);x.beginPath();if(ak==="cargo"&&!isB){const q=isB?6:on?4.4:open?3.2:2.4;x.rect(px-q,py-q,q*2,q*2)}else x.arc(px,py,isB?6:on?4:open?2.8:2,0,7);x.fillStyle=isB?acc:ak==="cargo"?cargoCol:on?(bm()==="cargo"?cargoCol:routeCol):mut;x.globalAlpha=(on?1:open?.7:.35)*(!isB&&!aptTakes(c.c,bm())?.18:1)*(vmode()==='sea'?.22:1);x.fill();
     if((isB||on)&&vmode()!=='sea'){x.lineWidth=isB?2:1.5;x.strokeStyle=paper;x.stroke()}
     x.globalAlpha=1;if(vmode()!=='sea')mapHits.push({c:c.c,px,py})}
   // how many people board at each of your airports today (or tons of cargo at a freight hub)
   if(vmode()!=='sea'&&S.ui_traf!==false){const items=[];for(const code of shown){const c=city(code),[px,py]=PX(ulon(c.lon),c.lat);if(px<0||px>W||py<0||py>H)continue;const {t}=apStat(code);
-      const k=aptKind(code),v=k==="cargo"?t.cu+t.cd:t.up;if(v<1)continue;items.push({px,py,lab:k==="cargo"?`📦${niceShort(t.cu+t.cd)}t`:`👥${niceShort(t.up)}`,isB:S.bases.includes(code),k})}
+      const k=bm(),v=k==="cargo"?t.cu+t.cd:t.up;if(v<1)continue;items.push({px,py,lab:k==="cargo"?`📦${niceShort(t.cu+t.cd)}t`:`👥${niceShort(t.up)}`,isB:S.bases.includes(code),k})}
     items.sort((a,b)=>b.isB-a.isB);const boxes=[];x.font="600 10.5px 'IBM Plex Mono', monospace";x.textBaseline="middle";
     for(const it of items){const tw=x.measureText(it.lab).width+10,bx=it.px+(it.isB?9:6),by=it.py-17,bb=[bx,by,bx+tw,by+15];
       if(boxes.some(o=>bb[0]<o[2]&&bb[2]>o[0]&&bb[1]<o[3]&&bb[3]>o[1]))continue;boxes.push(bb);
