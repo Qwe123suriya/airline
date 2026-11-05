@@ -87,6 +87,9 @@ canvas#map:active{cursor:grabbing}
 .regrow.sel{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .regrow.open{background:var(--sky)}
 .ap.lock{opacity:.6}
+#hubl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:440px){#hubl{display:none}.top .clock{margin-left:auto}}
+.sbadges{display:flex;flex-wrap:wrap;gap:4px}.sbadges span{font-size:11px;font-weight:600;border:1px solid;border-radius:999px;padding:1px 7px}
 .afk{position:fixed;inset:0;z-index:60;background:radial-gradient(120% 90% at 50% 0%,#1B2A44 0%,#0B1220 70%);color:#E8EEF7;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;animation:popin .25s both}
 .afkin{width:min(420px,100%);display:flex;flex-direction:column;gap:12px;align-items:stretch;text-align:center}
 .afkz{height:34px;position:relative;font-family:var(--f-display);font-weight:700;color:#8FA3C0}
@@ -105,12 +108,22 @@ canvas#map:active{cursor:grabbing}
 .afklog{font-size:12.5px;color:#B8C6DA;display:flex;flex-direction:column;gap:3px;min-height:20px}
 .afkrule{margin:0;padding:0 0 0 18px;text-align:left;font-size:12px;color:#8FA3C0;line-height:1.55}
 .afkx{height:46px;font-size:15px}
+.afkdimb{height:46px;background:transparent;color:#E8EEF7;border-color:rgba(255,255,255,.2)}
+.afkhint{font-size:11.5px;color:#6F819B}
+.afk{transition:background-color 1.2s}
+.afkin{transition:opacity 1.2s}
+.afksleep{position:absolute;inset:0;margin:auto;height:max-content;display:flex;flex-direction:column;align-items:center;gap:6px;opacity:0;pointer-events:none;transition:opacity 1.2s,transform 4s ease-in-out}
+.afk.dim{background:#000}
+.afk.dim .afkin{opacity:0;pointer-events:none}
+.afk.dim .afksleep{opacity:1}
+.afkt{font-size:clamp(48px,16vw,84px);font-weight:600;color:#3A4658;letter-spacing:1px}
+.afksc{font-size:14px;color:#2E3A4B}.afksz{font-size:12px;color:#283342}
+@media (prefers-reduced-motion:reduce){.afk,.afkin,.afksleep{transition:none}}
 @media (max-width:400px){.clock button,.qbtn{min-width:31px;padding:0 4px}.clock{gap:3px}}
 .rankbtn{position:absolute;right:8px;top:var(--barh,8px);z-index:7;height:38px;min-width:36px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:color-mix(in srgb,var(--paper) 94%,transparent);display:flex;align-items:center;gap:4px;font-size:16px;font-weight:700}
 .rankbtn .num{font-size:12.5px}
 .rankbtn.on{border-color:var(--accent);color:var(--accent)}
 .rankpanel{position:absolute;right:54px;top:calc(var(--barh,8px) + 46px);z-index:7;width:min(250px,calc(100% - 70px));background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 26px rgba(10,20,40,.2);padding:10px 12px;display:flex;flex-direction:column;gap:8px;max-height:60%;overflow:auto;animation:popin .18s both}
-[hidden]{display:none!important}
 .rlist{display:flex;flex-direction:column;gap:2px}
 .rk{display:grid;grid-template-columns:20px minmax(0,1fr) 30px auto;gap:6px;align-items:center;font-size:13px;padding:5px 6px;border-radius:8px}
 .rk.me{background:color-mix(in srgb,var(--accent) 14%,var(--paper));font-weight:700}
@@ -518,7 +531,8 @@ const CITIES=[
  ["MRU","มอริเชียส",-20.43,57.68,2,34],
  ["DAR","ดาร์เอสซาลาม",-6.88,39.2,4,28],
  ["ACC","อักกรา",5.61,-0.17,4,30],
- ["SEZ","เซเชลส์",-4.67,55.52,1.5,34]
+ ["SEZ","เซเชลส์",-4.67,55.52,1.5,34],
+ ["OSL","ออสโล",60.19,11.1,6,52],["LGW","ลอนดอน แกตวิก",51.15,-0.18,9,55],["EDI","เอดินบะระ",55.95,-3.37,4,48],["BER","เบอร์ลิน",52.37,13.5,8,50],["HAM","ฮัมบูร์ก",53.63,9.99,5,48],["DUS","ดุสเซลดอร์ฟ",51.29,6.77,6,48],["NCE","นีซ",43.66,7.21,4,48],["LYS","ลียง",45.73,5.08,3,45],["BUD","บูดาเปสต์",47.44,19.26,5,40],["OTP","บูคาเรสต์",44.57,26.08,4,38],["KEF","เรคยาวิก",63.99,-22.61,2,50],["SVO","มอสโก",55.97,37.41,12,45],["AGP","มาลากา",36.67,-4.5,5,42],["PMI","ปัลมา มายอร์กา",39.55,2.74,5,42],["NAP","เนเปิลส์",40.88,14.29,4,44],["VCE","เวนิส",45.5,12.35,4,46],["GVA","เจนีวา",46.24,6.11,5,55],["YYC","แคลการี",51.13,-114.01,5,45],["PHX","ฟินิกซ์",33.43,-112.01,8,48],["IAH","ฮิวสตัน",29.99,-95.34,10,50],["MCO","ออร์แลนโด",28.43,-81.31,9,48],["MSP","มินนีแอโพลิส",44.88,-93.22,6,46],["DTW","ดีทรอยต์",42.21,-83.35,6,46],["PHL","ฟิลาเดลเฟีย",39.87,-75.24,7,50],["CLT","ชาร์ลอตต์",35.21,-80.94,7,46],["SAN","ซานดิเอโก",32.73,-117.19,5,48],["PDX","พอร์ตแลนด์",45.59,-122.6,4,45],["HAV","ฮาวานา",22.99,-82.41,3,36],["SJU","ซานฮวน",18.44,-66.0,3,40],["GDL","กวาดาลาฮารา",20.52,-103.31,4,32],["YOW","ออตตาวา",45.32,-75.67,3,44],["OGG","เมาวี (ฮาวาย)",20.9,-156.43,2,44],["MDE","เมเดยิน",6.16,-75.42,4,32],["CTG","การ์ตาเฮนา",10.44,-75.51,3,32],["GYE","กวายากิล",-2.16,-79.88,3,32],["CCS","การากัส",10.6,-66.99,3,34],["MVD","มอนเตวิเดโอ",-34.84,-56.03,3,36],["ASU","อะซุนซิออน",-25.24,-57.52,2,32],["VVI","ซานตาครูซ",-17.64,-63.14,2,30],["SSA","ซัลวาดอร์",-12.91,-38.33,4,34],["REC","เรซีเฟ",-8.13,-34.92,3,34],["POA","ปอร์ตูอาเลกรี",-29.99,-51.17,3,34],["CUZ","กุสโก",-13.54,-71.94,2,30],["MAO","มาเนาส์",-3.04,-60.05,2,32],["ALG","แอลเจียร์",36.69,3.22,3,34],["TUN","ตูนิส",36.85,10.23,3,34],["RAK","มาร์ราเกช",31.61,-8.04,4,36],["DSS","ดาการ์",14.67,-17.07,3,34],["ABJ","อาบีจาน",5.26,-3.93,3,34],["ABV","อาบูจา",9.01,7.26,3,32],["EBB","เอนเทบเบ (ยูกันดา)",0.04,32.44,2,32],["KGL","คิกาลี",-1.97,30.14,2,32],["LUN","ลูซากา",-15.33,28.45,2,32],["HRE","ฮาราเร",-17.93,31.09,2,32],["DUR","เดอร์บัน",-29.61,31.12,4,34],["TNR","อันตานานาริโว",-18.8,47.48,2,30],["ZNZ","แซนซิบาร์",-6.22,39.22,2,32],["HRG","ฮูร์กาดา",27.18,33.8,3,32],["HBA","โฮบาร์ต",-42.84,147.51,2,36],["CBR","แคนเบอร์รา",-35.31,149.19,3,38],["WLG","เวลลิงตัน",-41.33,174.81,3,38],["ZQN","ควีนส์ทาวน์",-45.02,168.74,2,38],["PPT","ตาฮีตี",-17.55,-149.61,2,40],["NOU","นูเมอา",-22.01,166.21,2,38],["POM","พอร์ตมอร์สบี",-9.44,147.22,2,34]
 ].map(([c,n,lat,lon,w,fee])=>({c,n,lat,lon,w,fee}));
 const MODELS=[
  {id:"c208",cat:"prop",name:"Cessna 208 Caravan",tag:"ใบพัดเดี่ยว ลงสนามบินเล็กได้",seats:12,cargo:.4,range:1700,speed:340,price:12e6,cpk:16,len:12.7,a:{fw:.13,sr:1.25,prop:1,pods:[],fh:9,hw:1,eng:"nose"}},
@@ -582,11 +596,11 @@ const REGIONS=[
  {id:"sea",n:"อาเซียน",c:["SIN","KUL","CGK","DPS","MNL","SGN","HAN","RGN","PNH","REP","VTE","LPQ","DAD","CEB","PEN","BKI","SUB","MDL","BWN","PQC"],lab:[112,2],r:1400},
  {id:"ea",n:"เอเชียตะวันออก",c:["HKG","TPE","PVG","PEK","ICN","NRT","KIX","CAN","SZX","CTU","KMG","XMN","MFM","FUK","CTS","NGO","OKA","PUS","KHH","ULN"],lab:[124,34],r:1400},
  {id:"sa",n:"เอเชียใต้และตะวันออกกลาง",c:["DEL","BOM","DXB","DOH","AUH","RUH","JED","MCT","TLV","BLR","MAA","CCU","HYD","CMB","KTM","DAC","MLE","KHI"],lab:[67,24],r:1500},
- {id:"oc",n:"โอเชียเนีย",c:["SYD","MEL","BNE","PER","ADL","OOL","DRW","CNS","AKL","CHC","NAN"],lab:[146,-29],r:1900},
- {id:"eu",n:"ยุโรป",c:["IST","FRA","CDG","LHR","AMS","MAD","BCN","FCO","MXP","MUC","ZRH","VIE","CPH","ARN","HEL","DUB","LIS","ATH","WAW","PRG","BRU","MAN"],lab:[14,47],r:1300},
- {id:"na",n:"อเมริกาเหนือ",c:["JFK","LAX","SFO","SEA","ORD","ATL","DFW","MIA","BOS","IAD","DEN","LAS","HNL","YVR","YYZ","YUL","MEX","CUN","ANC"],lab:[-96,39],r:1700},
- {id:"sam",n:"อเมริกาใต้",c:["GRU","GIG","EZE","SCL","LIM","BOG","PTY","UIO","BSB"],lab:[-60,-16],r:2000},
- {id:"af",n:"แอฟริกา",c:["CAI","JNB","CPT","NBO","ADD","LOS","CMN","MRU","DAR","ACC","SEZ"],lab:[20,4],r:2200},
+ {id:"oc",n:"โอเชียเนีย",c:["SYD","MEL","BNE","PER","ADL","OOL","DRW","CNS","AKL","CHC","NAN","HBA","CBR","WLG","ZQN","PPT","NOU","POM"],lab:[146,-29],r:1900},
+ {id:"eu",n:"ยุโรป",c:["IST","FRA","CDG","LHR","AMS","MAD","BCN","FCO","MXP","MUC","ZRH","VIE","CPH","ARN","HEL","DUB","LIS","ATH","WAW","PRG","BRU","MAN","OSL","LGW","EDI","BER","HAM","DUS","NCE","LYS","BUD","OTP","KEF","SVO","AGP","PMI","NAP","VCE","GVA"],lab:[14,47],r:1300},
+ {id:"na",n:"อเมริกาเหนือ",c:["JFK","LAX","SFO","SEA","ORD","ATL","DFW","MIA","BOS","IAD","DEN","LAS","HNL","YVR","YYZ","YUL","MEX","CUN","ANC","YYC","PHX","IAH","MCO","MSP","DTW","PHL","CLT","SAN","PDX","HAV","SJU","GDL","YOW","OGG"],lab:[-96,39],r:1700},
+ {id:"sam",n:"อเมริกาใต้",c:["GRU","GIG","EZE","SCL","LIM","BOG","PTY","UIO","BSB","MDE","CTG","GYE","CCS","MVD","ASU","VVI","SSA","REC","POA","CUZ","MAO"],lab:[-60,-16],r:2000},
+ {id:"af",n:"แอฟริกา",c:["CAI","JNB","CPT","NBO","ADD","LOS","CMN","MRU","DAR","ACC","SEZ","ALG","TUN","RAK","DSS","ABJ","ABV","EBB","KGL","LUN","HRE","DUR","TNR","ZNZ","HRG"],lab:[20,4],r:2200},
 ];
 const regionOf=c=>REGIONS.find(R=>R.c.includes(c));
 // Branches (สาขา): every airport where you base aircraft. Routes start from a branch. Levels 1–3.
@@ -695,13 +709,22 @@ function seaPath(A,B){const shut=suezShut(),key=A+B+(shut?"x":"");if(seaCache.ha
   const via=[];for(let u=best;u&&u!=="@";u=prev[u])via.unshift(u);const cum=[0];for(let i=1;i<pts.length;i++)cum.push(cum[i-1]+seaHav(pts[i-1],pts[i]));const r={pts,km:Math.round(bestD),via,cum};seaCache.set(key,r);return r}
 
 const SHIPS=[
- {id:"fdr",name:"เรือฟีดเดอร์ 1,700 TEU",tag:"เรือเล็ก วิ่งระยะใกล้ในภูมิภาค",teu:1700,speed:35,price:450e6,cpk:450,len:170},
+ {id:"cst",name:"เรือชายฝั่ง 600 TEU",tag:"ราคาถูกที่สุด เหมาะเริ่มต้นและเส้นทางสั้นมาก",teu:600,speed:30,price:160e6,cpk:200,len:120},
  {id:"rfr",name:"เรือห้องเย็น 800 TEU",tag:"ขนผลไม้ อาหารทะเล ค่าระวาง 1.8 เท่า",teu:800,speed:38,price:380e6,cpk:330,len:150,reefer:1},
+ {id:"fdr",name:"เรือฟีดเดอร์ 1,700 TEU",tag:"เรือเล็ก วิ่งระยะใกล้ในภูมิภาค",teu:1700,speed:35,price:450e6,cpk:450,len:170},
+ {id:"rfl",name:"เรือห้องเย็นใหญ่ 2,200 TEU",tag:"ห้องเย็นรุ่นใหญ่ ค่าระวาง 1.8 เท่า ส่งได้ทีละมาก",teu:2200,speed:39,price:1.05e9,cpk:760,len:210,reefer:1},
+ {id:"fdx",name:"ฟีดเดอร์ด่วน 2,500 TEU",tag:"เร็วที่สุดในกองเรือ ไปกลับได้หลายรอบ",teu:2500,speed:46,price:780e6,cpk:760,len:200},
  {id:"pmx",name:"พานาแมกซ์ 5,000 TEU",tag:"ขนาดกลาง ใช้ได้เกือบทุกท่าเรือ",teu:5000,speed:40,price:1.6e9,cpk:1100,len:294},
+ {id:"ppx",name:"โพสต์พานาแมกซ์ 8,500 TEU",tag:"ใหญ่กว่าพานาแมกซ์ ยังเข้าท่าทั่วไปได้",teu:8500,speed:41,price:2.4e9,cpk:1500,len:330},
+ {id:"eco",name:"อีโค LNG 11,000 TEU",tag:"ใช้ก๊าซ LNG กินน้ำมันน้อยมาก แต่แล่นช้ากว่า",teu:11000,speed:37,price:3.4e9,cpk:1300,len:345,eco:1},
  {id:"npx",name:"นีโอพานาแมกซ์ 13,000 TEU",tag:"ใหญ่ ต้นทุนต่อตู้ถูกลง",teu:13000,speed:41,price:3.6e9,cpk:2000,len:366},
+ {id:"vlc",name:"VLCS 18,000 TEU",tag:"ยักษ์ใหญ่ เทียบได้เฉพาะท่าเรือน้ำลึก",teu:18000,speed:40,price:4.9e9,cpk:2300,len:395,deep:1},
  {id:"ulc",name:"ULCV 24,000 TEU",tag:"ใหญ่ที่สุด เทียบได้เฉพาะท่าเรือน้ำลึก",teu:24000,speed:39,price:6.2e9,cpk:2600,len:400,deep:1},
+ {id:"ult",name:"ULCV อีโค 24,300 TEU",tag:"เรือธงรุ่นใหม่ ใหญ่ที่สุดและประหยัดน้ำมันที่สุด",teu:24300,speed:40,price:7.8e9,cpk:2000,len:400,deep:1,eco:1},
 ];
 const shipM=id=>SHIPS.find(m=>m.id===id);
+function shipBadges(m){const b=[];if(m.speed>=44)b.push(["⚡ เร็ว","#D9822B"]);if(m.eco)b.push(["🌿 ประหยัด","#2F9A5E"]);if(m.reefer)b.push(["❄ ห้องเย็น","#3A7BC8"]);if(m.deep)b.push(["⚓ น้ำลึก","#5B6B80"]);if(m.price<=2e8)b.push(["💰 เริ่มต้น","#8A6D1F"]);
+  return b.length?`<span class="sbadges">${b.map(([t,c])=>`<span style="color:${c};border-color:color-mix(in srgb,${c} 40%,transparent)">${t}</span>`).join("")}</span>`:""}
 const shipById=id=>S.ships.find(x=>x.id===id);
 const portH=m=>18+Math.sqrt(m.teu)*.25;
 const sailDays=(m,km)=>km/m.speed/24;
@@ -766,6 +789,8 @@ function dist(a,b){const R=6371,r=Math.PI/180,dl=(b.lat-a.lat)*r,dn=(b.lon-a.lon
 const rd=r=>dist(city(r.from),city(r.dest));
 const baseFare=d=>Math.round((700+6*Math.pow(d,.85))/10)*10;
 const legsFor=(m,d)=>clamp(Math.floor(24/(d/m.speed+1.2)),1,12);
+// planes take longer in the air on screen; the time comes out of ground time, so the number of flights per day stays the same
+const AIR_SLOW=1.7,flyFrac=(m,d,L)=>Math.min(.94,(d/m.speed+.4)*AIR_SLOW/(24/L));
 const distF=d=>d<300?.5+d/600:1/(1+(d/9000)**2);
 function money(n,short){const s=n<0?"−":"",a=Math.abs(n);
   if(a>=1e9)return s+"฿"+(a/1e9).toFixed(a>=1e10?1:2)+(short?"B":" พันล้าน");
@@ -799,12 +824,12 @@ function migrate(s){
 let fate=null, justRolled=true;
 function rollFate(keepName){
   const hub=rnd(CITIES);
-  const cap=rnd([60e6,80e6,100e6,130e6,160e6]);   // enough for 1–2 small aircraft: start small, grow from profit
+  const cap=rnd([40e6,55e6,75e6,100e6,130e6,180e6]);
   const fuel=+(0.8+Math.random()*0.5).toFixed(2);
   fate={hub:hub.c,cap,fuel,name:keepName&&fate?fate.name:rnd(NAMES),code:keepName&&fate?fate.code:String.fromCharCode(65+Math.random()*26|0,65+Math.random()*26|0)};
   justRolled=true;
 }
-function difficulty(f){let s=0;const h=city(f.hub);s+=h.w>=16?0:h.w>=12?1:h.w>=8?2:3;s+=f.cap>=130e6?0:f.cap>=90e6?1:2;s+=f.fuel>1.1?1:0;return clamp(s,0,4)+1}
+function difficulty(f){let s=0;const h=city(f.hub);s+=h.w>=16?0:h.w>=12?1:h.w>=8?2:3;s+=f.cap>=130e6?0:f.cap>=75e6?1:2;s+=f.fuel>1.1?1:0;return clamp(s,0,4)+1}
 function fuelText(f){return f>=1.15?"ยุคน้ำมันแพง":f<=.92?"ยุคน้ำมันถูก":"ราคาน้ำมันปกติ"}
 function flap(el,final,ms){
   const chars="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -927,7 +952,7 @@ let floaters=[];
 function settleFlights(T){
   for(const r of S.routes){
     const a=city(r.from),b=city(r.dest),d=dist(a,b),ground=grounded(r.from)||grounded(r.dest),c=calc(r);
-    for(const id of r.planes){const p=plane(id);if(!p)continue;const m=model(p.m),L=c.plan.get(p.id)||legsFor(m,d),fly=(d/m.speed+.4)/(24/L);
+    for(const id of r.planes){const p=plane(id);if(!p)continue;const m=model(p.m),L=c.plan.get(p.id)||legsFor(m,d),fly=flyFrac(m,d,L);
       const key=r.id+":"+L,N=Math.floor(T*L+(p.off||0)-fly);
       if(p.lk!==key){p.lk=key;p.ld=N;continue}
       if(N<=p.ld)continue;const n0=p.ld;p.ld=N;
@@ -1087,6 +1112,7 @@ function homeHTML(){
   <div id="homeRest" class="stack" style="gap:14px">${homeRestHTML()}</div>`}
 function mapCtlHTML(withFull){return `<div class="mapctl"><button data-cam="in" aria-label="ซูมเข้า">+</button><button data-cam="out" aria-label="ซูมออก">−</button>
     <button data-cam="world" aria-label="ดูทั้งโลก" class="${camMode==="world"?"on":""}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></button>
+    <button data-night aria-label="${S.night===false?"เปิด":"ปิด"}เงากลางวันกลางคืน" aria-pressed="${S.night!==false}" class="${S.night===false?"":"on"}" title="กลางวัน/กลางคืน"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></button>
     <button data-cam="fit" aria-label="ซูมไปที่เส้นทางของฉัน" class="${camMode==="fit"?"on":""}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><circle cx="12" cy="12" r="6"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>
     ${withFull?`<button data-cam="full" aria-label="เปิดแผนที่เต็มจอ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>`:""}</div>`}
 let airborne=0;
@@ -1308,6 +1334,7 @@ function bindMap(){
     if(k==="full"){tab="map";renderView(true);window.scrollTo(0,0);return}
     if(k==="in"||k==="out"){const W=cv.clientWidth,H=cv.clientHeight;zoom(k==="in"?.6:1.6,W/2,H/2)}else setCam(k)});
   $("#regbtn").onclick=()=>openSheet(regionSheet({}));
+  $$("[data-night]").forEach(b=>b.onclick=()=>{S.night=S.night===false;save();$$("[data-night]").forEach(x=>{x.classList.toggle("on",S.night);x.setAttribute("aria-pressed",S.night);x.setAttribute("aria-label",(S.night?"ปิด":"เปิด")+"เงากลางวันกลางคืน")});toast(S.night?"🌙 เปิดกลางวัน-กลางคืนบนแผนที่":"☀️ ปิดเงากลางคืนแล้ว · เวลาในเกมยังเดินตามปกติ")});
   $$("[data-vm]").forEach(b=>b.onclick=()=>setMode(b.dataset.vm));
   const rb=$("#rankbtn");if(rb)rb.onclick=()=>{S.ui_rank=!S.ui_rank;save();const rp=$("#rankpanel");rp.hidden=!S.ui_rank;if(S.ui_rank)rp.innerHTML=rankPanelHTML();rb.classList.toggle("on",S.ui_rank);rb.setAttribute("aria-expanded",S.ui_rank)}}
 function setCam(m,focus){camMode=m;camFocus=focus||null;$$("[data-cam]").forEach(b=>b.classList.toggle("on",b.dataset.cam===m))}
@@ -1334,6 +1361,7 @@ function shipArt(m,lv){lv=lv||S.livery;const L=Math.min(190,70+m.len*.3),x0=(200
   // hull
   const hull=`M${x0} ${deck}L${x1-6} ${deck-1.5}Q${x1+1} ${deck-1.5} ${x1} ${deck+2}L${x1-hh*.9} ${keel}L${x0+3} ${keel}Q${x0-1} ${keel} ${x0} ${deck+hh*.6}Z`;
   g+=`<path d="${hull}" style="fill:${hullC}"/><path d="M${x0} ${wl+.5}L${x1-hh*.55} ${wl+.5}L${x1-hh*.9} ${keel}L${x0+3} ${keel}Q${x0-1} ${keel} ${x0} ${wl+.5}Z" style="fill:#A8322C"/>`;
+  if(m.eco)g+=`<rect x="${x0+2}" y="${wl-2.6}" width="${L-hh-4}" height="1.6" style="fill:#3FA66B"/>`;
   g+=`<rect x="${x0+2}" y="${deck+1.2}" width="${L-10}" height="1.3" style="fill:${lv.stripe}"/>`;
   g+=`<path d="M${x0-4} ${wl+1.2}q3 -1.6 6 0t6 0t6 0" style="fill:none;stroke:var(--route)" stroke-width=".8" opacity=".5"/>`;
   return `<svg class="art" viewBox="0 0 200 66" role="img" aria-label="${m.name}">${g}</svg>`}
@@ -1366,7 +1394,7 @@ function seaHTML(){const lp=S.lanes.reduce((a,l)=>a+laneAvg(l),0),tpd=S.lanes.re
   ${S.ships.length?`<h2>กองเรือของคุณ</h2><div class="hangar">${S.ships.map(sh=>{const m=shipM(sh.m),l=S.lanes.find(x=>x.id===sh.lane);
     return `<button class="pcard ${l?"":"idle"}" data-ship="${sh.id}" style="border-bottom-color:${l?"var(--port)":"var(--muted)"}">${shipArt(m)}<div class="row between"><b class="num">${sh.reg}</b><span class="small">${l?`${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:'<span class="muted">จอดว่าง</span>'}</span></div><div class="small muted">${m.name}</div></button>`}).join("")}</div>`:""}
   <h2>อู่ต่อเรือ</h2>
-  <div class="models">${SHIPS.map(m=>`<div class="model">${shipArt(m)}<b>${m.name}</b><span class="tag">${m.tag}</span>
+  <div class="models">${SHIPS.map(m=>`<div class="model">${shipArt(m)}<b>${m.name}</b>${shipBadges(m)}<span class="tag">${m.tag}</span>
     <div class="spec"><span>ความจุ</span><span class="num">${m.teu.toLocaleString()} TEU</span><span>ความเร็ว</span><span class="num">${m.speed} กม./ชม.</span><span>ค่าน้ำมัน/กม.</span><span class="num">฿${m.cpk.toLocaleString()}</span><span>ท่าเรือ</span><span class="num">${m.deep?"น้ำลึกเท่านั้น":"ทุกท่า"}</span></div>
     <button class="btn ${S.cash>=m.price?"primary":""} sm" data-buyship="${m.id}" ${S.cash>=m.price?"":"disabled"}>ซื้อ ${money(m.price)}</button></div>`).join("")}</div>`}
 function bindCargo(){
@@ -1529,10 +1557,24 @@ function startAfk(){if(!S||S.over)return;closePop&&closePop();if(sheetFn){sheetF
     <div class="afkspd">${SPEEDS.map(v=>`<button data-asp="${v}">${v}×</button>`).join("")}</div>
     <div class="afklog" id="afkl"></div>
     <ul class="afkrule"><li>ตัดสินใจเหตุการณ์ให้เองแบบปลอดภัย (เลือกตัวเลือกสุดท้าย)</li><li>รับรางวัลภารกิจที่สำเร็จให้อัตโนมัติ</li><li>หยุดวาดแผนที่เพื่อประหยัดแบตเตอรี่ และพยายามไม่ให้จอดับ</li><li>ถ้าปิดแอปไป จะได้รายได้ตอนไม่อยู่ ${awayRate(1).dph} วันต่อชั่วโมง (สูงสุด ${awayRate(1).cap} ชม.)</li></ul>
-    <button class="btn primary afkx" id="afkx">กลับมาเล่น</button></div>`;
+    <div class="row" style="gap:8px"><button class="btn afkdimb" id="afkdim">🌙 หรี่จอเลย</button><button class="btn primary afkx" id="afkx" style="flex:1">กลับมาเล่น</button></div>
+    <div class="afkhint">ไม่แตะจอ 10 วินาที จอจะหรี่เองเหมือนโหมดนอนหลับ · แตะจอเพื่อปลุก</div></div>
+    <div class="afksleep" id="afks" aria-hidden="true"><div class="afkt num" id="afkt"></div><div class="afksc num" id="afksc"></div><div class="afksz">💤 AFK · แตะเพื่อปลุก</div></div>`;
   el.querySelectorAll("[data-asp]").forEach(b=>b.onclick=()=>{speed=+b.dataset.asp;paused=false;updateTop();afkTick()});
-  $("#afkx").onclick=stopAfk;wakeOn();afkTick()}
+  $("#afkx").onclick=stopAfk;$("#afkdim").onclick=()=>afkDim(true);
+  afk.last=Date.now();afk.dim=false;
+  const poke=e=>{afk.last=Date.now();if(afk.dim){afkDim(false);afk.swallow=Date.now();e.preventDefault();e.stopPropagation()}};
+  el.addEventListener("pointerdown",poke,true);el.addEventListener("touchstart",poke,{capture:true,passive:false});
+  el.addEventListener("click",e=>{if(afk&&afk.swallow&&Date.now()-afk.swallow<600){e.preventDefault();e.stopPropagation()}},true);
+  wakeOn();afkTick()}
+// sleep screen: near-black with a dim clock that drifts slowly so nothing burns in
+function afkDim(on){if(!afk)return;const el=$("#afk");if(!el)return;afk.dim=on;afk.last=Date.now();el.classList.toggle("dim",on);if(on)afkDrift();afkTick()}
+function afkDrift(){const z=$("#afks");if(!z)return;z.style.transform=`translate(${Math.round((Math.random()-.5)*50)}vw,${Math.round((Math.random()-.5)*50)}vh)`}
 function afkTick(){if(!afk)return;const el=$("#afk");if(!el)return;
+  if(!afk.dim&&Date.now()-afk.last>10000)afkDim(true);
+  if(afk.dim){const d=new Date(),t=$("#afkt");if(t)t.textContent=`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+    const sc=$("#afksc");if(sc){const e=S.cash-afk.c0;sc.textContent=`${money(S.cash,true)} · ${e>=0?"+":""}${money(e,true)}`}
+    if(Date.now()-(afk.dr||0)>30000){afk.dr=Date.now();afkDrift()}}
   for(const m of (S.missions||[]).filter(m=>m.done)){afk.log.unshift(`🎯 รับรางวัล "${mTitle(m)}" ${money(m.reward,true)}`);claimMission(m.id)}
   const ms=Date.now()-afk.t0,hh=Math.floor(ms/3.6e6),mm=Math.floor(ms/6e4)%60,ss=Math.floor(ms/1e3)%60,earn=S.cash-afk.c0;
   $("#afkc").textContent=money(S.cash);
@@ -1778,7 +1820,7 @@ function todayHTML(){const T=S.today||blankT();
    <div class="muted small">เงินเข้าทุกครั้งที่เครื่องบินลงจอด ส่วนค่าดูแลเครื่อง ค่าลูกเรือ และดอกเบี้ย หักรวมตอนขึ้นวันใหม่</div>`}
 function svcProj(i){const sv=S.service,rp=S.rep;S.service=i;S.rep=SERVICE[i].rep;let pax=0,profit=0;
   for(const r of S.routes){const c=calc(r);pax+=c.pax;profit+=c.profit}S.service=sv;S.rep=rp;return {pax:Math.round(pax),profit}}
-function maxLoan(){return Math.max(0,Math.floor((fleetValue()*.6+50e6)/50e6)*50e6)}
+function maxLoan(){return Math.max(0,Math.floor((fleetValue()*.8+50e6)/50e6)*50e6)}
 function moneyHTML(){
   const L=S.last||{tix:0,crev:0,fuelC:0,feeC:0,fixed:0,svc:0,interest:0,cost:0,rev:0};
   const ml=maxLoan(),hedgeFee=Math.max(5e6,(L.fuelC||0)*60*.03);
@@ -2050,7 +2092,7 @@ function guideSheet(){return head("คู่มือระบบ","ทุกร
 <details class="g"><summary>ชื่อเสียงและระดับบริการ</summary><div><p>ชื่อเสียงจะค่อย ๆ เคลื่อนเข้าหาค่าเป้าหมายของระดับบริการ ประหยัด 35 มาตรฐาน 60 พรีเมียม 85 คลิปไวรัลและแคมเปญใหญ่ช่วยดันขึ้น เครื่องเสียกลางทางทำให้ลดลง</p></div></details>
 <details class="g"><summary>การตลาดและล็อกราคาน้ำมัน</summary><div><p>แคมเปญการตลาดเพิ่มคนบินทุกเส้นทางชั่วคราว เปิดได้ทีละแคมเปญ</p><p>ดัชนีน้ำมันขึ้นลงทุกวันและพุ่งแรงได้จากเหตุการณ์ การล็อกราคาจะตรึงดัชนีไว้ 60 วัน ค่าธรรมเนียมประมาณ 3% ของค่าน้ำมันช่วงนั้น เหมาะตอนน้ำมันถูก</p></div></details>
 <details class="g"><summary>เงินกู้และการล้มละลาย</summary><div><p>กู้ได้ทีละ ฿50 ล้าน วงเงินขึ้นกับมูลค่าฝูงบิน ถ้าเงินสดติดลบต่อเนื่อง 30 วัน สายการบินล้มละลายและต้องเริ่มชะตาใหม่</p></div></details>
-<details class="g"><summary>โหมด AFK และรายได้ตอนไม่อยู่</summary><div><p>กดปุ่ม 💤 บนแถบด้านบนเพื่อเข้าโหมด AFK เกมจะเดินต่อเอง ตัดสินใจเหตุการณ์แบบปลอดภัย และรับรางวัลภารกิจให้ โดยไม่วาดแผนที่เพื่อประหยัดแบต</p><p>ถ้าปิดเกมหรือสลับไปแอปอื่นเกิน 2 นาที กลับมาจะได้รายได้ตามกำไรเฉลี่ย 7 วันล่าสุด</p><ul><li>ปกติ: 12 วันของกำไรต่อชั่วโมง สูงสุด 8 ชม.</li><li>เปิด AFK ไว้ก่อนออก: 24 วันต่อชั่วโมง สูงสุด 12 ชม.</li><li>ถ้ากำไรเฉลี่ยติดลบจะไม่ได้รายได้ แต่ก็ไม่หักเงิน</li><li>เวลาในเกมไม่เดินระหว่างที่ไม่อยู่</li></ul></div></details>
+<details class="g"><summary>โหมด AFK และรายได้ตอนไม่อยู่</summary><div><p>กดปุ่ม 💤 บนแถบด้านบนเพื่อเข้าโหมด AFK เกมจะเดินต่อเอง ตัดสินใจเหตุการณ์แบบปลอดภัย และรับรางวัลภารกิจให้ โดยไม่วาดแผนที่เพื่อประหยัดแบต</p><p>ถ้าไม่แตะจอ 10 วินาที (หรือกด 🌙 หรี่จอเลย) จอจะมืดเหมือนโหมดนอนหลับ เหลือแค่นาฬิกาจางๆ กับเงิน แตะจอครั้งเดียวเพื่อปลุก</p><p>ถ้าปิดเกมหรือสลับไปแอปอื่นเกิน 2 นาที กลับมาจะได้รายได้ตามกำไรเฉลี่ย 7 วันล่าสุด</p><ul><li>ปกติ: 12 วันของกำไรต่อชั่วโมง สูงสุด 8 ชม.</li><li>เปิด AFK ไว้ก่อนออก: 24 วันต่อชั่วโมง สูงสุด 12 ชม.</li><li>ถ้ากำไรเฉลี่ยติดลบจะไม่ได้รายได้ แต่ก็ไม่หักเงิน</li><li>เวลาในเกมไม่เดินระหว่างที่ไม่อยู่</li></ul></div></details>
 <details class="g"><summary>การแข่งขันและคะแนน</summary><div><p>แข่งกับสายการบินคู่แข่ง 5 เจ้าด้วยคะแนนรวม ดูได้จากปุ่ม 🏆 มุมขวาบนของแผนที่ หรือในหน้าภาพรวม</p><ul><li>มูลค่ากิจการ 1 คะแนนต่อ ฿2 ล้าน</li><li>ผู้โดยสารสะสม 1 คะแนนต่อ 100 คน</li><li>สินค้าทางอากาศ 1 คะแนนต่อ 2 ตัน</li><li>ตู้ทางเรือ 1 คะแนนต่อ 10 TEU</li><li>เรตติ้ง 1,000 คะแนนต่อดาว</li><li>ภารกิจ 300 คะแนนต่อภารกิจ</li></ul><p>ลูกศร ▲▼ บอกว่าอันดับเปลี่ยนไปเท่าไรจากเมื่อวาน</p></div></details>
 <details class="g"><summary>เรตติ้ง 5 ดาว</summary><div><p>เรตติ้งโดยรวมคือค่าเฉลี่ยของ 4 ด้านที่เริ่มทำแล้ว:</p><ul><li><b>สายการบิน</b> จำนวนปลายทาง ที่นั่งเต็มใกล้ 85% สภาพเครื่อง และสัดส่วนเส้นทางที่มีกำไร</li><li><b>การเดินเรือ</b> ตู้เต็ม เส้นทางเรือที่มีกำไร ขนาดกองเรือ และระดับสาขาท่าเรือ</li><li><b>สินค้าทางอากาศ</b> ระวางเต็ม ปริมาณสินค้า และจำนวนเครื่องขนสินค้า</li><li><b>ความพอใจของผู้โดยสาร</b> ชื่อเสียง ระดับบริการ ความคุ้มค่าของราคาตั๋ว ความแออัด และเหตุเครื่องขัดข้อง</li></ul><p>เรตติ้งคำนวณใหม่ทุกวัน 0 ดาวทำให้ผู้โดยสารลด 10% ส่วน 5 ดาวเพิ่ม 10% คู่แข่งก็มีเรตติ้งในตารางอันดับ</p></div></details>
 <details class="g"><summary>ภารกิจและการตัดสินใจ</summary><div><p>หน้าภาพรวมมีภารกิจ 3 อย่างเสมอ ทำสำเร็จแล้วกดรับรางวัลเป็นเงินและชื่อเสียง บางภารกิจมีเวลาจำกัด ทุก 1–2 สัปดาห์ในเกมจะมีเรื่องให้ตัดสินใจ เช่น งานเหมาลำ สหภาพลูกเรือ ดีลลดราคาเครื่องบิน หรือโค้ดแชร์ เกมจะหยุดรอจนกว่าคุณเลือก</p></div></details>
@@ -2166,9 +2208,9 @@ function drawMap(){
         f.fillStyle=g;f.beginPath();f.arc(px,py,rad,0,7);f.fill()}}}
     f.globalCompositeOperation="source-over"}
   // static layers (land, fog, night) go on a separate canvas under the animated one; it only redraws when something there changes
-  const bcv=$("#mapbase"),nightKey=speed>=10?"n":Math.floor(animDay*48),rsig=vmode()+"|"+S.routes.map(r=>r.id+"."+r.planes.length+(grounded(r.dest)||grounded(r.from)?"g":"")).join()+"|"+S.lanes.map(l=>l.id+"."+l.ships.length).join()+"|"+suezShut()+"|"+S.livery.tail,bkey=landKey+"|"+fogKey+"|"+nightKey+"|"+rsig;let SX=null;
+  const bcv=$("#mapbase"),nightOn=S.night!==false&&speed<10,nightKey=nightOn?Math.floor(animDay*48):"n",rsig=vmode()+"|"+S.routes.map(r=>r.id+"."+r.planes.length+(grounded(r.dest)||grounded(r.from)?"g":"")).join()+"|"+S.lanes.map(l=>l.id+"."+l.ships.length).join()+"|"+suezShut()+"|"+S.livery.tail,bkey=landKey+"|"+fogKey+"|"+nightKey+"|"+rsig;let SX=null;
   if(bcv&&camIdle&&(bkey!==baseKey||bcv!==baseCv||bcv.width!==W*dpr||bcv.height!==H*dpr)){baseKey=bkey;baseCv=bcv;baseView={cx,cy,w,k};bcv.style.transform="";bcv.width=W*dpr;bcv.height=H*dpr;const bx=bcv.getContext("2d");bx.setTransform(1,0,0,1,0,0);bx.drawImage(landCv,0,0);bx.drawImage(fogCv,0,0);bx.setTransform(dpr,0,0,dpr,0,0);
-    if(speed<10){
+    if(nightOn){
   // day / night — sun position from the game clock (hub local time)
   const date=new Date(START);date.setDate(date.getDate()+S.day);
   const doy=Math.floor((date-new Date(date.getFullYear(),0,0))/864e5);
@@ -2251,7 +2293,7 @@ function drawMap(){
   for(const {r} of (vmode()==='sea'?[]:routes)){if(grounded(r.dest)||grounded(r.from))continue;const d=rd(r),ar=arcs.get(r.id),plan=calc(r).plan;
     r.planes.forEach(id=>{const pl=plane(id);if(!pl||pl.down>S.day)return;const m=model(pl.m),L=plan.get(pl.id)||legsFor(m,d);
       const t0=animDay*L+(pl.off||0),leg=Math.floor(t0),f=t0-leg,back=leg%2===1;
-      const fly=(d/m.speed+.4)/(24/L),kind=aircraftKind(m);
+      const fly=flyFrac(m,d,L),kind=aircraftKind(m);
       if(f>fly){const at=back?r.from:r.dest;parked.set(at,(parked.get(at)||[]).concat([[kind,m]]));return}
       const e=f/fly,s=e<.12?e*e/.24:e>.88?1-(1-e)*(1-e)/.24:.06+(e-.12)*(.88/.76),path=back?ar.back:ar.out;
       const pos=onPath(path,s),nx=onPath(path,s+.01),ang=Math.atan2(nx[1]-pos[1],nx[0]-pos[0]);
