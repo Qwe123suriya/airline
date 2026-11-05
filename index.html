@@ -124,6 +124,7 @@ canvas#map:active{cursor:grabbing}
 .rankbtn .num{font-size:12.5px}
 .rankbtn.on{border-color:var(--accent);color:var(--accent)}
 .rankpanel{position:absolute;right:54px;top:calc(var(--barh,8px) + 46px);z-index:7;width:min(250px,calc(100% - 70px));background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 26px rgba(10,20,40,.2);padding:10px 12px;display:flex;flex-direction:column;gap:8px;max-height:60%;overflow:auto;animation:popin .18s both}
+.rankpanel[hidden]{display:none!important}
 .rlist{display:flex;flex-direction:column;gap:2px}
 .rk{display:grid;grid-template-columns:20px minmax(0,1fr) 30px auto;gap:6px;align-items:center;font-size:13px;padding:5px 6px;border-radius:8px}
 .rk.me{background:color-mix(in srgb,var(--accent) 14%,var(--paper));font-weight:700}
@@ -1062,7 +1063,7 @@ function renderApp(){
      <div class="cash"><div class="v" id="cs"></div><div class="d num" id="cd"></div></div>
    </div><div class="wrap" style="padding-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px">
      <span class="muted" style="font-size:12.5px;min-width:0" id="hubl"></span>
-     <div class="clock"><button class="qbtn afkb" id="afkbtn" aria-label="โหมด AFK" title="โหมด AFK">💤</button><button class="qbtn" id="restart" aria-label="เริ่มเกมใหม่" title="เริ่มเกมใหม่"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 3.5v5h5"/></svg></button><button class="qbtn" id="help" aria-label="คู่มือระบบ">?</button><button id="pp" aria-label="หยุด/เล่น"></button>${SPEEDS.map(s=>`<button data-sp="${s}">${s}×</button>`).join("")}</div>
+     <div class="clock"><button class="qbtn" id="themebtn" aria-label="โหมดแสง" title="โหมดแสง">${themeIcon()}</button><button class="qbtn afkb" id="afkbtn" aria-label="โหมด AFK" title="โหมด AFK">💤</button><button class="qbtn" id="restart" aria-label="เริ่มเกมใหม่" title="เริ่มเกมใหม่"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 3.5v5h5"/></svg></button><button class="qbtn" id="help" aria-label="คู่มือระบบ">?</button><button id="pp" aria-label="หยุด/เล่น"></button>${SPEEDS.map(s=>`<button data-sp="${s}">${s}×</button>`).join("")}</div>
    </div></header>
    <main><div class="wrap" id="view"></div></main>
    <nav class="tabs"><div class="wrap">${TABS.map(([k,n])=>`<button data-tab="${k}">${ICONS[k]}<span>${n}</span></button>`).join("")}</div></nav>
@@ -1071,6 +1072,7 @@ function renderApp(){
   $("#help").onclick=()=>openSheet(guideSheet);
   $("#restart").onclick=()=>openSheet(resetSheet);
   $("#afkbtn").onclick=()=>startAfk();
+  $("#themebtn").onclick=cycleTheme;
   $("#badge").onclick=()=>openSheet(liverySheet({}));
   $$("[data-sp]").forEach(b=>b.onclick=()=>{speed=+b.dataset.sp;paused=false;updateTop()});
   $$("[data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;renderView(true);window.scrollTo(0,0)});
@@ -2134,7 +2136,7 @@ function silPath(m){if(SILS[m.id])return SILS[m.id];const A=m.a,L=20,hl=L/2,w=L*
   return SILS[m.id]={parts,acc,eng,win}}
 const aircraftKind=m=>m;
 function drawAircraft(x,pos,ang,m,scale,col,edge,alt){const sz=(.55+m.len/80)*scale,P=silPath(m);
-  if(alt>0){x.save();x.translate(pos[0]+alt*6,pos[1]+alt*7);x.rotate(ang);x.scale(sz,sz);x.fillStyle="rgba(10,20,40,.16)";for(const q of P.parts)x.fill(q);x.restore()}
+  if(alt>0){x.save();x.translate(pos[0]+alt*2.5,pos[1]+alt*3.5);x.rotate(ang);x.scale(sz,sz);x.fillStyle=`rgba(10,20,40,${(.1*alt).toFixed(3)})`;for(const q of P.parts)x.fill(q);x.restore()}
   x.save();x.translate(...pos);x.rotate(ang);x.scale(sz,sz);x.lineJoin="round";
   x.strokeStyle=col;x.lineWidth=2.6/sz;for(const q of P.parts)x.stroke(q);
   x.fillStyle="#FFFFFF";for(const q of P.parts)x.fill(q);
@@ -2295,15 +2297,15 @@ function drawMap(){
       const t0=animDay*L+(pl.off||0),leg=Math.floor(t0),f=t0-leg,back=leg%2===1;
       const fly=flyFrac(m,d,L),kind=aircraftKind(m);
       if(f>fly){const at=back?r.from:r.dest;parked.set(at,(parked.get(at)||[]).concat([[kind,m]]));return}
-      const e=f/fly,s=e<.12?e*e/.24:e>.88?1-(1-e)*(1-e)/.24:.06+(e-.12)*(.88/.76),path=back?ar.back:ar.out;
-      const pos=onPath(path,s),nx=onPath(path,s+.01),ang=Math.atan2(nx[1]-pos[1],nx[0]-pos[0]);
-      const alt=clamp(Math.min(e/.12,(1-e)/.12),0,1),col=m.seats?S.livery.tail:cargoCol;
+      const e=f/fly,R=.1,vm=1/(1-R),s=e<R?vm*e*e/(2*R):e>1-R?1-vm*(1-e)*(1-e)/(2*R):vm*(e-R/2),path=back?ar.back:ar.out;
+      const pos=onPath(path,s),a0=onPath(path,Math.max(0,Math.min(s,.985)-.012)),a1=onPath(path,Math.min(1,Math.max(s,.015)+.012)),ang=Math.atan2(a1[1]-a0[1],a1[0]-a0[0]);
+      const alt=clamp(Math.min(e/.14,(1-e)/.14),0,1),col=m.seats?S.livery.tail:cargoCol;
       x.lineCap="round";x.strokeStyle=col;x.lineWidth=1.6*zp;let prv=pos;
       for(let j=1;j<=12;j++){const pp=onPath(path,s-j*.006);x.globalAlpha=.3*(1-j/13)*alt;x.beginPath();x.moveTo(...prv);x.lineTo(...pp);x.stroke();prv=pp}
-      airborne++;x.globalAlpha=1;drawAircraft(x,pos,ang,kind,(.75+.3*alt)*(tab==="map"?1.1:1)*zp,col,paper,alt)})}
+      airborne++;x.globalAlpha=1;drawAircraft(x,pos,ang,kind,(.62+.4*alt)*(tab==="map"?1.1:1)*zp,col,paper,alt)})}
   for(const [code,list] of parked){const c=city(code),[px,py]=PX(ulon(c.lon),c.lat);
-    list.slice(0,4).forEach(([kind,m],i)=>{const a=-Math.PI/2+(i-(Math.min(list.length,4)-1)/2)*.9;
-      drawAircraft(x,[px+Math.cos(a)*11*zp,py+Math.sin(a)*11*zp],a+Math.PI/2,kind,.55*zp,S.livery.tail,paper,0)})}
+    const n=Math.min(list.length,3);list.slice(0,n).forEach(([kind,m],i)=>{
+      drawAircraft(x,[px+(i-(n-1)/2)*12*zp,py+12*zp],-Math.PI/2,kind,.5*zp,m.seats?S.livery.tail:cargoCol,paper,0)})}
   // landing payouts float up from the arrival airport
   const tnow=performance.now();floaters=floaters.filter(f=>tnow-f.t0<1600);
   x.font="600 11px 'IBM Plex Mono', monospace";x.textBaseline="middle";
@@ -2354,7 +2356,16 @@ function frame(now){
     const cs=$("#cs");if(cs){dispCash+=(S.cash-dispCash)*Math.min(1,dt/180);if(Math.abs(S.cash-dispCash)<1)dispCash=S.cash;cs.textContent=money(dispCash);cs.className="v "+(S.cash<0?"bad":"")}}
   requestAnimationFrame(frame)}
 addEventListener("resize",()=>{if(S&&tab==="money")drawChart();if(S&&tab==="map")sizeFullMap()});
-matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>S&&renderView());
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if(S&&themePref()==="auto")renderView()});
+/* ---------- light / dark mode: auto follows the device, or pin light or dark ---------- */
+function themePref(){try{return localStorage.getItem("airline-theme")||"auto"}catch(e){return "auto"}}
+function applyTheme(t){if(t==="auto")delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=t;
+  const dark=t==="dark"||(t==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.style.colorScheme=dark?"dark":"light"}
+const THEMES=[["auto","🌓","ตามเครื่อง"],["light","☀️","สว่าง"],["dark","🌑","มืด"]];
+function themeIcon(){const t=THEMES.find(x=>x[0]===themePref())||THEMES[0];return `<span aria-hidden="true">${t[1]}</span>`}
+function cycleTheme(){const i=THEMES.findIndex(x=>x[0]===themePref()),n=THEMES[(i+1)%THEMES.length];try{localStorage.setItem("airline-theme",n[0])}catch(e){}
+  applyTheme(n[0]);const b=$("#themebtn");if(b){b.innerHTML=themeIcon();b.setAttribute("aria-label","โหมดแสง: "+n[2])}baseKey="";fogKey="";if(S)renderView();toast(`${n[1]} โหมด${n[2]}`)}
+applyTheme(themePref());
 
 S=load();if(!S)rollFate();else{dispCash=S.cash;seenNews=S.news.length?S.news[0].id:0}
 renderApp();requestAnimationFrame(frame);
