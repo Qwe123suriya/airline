@@ -87,6 +87,15 @@ canvas#map:active{cursor:grabbing}
 .regrow.sel{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .regrow.open{background:var(--sky)}
 .ap.lock{opacity:.6}
+.aptk{display:inline-flex;align-items:center;gap:3px;font-size:11.5px;font-weight:600;border:1px solid var(--line);border-radius:999px;padding:1px 8px;white-space:nowrap}
+.aptk.cargo{color:var(--cargo);border-color:color-mix(in srgb,var(--cargo) 45%,transparent)}
+.aptk.pax{color:var(--route);border-color:color-mix(in srgb,var(--route) 45%,transparent)}
+.mapbox.full .maplegend{white-space:nowrap;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:8px;max-width:calc(100% - 96px)}
+.mapbox.full .maplegend::-webkit-scrollbar{display:none}
+.fkseg button{flex:1;padding:10px 6px;font-weight:600}
+.aptraf{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.aptraf>div{background:var(--sky);border-radius:8px;padding:6px 8px;min-width:0}
+.aptraf .k{font-size:11.5px;color:var(--muted)}.aptraf .v{font-size:15px;font-weight:700}
 #hubl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (max-width:440px){#hubl{display:none}.top .clock{margin-left:auto}}
 .sbadges{display:flex;flex-wrap:wrap;gap:4px}.sbadges span{font-size:11px;font-weight:600;border:1px solid;border-radius:999px;padding:1px 7px}
@@ -533,7 +542,8 @@ const CITIES=[
  ["DAR","ดาร์เอสซาลาม",-6.88,39.2,4,28],
  ["ACC","อักกรา",5.61,-0.17,4,30],
  ["SEZ","เซเชลส์",-4.67,55.52,1.5,34],
- ["OSL","ออสโล",60.19,11.1,6,52],["LGW","ลอนดอน แกตวิก",51.15,-0.18,9,55],["EDI","เอดินบะระ",55.95,-3.37,4,48],["BER","เบอร์ลิน",52.37,13.5,8,50],["HAM","ฮัมบูร์ก",53.63,9.99,5,48],["DUS","ดุสเซลดอร์ฟ",51.29,6.77,6,48],["NCE","นีซ",43.66,7.21,4,48],["LYS","ลียง",45.73,5.08,3,45],["BUD","บูดาเปสต์",47.44,19.26,5,40],["OTP","บูคาเรสต์",44.57,26.08,4,38],["KEF","เรคยาวิก",63.99,-22.61,2,50],["SVO","มอสโก",55.97,37.41,12,45],["AGP","มาลากา",36.67,-4.5,5,42],["PMI","ปัลมา มายอร์กา",39.55,2.74,5,42],["NAP","เนเปิลส์",40.88,14.29,4,44],["VCE","เวนิส",45.5,12.35,4,46],["GVA","เจนีวา",46.24,6.11,5,55],["YYC","แคลการี",51.13,-114.01,5,45],["PHX","ฟินิกซ์",33.43,-112.01,8,48],["IAH","ฮิวสตัน",29.99,-95.34,10,50],["MCO","ออร์แลนโด",28.43,-81.31,9,48],["MSP","มินนีแอโพลิส",44.88,-93.22,6,46],["DTW","ดีทรอยต์",42.21,-83.35,6,46],["PHL","ฟิลาเดลเฟีย",39.87,-75.24,7,50],["CLT","ชาร์ลอตต์",35.21,-80.94,7,46],["SAN","ซานดิเอโก",32.73,-117.19,5,48],["PDX","พอร์ตแลนด์",45.59,-122.6,4,45],["HAV","ฮาวานา",22.99,-82.41,3,36],["SJU","ซานฮวน",18.44,-66.0,3,40],["GDL","กวาดาลาฮารา",20.52,-103.31,4,32],["YOW","ออตตาวา",45.32,-75.67,3,44],["OGG","เมาวี (ฮาวาย)",20.9,-156.43,2,44],["MDE","เมเดยิน",6.16,-75.42,4,32],["CTG","การ์ตาเฮนา",10.44,-75.51,3,32],["GYE","กวายากิล",-2.16,-79.88,3,32],["CCS","การากัส",10.6,-66.99,3,34],["MVD","มอนเตวิเดโอ",-34.84,-56.03,3,36],["ASU","อะซุนซิออน",-25.24,-57.52,2,32],["VVI","ซานตาครูซ",-17.64,-63.14,2,30],["SSA","ซัลวาดอร์",-12.91,-38.33,4,34],["REC","เรซีเฟ",-8.13,-34.92,3,34],["POA","ปอร์ตูอาเลกรี",-29.99,-51.17,3,34],["CUZ","กุสโก",-13.54,-71.94,2,30],["MAO","มาเนาส์",-3.04,-60.05,2,32],["ALG","แอลเจียร์",36.69,3.22,3,34],["TUN","ตูนิส",36.85,10.23,3,34],["RAK","มาร์ราเกช",31.61,-8.04,4,36],["DSS","ดาการ์",14.67,-17.07,3,34],["ABJ","อาบีจาน",5.26,-3.93,3,34],["ABV","อาบูจา",9.01,7.26,3,32],["EBB","เอนเทบเบ (ยูกันดา)",0.04,32.44,2,32],["KGL","คิกาลี",-1.97,30.14,2,32],["LUN","ลูซากา",-15.33,28.45,2,32],["HRE","ฮาราเร",-17.93,31.09,2,32],["DUR","เดอร์บัน",-29.61,31.12,4,34],["TNR","อันตานานาริโว",-18.8,47.48,2,30],["ZNZ","แซนซิบาร์",-6.22,39.22,2,32],["HRG","ฮูร์กาดา",27.18,33.8,3,32],["HBA","โฮบาร์ต",-42.84,147.51,2,36],["CBR","แคนเบอร์รา",-35.31,149.19,3,38],["WLG","เวลลิงตัน",-41.33,174.81,3,38],["ZQN","ควีนส์ทาวน์",-45.02,168.74,2,38],["PPT","ตาฮีตี",-17.55,-149.61,2,40],["NOU","นูเมอา",-22.01,166.21,2,38],["POM","พอร์ตมอร์สบี",-9.44,147.22,2,34]
+ ["OSL","ออสโล",60.19,11.1,6,52],["LGW","ลอนดอน แกตวิก",51.15,-0.18,9,55],["EDI","เอดินบะระ",55.95,-3.37,4,48],["BER","เบอร์ลิน",52.37,13.5,8,50],["HAM","ฮัมบูร์ก",53.63,9.99,5,48],["DUS","ดุสเซลดอร์ฟ",51.29,6.77,6,48],["NCE","นีซ",43.66,7.21,4,48],["LYS","ลียง",45.73,5.08,3,45],["BUD","บูดาเปสต์",47.44,19.26,5,40],["OTP","บูคาเรสต์",44.57,26.08,4,38],["KEF","เรคยาวิก",63.99,-22.61,2,50],["SVO","มอสโก",55.97,37.41,12,45],["AGP","มาลากา",36.67,-4.5,5,42],["PMI","ปัลมา มายอร์กา",39.55,2.74,5,42],["NAP","เนเปิลส์",40.88,14.29,4,44],["VCE","เวนิส",45.5,12.35,4,46],["GVA","เจนีวา",46.24,6.11,5,55],["YYC","แคลการี",51.13,-114.01,5,45],["PHX","ฟินิกซ์",33.43,-112.01,8,48],["IAH","ฮิวสตัน",29.99,-95.34,10,50],["MCO","ออร์แลนโด",28.43,-81.31,9,48],["MSP","มินนีแอโพลิส",44.88,-93.22,6,46],["DTW","ดีทรอยต์",42.21,-83.35,6,46],["PHL","ฟิลาเดลเฟีย",39.87,-75.24,7,50],["CLT","ชาร์ลอตต์",35.21,-80.94,7,46],["SAN","ซานดิเอโก",32.73,-117.19,5,48],["PDX","พอร์ตแลนด์",45.59,-122.6,4,45],["HAV","ฮาวานา",22.99,-82.41,3,36],["SJU","ซานฮวน",18.44,-66.0,3,40],["GDL","กวาดาลาฮารา",20.52,-103.31,4,32],["YOW","ออตตาวา",45.32,-75.67,3,44],["OGG","เมาวี (ฮาวาย)",20.9,-156.43,2,44],["MDE","เมเดยิน",6.16,-75.42,4,32],["CTG","การ์ตาเฮนา",10.44,-75.51,3,32],["GYE","กวายากิล",-2.16,-79.88,3,32],["CCS","การากัส",10.6,-66.99,3,34],["MVD","มอนเตวิเดโอ",-34.84,-56.03,3,36],["ASU","อะซุนซิออน",-25.24,-57.52,2,32],["VVI","ซานตาครูซ",-17.64,-63.14,2,30],["SSA","ซัลวาดอร์",-12.91,-38.33,4,34],["REC","เรซีเฟ",-8.13,-34.92,3,34],["POA","ปอร์ตูอาเลกรี",-29.99,-51.17,3,34],["CUZ","กุสโก",-13.54,-71.94,2,30],["MAO","มาเนาส์",-3.04,-60.05,2,32],["ALG","แอลเจียร์",36.69,3.22,3,34],["TUN","ตูนิส",36.85,10.23,3,34],["RAK","มาร์ราเกช",31.61,-8.04,4,36],["DSS","ดาการ์",14.67,-17.07,3,34],["ABJ","อาบีจาน",5.26,-3.93,3,34],["ABV","อาบูจา",9.01,7.26,3,32],["EBB","เอนเทบเบ (ยูกันดา)",0.04,32.44,2,32],["KGL","คิกาลี",-1.97,30.14,2,32],["LUN","ลูซากา",-15.33,28.45,2,32],["HRE","ฮาราเร",-17.93,31.09,2,32],["DUR","เดอร์บัน",-29.61,31.12,4,34],["TNR","อันตานานาริโว",-18.8,47.48,2,30],["ZNZ","แซนซิบาร์",-6.22,39.22,2,32],["HRG","ฮูร์กาดา",27.18,33.8,3,32],["HBA","โฮบาร์ต",-42.84,147.51,2,36],["CBR","แคนเบอร์รา",-35.31,149.19,3,38],["WLG","เวลลิงตัน",-41.33,174.81,3,38],["ZQN","ควีนส์ทาวน์",-45.02,168.74,2,38],["PPT","ตาฮีตี",-17.55,-149.61,2,40],["NOU","นูเมอา",-22.01,166.21,2,38],["POM","พอร์ตมอร์สบี",-9.44,147.22,2,34],
+ ["EHU","เออโจว ฮวาหู (ฮับสินค้า)",30.34,115.03,7,30],["DWC","ดูไบ เวิลด์เซ็นทรัล",24.89,55.16,7,36],["LGG","ลีแยฌ (ฮับสินค้า)",50.64,5.44,6,42],["LEJ","ไลพ์ซิก (ฮับสินค้า)",51.42,12.24,7,42],["MEM","เมมฟิส (ฮับสินค้า)",35.04,-89.98,9,40],["SDF","หลุยส์วิลล์ (ฮับสินค้า)",38.17,-85.74,7,40],["CVG","ซินซินแนติ (ฮับสินค้า)",39.05,-84.66,6,40],["ONT","ออนแทรีโอ (ฮับสินค้า)",34.06,-117.6,4,40]
 ].map(([c,n,lat,lon,w,fee])=>({c,n,lat,lon,w,fee}));
 const MODELS=[
  {id:"c208",cat:"prop",name:"Cessna 208 Caravan",tag:"ใบพัดเดี่ยว ลงสนามบินเล็กได้",seats:12,cargo:.4,range:1700,speed:340,price:12e6,cpk:16,len:12.7,a:{fw:.13,sr:1.25,prop:1,pods:[],fh:9,hw:1,eng:"nose"}},
@@ -595,15 +605,22 @@ const ACH=[
 const REGIONS=[
  {id:"th",n:"ประเทศไทย",c:["BKK","DMK","CNX","HKT","USM","KKC","HDY","CEI","KBV","UTH","UBP","URT","PHS","UTP","TST","NAW"],lab:[101,16],r:900},
  {id:"sea",n:"อาเซียน",c:["SIN","KUL","CGK","DPS","MNL","SGN","HAN","RGN","PNH","REP","VTE","LPQ","DAD","CEB","PEN","BKI","SUB","MDL","BWN","PQC"],lab:[112,2],r:1400},
- {id:"ea",n:"เอเชียตะวันออก",c:["HKG","TPE","PVG","PEK","ICN","NRT","KIX","CAN","SZX","CTU","KMG","XMN","MFM","FUK","CTS","NGO","OKA","PUS","KHH","ULN"],lab:[124,34],r:1400},
- {id:"sa",n:"เอเชียใต้และตะวันออกกลาง",c:["DEL","BOM","DXB","DOH","AUH","RUH","JED","MCT","TLV","BLR","MAA","CCU","HYD","CMB","KTM","DAC","MLE","KHI"],lab:[67,24],r:1500},
+ {id:"ea",n:"เอเชียตะวันออก",c:["HKG","TPE","PVG","PEK","ICN","NRT","KIX","CAN","SZX","CTU","KMG","XMN","MFM","FUK","CTS","NGO","OKA","PUS","KHH","ULN","EHU"],lab:[124,34],r:1400},
+ {id:"sa",n:"เอเชียใต้และตะวันออกกลาง",c:["DEL","BOM","DXB","DOH","AUH","RUH","JED","MCT","TLV","BLR","MAA","CCU","HYD","CMB","KTM","DAC","MLE","KHI","DWC"],lab:[67,24],r:1500},
  {id:"oc",n:"โอเชียเนีย",c:["SYD","MEL","BNE","PER","ADL","OOL","DRW","CNS","AKL","CHC","NAN","HBA","CBR","WLG","ZQN","PPT","NOU","POM"],lab:[146,-29],r:1900},
- {id:"eu",n:"ยุโรป",c:["IST","FRA","CDG","LHR","AMS","MAD","BCN","FCO","MXP","MUC","ZRH","VIE","CPH","ARN","HEL","DUB","LIS","ATH","WAW","PRG","BRU","MAN","OSL","LGW","EDI","BER","HAM","DUS","NCE","LYS","BUD","OTP","KEF","SVO","AGP","PMI","NAP","VCE","GVA"],lab:[14,47],r:1300},
- {id:"na",n:"อเมริกาเหนือ",c:["JFK","LAX","SFO","SEA","ORD","ATL","DFW","MIA","BOS","IAD","DEN","LAS","HNL","YVR","YYZ","YUL","MEX","CUN","ANC","YYC","PHX","IAH","MCO","MSP","DTW","PHL","CLT","SAN","PDX","HAV","SJU","GDL","YOW","OGG"],lab:[-96,39],r:1700},
+ {id:"eu",n:"ยุโรป",c:["IST","FRA","CDG","LHR","AMS","MAD","BCN","FCO","MXP","MUC","ZRH","VIE","CPH","ARN","HEL","DUB","LIS","ATH","WAW","PRG","BRU","MAN","OSL","LGW","EDI","BER","HAM","DUS","NCE","LYS","BUD","OTP","KEF","SVO","AGP","PMI","NAP","VCE","GVA","LGG","LEJ"],lab:[14,47],r:1300},
+ {id:"na",n:"อเมริกาเหนือ",c:["JFK","LAX","SFO","SEA","ORD","ATL","DFW","MIA","BOS","IAD","DEN","LAS","HNL","YVR","YYZ","YUL","MEX","CUN","ANC","YYC","PHX","IAH","MCO","MSP","DTW","PHL","CLT","SAN","PDX","HAV","SJU","GDL","YOW","OGG","MEM","SDF","CVG","ONT"],lab:[-96,39],r:1700},
  {id:"sam",n:"อเมริกาใต้",c:["GRU","GIG","EZE","SCL","LIM","BOG","PTY","UIO","BSB","MDE","CTG","GYE","CCS","MVD","ASU","VVI","SSA","REC","POA","CUZ","MAO"],lab:[-60,-16],r:2000},
  {id:"af",n:"แอฟริกา",c:["CAI","JNB","CPT","NBO","ADD","LOS","CMN","MRU","DAR","ACC","SEZ","ALG","TUN","RAK","DSS","ABJ","ABV","EBB","KGL","LUN","HRE","DUR","TNR","ZNZ","HRG"],lab:[20,4],r:2200},
 ];
 const regionOf=c=>REGIONS.find(R=>R.c.includes(c));
+// Airport types: most take passengers and cargo; freight hubs take cargo only; small resort fields take passengers only
+const CARGO_ONLY=new Set(["EHU","DWC","LGG","LEJ","MEM","SDF","CVG","ONT"]);
+const PAX_ONLY=new Set(["USM","PQC","REP","LPQ","ZQN","OGG","CUZ","ZNZ","NAN","PPT","KEF","HRG"]);
+const aptKind=c=>CARGO_ONLY.has(c)?"cargo":PAX_ONLY.has(c)?"pax":"both";
+const aptTakes=(c,k)=>aptKind(c)==="both"||aptKind(c)===k;
+const APT_LABEL={both:["✈📦","รับทั้งคนและสินค้า"],pax:["✈","รับเฉพาะผู้โดยสาร"],cargo:["📦","รับเฉพาะสินค้า"]};
+const aptChip=c=>{const k=aptKind(c),[i,t]=APT_LABEL[k];return `<span class="aptk ${k}">${i} ${t}</span>`};
 // Branches (สาขา): every airport where you base aircraft. Routes start from a branch. Levels 1–3.
 const BR_MAX=3;
 const blv=c=>S.bases.includes(c)?(S.blv&&S.blv[c])||1:0;
@@ -807,6 +824,7 @@ function load(){try{const t=localStorage.getItem(KEY);if(t)return migrate(JSON.p
 function save(){try{if(S)localStorage.setItem(KEY,JSON.stringify(S));else localStorage.removeItem(KEY)}catch(e){}}
 function migrate(s){
   s.bases??=[s.hub];s.mkt??=null;s.hedge??=null;s.ach??=[];s.autoMx??=true;s.totCargo??=0;
+  s.apT??={};s.apY??={};
   s.rivals??=RIVALS.map((n,i)=>({n,v:s.startCap*[1.5,4,12][i]}));
   for(const [n,f] of [["อันดามันแอร์",.8],["เมฆาเวย์",2.5]])if(!s.rivals.some(r=>r.n===n))s.rivals.push({n,v:s.startCap*f});
   for(const r of s.routes){r.from??=s.hub;r.h??=[]}
@@ -824,7 +842,7 @@ function migrate(s){
 /* ---------- start / fate ---------- */
 let fate=null, justRolled=true;
 function rollFate(keepName){
-  const hub=rnd(CITIES);
+  const hub=rnd(CITIES.filter(c=>aptKind(c.c)!=="cargo"));
   const cap=rnd([40e6,55e6,75e6,100e6,130e6,180e6]);
   const fuel=+(0.8+Math.random()*0.5).toFixed(2);
   fate={hub:hub.c,cap,fuel,name:keepName&&fate?fate.name:rnd(NAMES),code:keepName&&fate?fate.code:String.fromCharCode(65+Math.random()*26|0,65+Math.random()*26|0)};
@@ -857,7 +875,7 @@ function renderStart(){
      <div class="tb perf">
        <label class="f full">ชื่อสายการบิน<input id="nm" type="text" maxlength="24" value="${esc(fate.name)}"></label>
        <label class="f">รหัส 2 ตัวอักษร<input id="cd" type="text" maxlength="2" value="${esc(fate.code)}" style="text-transform:uppercase"></label>
-       <label class="f">หรือเลือกฐานเอง<select id="hb">${CITIES.map(c=>`<option value="${c.c}" ${c.c===fate.hub?"selected":""}>${c.c} · ${c.n}</option>`).join("")}</select></label>
+       <label class="f">หรือเลือกฐานเอง<select id="hb">${CITIES.filter(c=>aptKind(c.c)!=="cargo").map(c=>`<option value="${c.c}" ${c.c===fate.hub?"selected":""}>${c.c} · ${c.n}</option>`).join("")}</select></label>
      </div>
    </div>
    <div class="row"><button class="btn" id="re" style="flex:1">สุ่มชะตาใหม่</button><button class="btn primary" id="go" style="flex:1.4">เริ่มกิจการ</button></div>
@@ -915,8 +933,8 @@ function calc(r,price,crate,svc){
   const ps=r.planes.map(plane).filter(Boolean);
   const ground=grounded(r.dest)||grounded(r.from);
   const ev=evMult(r.dest)*evMult(r.from)*brBoost(r.from)*brBoost(r.dest);
-  svc=svc??svcOf(r);const demand=rkind(r)==="cargo"?0:60*Math.sqrt(a.w*b.w)*distF(d)*Math.pow(base/price,1.5)*(.6+S.rep/125)*SERVICE[svc].f*ev*mktMult()*starMult();
-  crate=crate??crateOf(r);const cdem=cargoBase(r,a,b,d,ev)*(rkind(r)==="cargo"?1:.5)*Math.pow(1/crate,1.3);
+  svc=svc??svcOf(r);const demand=rkind(r)==="cargo"||!aptTakes(r.from,"pax")||!aptTakes(r.dest,"pax")?0:60*Math.sqrt(a.w*b.w)*distF(d)*Math.pow(base/price,1.5)*(.6+S.rep/125)*SERVICE[svc].f*ev*mktMult()*starMult();
+  crate=crate??crateOf(r);const cdem=(aptTakes(r.from,"cargo")&&aptTakes(r.dest,"cargo")?1:0)*cargoBase(r,a,b,d,ev)*(rkind(r)==="cargo"?1:.5)*Math.pow(1/crate,1.3);
   const plan=legPlan(r,demand,cdem,d);
   let cap=0,ccap=0,fuelC=0,feeC=0,fixed=0,legs=0;
   for(const p of ps){const m=model(p.m);fixed+=m.price*.0012;
@@ -965,9 +983,11 @@ function flyLeg(r,p,m,c,d,a,b,n){
   const o={tix:pax*c.price,crev:cargo*d*CARGO_RATE*c.crate,fuelC:d*m.cpk*fuelNow(),feeC:(feeOf(a)+feeOf(b))/2*1000*(m.seats||m.cargo*3)/100,svc:pax*SERVICE[svcOf(r)].cost,pax,cargo,seats:m.seats,legs:1};
   const net=o.tix+o.crev-o.fuelC-o.feeC-o.svc;
   S.cash+=net;addT(S.today,o);r.today=r.today||blankT();addT(r.today,o);
+  {const arr=(n%2===1?a:b).c,dep=(n%2===1?b:a).c;S.apT=S.apT||{};const A=S.apT[arr]=S.apT[arr]||{up:0,dn:0,cu:0,cd:0},D=S.apT[dep]=S.apT[dep]||{up:0,dn:0,cu:0,cd:0};D.up+=pax;A.dn+=pax;D.cu+=cargo;A.cd+=cargo}
   p.cond=clamp(p.cond-.035,0,100);S.totPax+=pax;S.totCargo+=cargo;
   if((tab==="home"||tab==="map")&&floaters.length<14)floaters.push({c:(n%2===1?a:b).c,v:net,t0:performance.now()})}
 function simDay(){
+  S.apY=S.apT||{};S.apT={};
   S.day++;
   S.fuel=clamp(S.fuel+(Math.random()-.5)*.03+(1-S.fuel)*.01,.6,1.9);
   // overnight: fixed costs per aircraft, interest, and close the day's books
@@ -1142,7 +1162,8 @@ function rankPanelHTML(){const B=standings(),mine=myScoreParts();
   return `<div class="row between"><b>🏆 การแข่งขัน</b><span class="muted small">วันที่ ${S.day+1}</span></div>
    <div class="rlist">${B.map((b,i)=>{const mv=b.prev?b.prev-(i+1):0;return `<div class="rk ${b.me?"me":""}"><span class="rkn num">${i+1}</span><span class="rkname">${esc(b.n)}</span><span class="rkmv ${mv>0?"good":mv<0?"bad":"muted"}">${mv>0?"▲"+mv:mv<0?"▼"+(-mv):"–"}</span><span class="num rksc">${b.sc.toLocaleString()}</span></div>`}).join("")}</div>
    <details class="more"><summary>คะแนนของคุณมาจากอะไร ▾</summary><div class="rparts">${mine.map(([n,v])=>`<div class="row between small"><span class="muted">${n}</span><span class="num">${Math.round(v).toLocaleString()}</span></div>`).join("")}</div></details>`}
-function legendHTML(){const v=vmode();return `${v!=="sea"?`<span><i style="background:var(--accent)"></i>ฐาน</span>`:""}${v!=="air"?`<span><i style="background:var(--port);border-radius:2px"></i>ท่าเรือ</span>`:""}${v!=="sea"?`<span><i style="background:var(--route)"></i>ปลายทาง</span><span><i style="background:var(--cargo);border-radius:2px;height:3px;vertical-align:2px"></i>สินค้า</span>`:""}<span><i style="background:var(--fog);outline:1px solid var(--border)"></i>ยังล็อก</span>${S.events.length?`<span><i style="background:var(--bad)"></i>เหตุการณ์</span>`:""}`}
+const niceShort=v=>v>=1e6?(v/1e6).toFixed(1)+"M":v>=1e4?Math.round(v/1e3)+"K":v>=1e3?(v/1e3).toFixed(1)+"K":Math.round(v).toString();
+function legendHTML(){const v=vmode();return `${v!=="sea"?`<span><i style="background:var(--accent)"></i>ฐาน</span>`:""}${v!=="air"?`<span><i style="background:var(--port);border-radius:2px"></i>ท่าเรือ</span>`:""}${v!=="sea"?`<span><i style="background:var(--route)"></i>ปลายทาง</span><span><i style="background:var(--cargo);border-radius:2px;height:3px;vertical-align:2px"></i>สินค้า</span><span><i style="background:var(--cargo);border-radius:1px"></i>ฮับสินค้า</span>`:""}<span><i style="background:var(--fog);outline:1px solid var(--border)"></i>ยังล็อก</span>${S.events.length?`<span><i style="background:var(--bad)"></i>เหตุการณ์</span>`:""}`}
 function refreshHome(){const r=$("#homeRest");if(!r){renderView();return}r.innerHTML=homeRestHTML();$("#legend").innerHTML=legendHTML();
   $("#regbtn").innerHTML=`🔓 ปลดล็อกแผนที่ <span class="num">${S.unlocked.length}/${REGIONS.length}</span>`;bindView(true);if(pop)renderPop()}
 function homeRestHTML(){
@@ -1259,18 +1280,23 @@ function popPortHTML(code){const pt=port(code),R=REGIONS.find(x=>x.id===pt.reg),
   h+=lv?`<div class="row" style="gap:6px"><button class="btn primary sm" style="flex:1" data-popnl="${code}">+ เส้นทางเรือ</button><button class="btn sm" style="flex:1" data-popport="${code}">รายละเอียด</button></div>`
        :`<div class="small muted">ต้องเปิดสาขาท่าเรือก่อนจึงปล่อยเรือออกจากท่านี้ได้</div><div class="row" style="gap:6px"><button class="btn primary sm" style="flex:1" data-poppb="${code}" ${S.cash<pBranchCost(code)?"disabled":""}>เปิดสาขา ${money(pBranchCost(code),true)}</button><button class="btn sm" style="flex:1" data-popport="${code}">รายละเอียด</button></div>`;
   return h}
+function apStat(code){const z={up:0,dn:0,cu:0,cd:0};return {t:{...z,...((S.apT||{})[code]||{})},y:{...z,...((S.apY||{})[code]||{})}}}
+function apTrafficHTML(code){const {t,y}=apStat(code),k=aptKind(code);if(!t.up&&!t.dn&&!t.cu&&!t.cd&&!y.up&&!y.dn&&!y.cu&&!y.cd)return "";
+  const n=v=>Math.round(v).toLocaleString(),cell=(ic,lab,v,yv,u)=>`<div><div class="k">${ic} ${lab}</div><div class="v num">${n(v)}<span class="muted" style="font-size:11px;font-weight:500"> ${u}</span></div><div class="muted" style="font-size:11px">เมื่อวาน ${n(yv)}</div></div>`;
+  return `<div class="aptraf">${k!=="cargo"?cell("🛫","คนขึ้นเครื่องวันนี้",t.up,y.up,"คน")+cell("🛬","คนลงที่นี่วันนี้",t.dn,y.dn,"คน"):""}${k!=="pax"?cell("📦","สินค้าส่งออก",t.cu,y.cu,"ตัน")+cell("📥","สินค้าเข้า",t.cd,y.cd,"ตัน"):""}</div>`}
 function popApHTML(code){const c=city(code),hub=city(S.hub),isB=S.bases.includes(code),open=isOpen(code),R=regionOf(code);
   const rs=S.routes.filter(r=>r.dest===code||r.from===code),pax=rs.reduce((a,r)=>a+((r.last&&r.last.pax)||0),0);
   let h=`<div class="pophead"><div style="min-width:0"><b>${c.c} · ${c.n}</b><div class="small muted">${R.n}${isB?` · สาขา ${"★".repeat(blv(code))}`:` · ${dist(hub,c).toLocaleString()} กม. จาก ${S.hub}`}</div></div><button class="x" data-popx aria-label="ปิด">✕</button></div>
-   <div class="popchips"><span>ความต้องการ <b>${"●".repeat(Math.max(1,Math.round(c.w/4)))}</b></span><span>เส้นทาง <b class="num">${rs.length}</b></span><span>ผู้โดยสาร <b class="num">${pax.toLocaleString()}</b>/วัน</span></div>`;
+   <div class="row" style="gap:6px;flex-wrap:wrap">${aptChip(code)}<span class="popchips" style="display:contents"><span>ความต้องการ <b>${"●".repeat(Math.max(1,Math.round(c.w/4)))}</b></span><span>เส้นทาง <b class="num">${rs.length}</b></span></span></div>
+   ${apTrafficHTML(code)}`;
   const evs=S.events.filter(e=>e.city===code&&e.until>S.day);if(evs.length)h+=`<div class="small warn">${evs.map(e=>e.type==="storm"?"🌀 พายุ งดบิน":e.type==="fest"?"🎉 เทศกาล คนเพิ่ม":e.type==="comp"?"✈️ คู่แข่งเข้ามา":e.type==="cboost"?"📦 สินค้าด่วนเพิ่ม":"").join(" · ")}</div>`;
   if(!open)return h+`<div class="small muted">ภูมิภาค${R.n}ยังล็อกอยู่</div><button class="btn primary sm" data-popunl="${R.id}">🔓 ปลดล็อก ${money(regionCost(R),true)}</button>`;
   const r=S.routes.find(x=>x.dest===code&&rkind(x)==="pax")||S.routes.find(x=>x.dest===code);
   if(r){const cc=calc(r);h+=`<div class="popdem"><div class="row between small"><span>เส้นทาง ${fno(r)} จาก ${r.from}</span><span class="num ${cc.profit<0?"bad":"good"}">${money(cc.profit,true)}/วัน</span></div>
      <div class="row between small"><span>👥 ${cc.demand.toLocaleString()} คนอยากบิน</span><span>💺 ${cc.cap.toLocaleString()} ที่นั่ง</span></div></div>
      <div class="row" style="gap:6px"><button class="btn primary sm" style="flex:1" data-popgo="${r.id}">+ เพิ่มเครื่องบิน</button><button class="btn sm" style="flex:1" data-poproute="${r.id}">ดูเส้นทาง</button></div>`}
-  else if(!isB){const est=calc({id:-9,from:S.hub,dest:code,price:baseFare(dist(hub,c)),planes:[],h:[]});
-    h+=`<div class="popdem small">ถ้าเปิดเส้นทางจาก ${S.hub}: คนอยากบินราว <b class="num">${est.demand.toLocaleString()}</b> คน/วัน ที่ราคา ${money(est.base,true)}</div>
+  else if(!isB){const kc=aptKind(code)==="cargo",est=calc({id:-9,kind:kc?"cargo":"pax",from:S.hub,dest:code,price:baseFare(dist(hub,c)),planes:[],h:[]});
+    h+=`<div class="popdem small">${kc?`ถ้าเปิดเส้นทางสินค้าจาก ${S.hub}: สินค้าราว <b class="num">${Math.round(est.cdem).toLocaleString()}</b> ตัน/วัน`:`ถ้าเปิดเส้นทางจาก ${S.hub}: คนอยากบินราว <b class="num">${est.demand.toLocaleString()}</b> คน/วัน ที่ราคา ${money(est.base,true)}`}</div>
      <div class="row" style="gap:6px"><button class="btn primary sm" style="flex:1" data-popnew="${code}">เปิดเส้นทาง</button><button class="btn sm" style="flex:1" data-popbr="${code}" ${S.cash<branchCost(c)?"disabled":""}>เปิดสาขา ${money(branchCost(c),true)}</button></div>`}
   if(isB)h+=`<div class="row" style="gap:6px"><button class="btn primary sm" style="flex:1" data-popfrom="${code}">+ เส้นทางจากที่นี่</button><button class="btn sm" style="flex:1" data-popbranch>ดูสาขา</button></div>`;
   return h}
@@ -1291,7 +1317,7 @@ function renderPop(){const box=$(tab==="map"?"#mapfull":".mapbox");if(!pop||!box
   q("[data-popgo]").forEach(b=>b.onclick=()=>{pop={type:"route",id:+b.dataset.popgo,x:pop.x,y:pop.y,add:true};selCity=null;refreshAirports();renderPop()});
   q("[data-popas]").forEach(b=>b.onclick=()=>{const p=plane(+b.dataset.popas);if(!p||!r)return;r.planes.push(p.id);p.route=r.id;r.last=null;save();toast(`${p.reg} เข้าประจำ ${fno(r)} แล้ว`);pop.add=false;renderPop()});
   q("[data-popbuy]").forEach(b=>b.onclick=()=>{const keep={...pop},np=buy(b.dataset.popbuy);if(!np||!r)return;r.planes.push(np.id);np.route=r.id;r.last=null;save();toast(`ซื้อ ${model(np.m).name} เข้าประจำ ${fno(r)} แล้ว`);pop={...keep,add:false};renderPop()});
-  q("[data-popnew]").forEach(b=>b.onclick=()=>{const code=b.dataset.popnew;closePop();openSheet(newRouteSheet({from:S.hub,dest:code}))});
+  q("[data-popnew]").forEach(b=>b.onclick=()=>{const code=b.dataset.popnew;closePop();openSheet(newRouteSheet({from:S.hub,dest:code,kind:aptKind(code)==="cargo"?"cargo":"pax"}))});
   q("[data-popbr]").forEach(b=>b.onclick=()=>{openBranch(b.dataset.popbr);renderPop()});
   q("[data-popfrom]").forEach(b=>b.onclick=()=>{const code=b.dataset.popfrom;closePop();openSheet(newRouteSheet({from:code}))});
   q("[data-popbranch]").forEach(b=>b.onclick=()=>{closePop();tab="branch";brSeg="air";renderView(true)});
@@ -1777,18 +1803,21 @@ function planeArt(m,lv){lv=lv||S.livery;const A=m.a,id="pa"+(artSeq++);
   return `<svg class="art" viewBox="0 0 200 80" role="img" aria-label="${m.name}">${g}</svg>`}
 let mktCat="all";
 function fleetHTML(){
-  const list=MODELS.filter(m=>mktCat==="all"||m.cat===mktCat);
-  return `<div class="row between"><h2>ฝูงบินของคุณ <span class="muted num small">${S.fleet.length} ลำ</span></h2><button class="btn sm" id="livery"><span class="dotlv" style="background:${S.livery.tail}"></span>ลายเครื่องบินและโลโก้</button></div>
-  ${S.fleet.length?[["pax","✈ เครื่องบินโดยสาร"],["cargo","📦 เครื่องบินขนสินค้า"]].map(([k,t])=>{const LL=S.fleet.filter(p=>(k==="cargo")===!model(p.m).seats);return LL.length?`<div class="eyebrow" style="margin-top:4px">${t} · ${LL.length} ลำ</div><div class="hangar">${LL.map(p=>{const m=model(p.m),r=S.routes.find(x=>x.id===p.route),shop=p.down>S.day;
+  const FK=S.ui_fk==="cargo"?"cargo":"pax",KC=FK==="cargo";if(KC)mktCat="cargo";else if(mktCat==="cargo")mktCat="all";
+  const list=MODELS.filter(m=>KC?!m.seats:m.seats&&(mktCat==="all"||m.cat===mktCat)).sort((a,b)=>KC?a.price-b.price:0);
+  const nP=S.fleet.filter(p=>model(p.m).seats).length,nC=S.fleet.length-nP,mine=KC?nC:nP;
+  return `<div class="seg fkseg"><button data-fk="pax" class="${!KC?"on":""}">✈ เครื่องบินโดยสาร <span class="num">${nP}</span></button><button data-fk="cargo" class="${KC?"on":""}">📦 เครื่องบินขนสินค้า <span class="num">${nC}</span></button></div>
+  <div class="row between"><h2>${KC?"ฝูงบินขนสินค้า":"ฝูงบินโดยสาร"} <span class="muted num small">${mine} ลำ</span></h2><button class="btn sm" id="livery"><span class="dotlv" style="background:${S.livery.tail}"></span>ลายเครื่องบินและโลโก้</button></div>
+  ${mine?[[FK,""]].map(([k,t])=>{const LL=S.fleet.filter(p=>(k==="cargo")===!model(p.m).seats);return LL.length?`<div class="hangar">${LL.map(p=>{const m=model(p.m),r=S.routes.find(x=>x.id===p.route),shop=p.down>S.day;
     const st=shop?`<span class="warn">ในโรงซ่อม ${p.down-S.day} วัน</span>`:r?`บิน ${r.from} → ${r.dest}`:'<span class="muted">จอดว่าง</span>';
     const cc=p.cond<40?"low":p.cond<70?"mid":"";
     return `<button class="pcard ${shop?"shop":r?"":"idle"}" data-plane="${p.id}">${planeArt(m)}
       <div class="row between"><b class="num">${p.reg}</b><span class="small">${st}</span></div>
       <div class="small muted">${m.name} · ${m.seats?m.seats+" ที่นั่ง":m.cargo+" ตัน"}</div>
-      <div class="row" style="gap:8px"><div class="lf cond ${cc}" style="flex:1;margin:0;max-width:none"><i style="width:${p.cond}%"></i></div><span class="num small ${p.cond<40?"bad":"muted"}">${Math.round(p.cond)}%</span></div></button>`}).join("")}</div>`:""}).join(""):`<div class="panel muted">ยังไม่มีเครื่องบิน เลือกซื้อจากตลาดด้านล่าง</div>`}
+      <div class="row" style="gap:8px"><div class="lf cond ${cc}" style="flex:1;margin:0;max-width:none"><i style="width:${p.cond}%"></i></div><span class="num small ${p.cond<40?"bad":"muted"}">${Math.round(p.cond)}%</span></div></button>`}).join("")}</div>`:""}).join(""):`<div class="panel muted">${KC?"ยังไม่มีเครื่องบินขนสินค้า ลำแรกที่ถูกที่สุดคือ ATR 72-600F ราคา ฿75 ล้าน อยู่ในตลาดด้านล่าง":"ยังไม่มีเครื่องบินโดยสาร เลือกซื้อจากตลาดด้านล่าง"}</div>`}
   <label class="tg panel"><input type="checkbox" id="amx" ${S.autoMx?"checked":""}> ส่งซ่อมบำรุงอัตโนมัติเมื่อสภาพต่ำกว่า 50%</label>
-  <div class="row between" style="margin-top:6px"><h2>ตลาดเครื่องบิน <span class="muted num small">${MODELS.length} รุ่น</span></h2><span class="muted num small">เงินสด ${money(S.cash,true)}</span></div>
-  <div class="seg scrollx">${CATS.map(([k,n])=>`<button data-cat="${k}" class="${mktCat===k?"on":""}">${n}</button>`).join("")}</div>
+  <div class="row between" style="margin-top:6px"><h2>${KC?"ตลาดเครื่องบินขนสินค้า":"ตลาดเครื่องบินโดยสาร"} <span class="muted num small">${list.length} รุ่น</span></h2><span class="muted num small">เงินสด ${money(S.cash,true)}</span></div>
+  ${KC?`<div class="muted small">ใช้ได้เฉพาะเส้นทางขนสินค้า · ขนสินค้าเต็มลำ ได้ค่าระวางต่อตัน</div>`:`<div class="seg scrollx">${CATS.filter(([k])=>k!=="cargo").map(([k,n])=>`<button data-cat="${k}" class="${mktCat===k?"on":""}">${n}</button>`).join("")}</div><div class="muted small">ใช้ได้เฉพาะเส้นทางผู้โดยสาร · ใต้ท้องเครื่องขนสินค้าได้เล็กน้อย</div>`}
   <div class="models">${list.map(m=>`<div class="model">${planeArt(m)}<b>${m.name}</b><span class="tag">${m.tag}</span>
     <div class="spec"><span>ที่นั่ง</span><span class="num">${m.seats||"—"}</span><span>สินค้า/เที่ยว</span><span class="num">${m.cargo} ตัน</span><span>พิสัยบิน</span><span class="num">${m.range.toLocaleString()} กม.</span><span>ความเร็ว</span><span class="num">${m.speed} กม./ชม.</span><span>ค่าบิน/กม.</span><span class="num">฿${m.cpk}</span></div>
     <button class="btn ${S.cash>=priceFor(m)?"primary":""} sm" data-buy="${m.id}" ${S.cash>=priceFor(m)?"":"disabled"}>${priceFor(m)<m.price?`🏷️ ดีล ซื้อ ${money(priceFor(m))}`:`ซื้อ ${money(m.price)}`}</button></div>`).join("")}</div>`;
@@ -1875,6 +1904,7 @@ function bindView(rest){
   $$("[data-plane]").forEach(b=>b.onclick=()=>openSheet(planeSheet(+b.dataset.plane,{})));
   $$("[data-buy]").forEach(b=>b.onclick=()=>buy(b.dataset.buy));
   $$("[data-cat]").forEach(b=>b.onclick=()=>{mktCat=b.dataset.cat;renderView()});
+  $$("[data-fk]").forEach(b=>b.onclick=()=>{S.ui_fk=b.dataset.fk;mktCat=S.ui_fk==="cargo"?"cargo":"all";save();renderView()});
   const lvb=$("#livery");if(lvb)lvb.onclick=()=>openSheet(liverySheet({}));
   $$("[data-svc]").forEach(b=>b.onclick=()=>{S.service=+b.dataset.svc;save();renderView();const own=S.routes.filter(r=>r.svc!=null).length;toast(own?`ตั้งค่าเริ่มต้นแล้ว · ${own} เส้นทางที่ตั้งบริการเองไม่เปลี่ยน`:"เปลี่ยนระดับบริการทุกเส้นทางแล้ว")});
   $$("[data-mkt]").forEach(b=>b.onclick=()=>{const m=MKT.find(x=>x.id===b.dataset.mkt);S.cash-=m.cost;S.mkt={n:m.n,mult:m.mult,until:S.day+m.days};S.rep=clamp(S.rep+m.rep,0,100);addNews(`📣 เริ่ม${m.n} ${m.days} วัน`);toast(`เริ่ม${m.n}แล้ว`);save();renderView()});
@@ -1904,21 +1934,23 @@ function newRouteSheet(st){
   const fn=()=>{
     st.kind=st.kind||"pax";const KC=st.kind==="cargo",from=city(st.from),open=new Set(S.routes.filter(r=>r.from===st.from&&rkind(r)===st.kind).map(r=>r.dest));
     const idle=S.fleet.filter(p=>!p.route&&(KC?!model(p.m).seats:!!model(p.m).seats));
-    const list=CITIES.filter(c=>c.c!==st.from&&!open.has(c.c)&&isOpen(c.c)).map(c=>({c,d:dist(from,c)})).sort((a,b)=>a.d-b.d);
+    const list=CITIES.filter(c=>c.c!==st.from&&!open.has(c.c)&&isOpen(c.c)&&aptTakes(c.c,st.kind)).map(c=>({c,d:dist(from,c)})).sort((a,b)=>a.d-b.d);
     const locked=REGIONS.length-S.unlocked.length;
     const sel=st.dest&&city(st.dest);
     let out=head(KC?"เปิดเส้นทางขนสินค้า":"เปิดเส้นทางผู้โดยสาร",`ออกจากสาขา ${from.n} · ค่าเปิดเส้นทาง ฿3 ล้าน`);
     out+=`<div class="seg"><button data-rk="pax" class="${!KC?"on":""}">✈ ผู้โดยสาร</button><button data-rk="cargo" class="${KC?"on":""}">📦 ขนสินค้า</button></div><div class="muted small">${KC?"ใช้เฉพาะเครื่องบินขนสินค้า ใช้สาขาเดียวกับเส้นทางผู้โดยสาร และเปิดคู่กับเส้นทางผู้โดยสารเมืองเดียวกันได้":"ใช้เฉพาะเครื่องบินโดยสาร ขนพัสดุใต้ท้องเครื่องได้นิดหน่อย"}</div>`;
     if(S.bases.length>1)out+=`<div class="seg scrollx">${S.bases.map(b=>`<button data-from="${b}" class="${b===st.from?"on":""}">${b}</button>`).join("")}</div>`;
+    out+=`<div class="row small" style="gap:6px;flex-wrap:wrap"><span class="muted">สาขา ${from.c}:</span>${aptChip(from.c)}<span class="muted">· แสดงเฉพาะสนามบินที่รับ${KC?"สินค้า":"ผู้โดยสาร"}</span></div>`;
+    if(!aptTakes(st.from,st.kind))out+=`<div class="panel small bad">สาขา ${from.n} ${APT_LABEL[aptKind(st.from)][1]} เปิดเส้นทาง${KC?"สินค้า":"ผู้โดยสาร"}จากที่นี่ไม่ได้ ลองเลือกสาขาอื่น หรือเปลี่ยนเป็น${KC?"ผู้โดยสาร":"ขนสินค้า"}</div>`;
     if(!idle.length)out+=`<div class="panel muted" style="font-size:14px">ยังไม่มีเครื่องบินว่าง เปิดเส้นทางไว้ก่อนได้ แล้วค่อยใส่เครื่องทีหลัง</div>`;
     out+=`<div class="pick">${list.map(({c,d})=>{const reach=idle.some(p=>model(p.m).range>=d);
-      return `<button data-dest="${c.c}" class="${st.dest===c.c?"sel":""}"><span class="iata">${c.c}</span><span>${c.n}<br><span class="muted" style="font-size:12.5px">ความต้องการ ${"●".repeat(Math.max(1,Math.round(c.w/5)))}${idle.length?(reach?" · มีเครื่องบินถึง":" · เครื่องที่มีบินไม่ถึง"):""}</span></span><span class="num muted" style="font-size:13px">${d.toLocaleString()} กม.</span></button>`}).join("")}</div>
+      return `<button data-dest="${c.c}" class="${st.dest===c.c?"sel":""}"><span class="iata">${c.c}</span><span>${c.n}<br><span class="muted" style="font-size:12.5px">${APT_LABEL[aptKind(c.c)][0]} · ความต้องการ ${"●".repeat(Math.max(1,Math.round(c.w/5)))}${idle.length?(reach?" · มีเครื่องบินถึง":" · เครื่องที่มีบินไม่ถึง"):""}</span></span><span class="num muted" style="font-size:13px">${d.toLocaleString()} กม.</span></button>`}).join("")}</div>
     ${locked?`<button class="btn sm" id="gounlock">🔒 อีก ${locked} ภูมิภาคยังล็อก · ปลดล็อกแผนที่เพิ่ม</button>`:""}`;
     if(sel){const d=dist(from,sel),ok=idle.filter(p=>model(p.m).range>=d);
       out+=`<div class="panel stack" style="position:sticky;bottom:-20px"><div class="row between"><b>${st.from} → ${sel.c} · ${sel.n}</b><span class="num muted">${d.toLocaleString()} กม.</span></div>
        <div class="small muted">${KC?`สินค้าราว ${Math.round(calc({id:-9,kind:"cargo",from:st.from,dest:sel.c,price:baseFare(d),planes:[],h:[]}).cdem).toLocaleString()} ตัน/วัน · ค่าระวางราว ฿${(d*CARGO_RATE/1000).toFixed(2)}/กก.`:`ราคาตั๋วเริ่มต้น ${money(baseFare(d))} · ใช้เวลาบิน ${(d/830+.4).toFixed(1)} ชม. (A320)`}</div>
        ${idle.length?`<label class="f">ใส่เครื่องบิน<select id="np"><option value="">ยังไม่ใส่</option>${idle.map(p=>{const m=model(p.m),go=m.range>=d;return `<option value="${p.id}" ${go?"":"disabled"}>${p.reg} · ${m.name} · บินได้ ${m.range.toLocaleString()} กม.${go?"":" · ไม่สามารถบินได้"}</option>`}).join("")}</select></label>`:""}
-       <button class="btn primary block" id="openr" ${S.cash<3e6?"disabled":""}>เปิดเส้นทาง ฿3 ล้าน</button></div>`}
+       <button class="btn primary block" id="openr" ${S.cash<3e6||!aptTakes(st.from,st.kind)?"disabled":""}>เปิดเส้นทาง ฿3 ล้าน</button></div>`}
     return out};
   fn.bind=()=>{$$("[data-rk]").forEach(b=>b.onclick=()=>{st.kind=b.dataset.rk;st.dest=null;drawSheet()});const gu=$("#gounlock");if(gu)gu.onclick=()=>openSheet(regionSheet({}));$$("[data-from]").forEach(b=>b.onclick=()=>{st.from=b.dataset.from;st.dest=null;drawSheet()});
     $$("[data-dest]").forEach(b=>b.onclick=()=>{st.dest=b.dataset.dest;drawSheet();const s=$(".sheet");s.scrollTop=s.scrollHeight});
@@ -2094,6 +2126,7 @@ function guideSheet(){return head("คู่มือระบบ","ทุกร
 <details class="g"><summary>ชื่อเสียงและระดับบริการ</summary><div><p>ชื่อเสียงจะค่อย ๆ เคลื่อนเข้าหาค่าเป้าหมายของระดับบริการ ประหยัด 35 มาตรฐาน 60 พรีเมียม 85 คลิปไวรัลและแคมเปญใหญ่ช่วยดันขึ้น เครื่องเสียกลางทางทำให้ลดลง</p></div></details>
 <details class="g"><summary>การตลาดและล็อกราคาน้ำมัน</summary><div><p>แคมเปญการตลาดเพิ่มคนบินทุกเส้นทางชั่วคราว เปิดได้ทีละแคมเปญ</p><p>ดัชนีน้ำมันขึ้นลงทุกวันและพุ่งแรงได้จากเหตุการณ์ การล็อกราคาจะตรึงดัชนีไว้ 60 วัน ค่าธรรมเนียมประมาณ 3% ของค่าน้ำมันช่วงนั้น เหมาะตอนน้ำมันถูก</p></div></details>
 <details class="g"><summary>เงินกู้และการล้มละลาย</summary><div><p>กู้ได้ทีละ ฿50 ล้าน วงเงินขึ้นกับมูลค่าฝูงบิน ถ้าเงินสดติดลบต่อเนื่อง 30 วัน สายการบินล้มละลายและต้องเริ่มชะตาใหม่</p></div></details>
+<details class="g"><summary>ประเภทสนามบิน</summary><div><ul><li>✈📦 สนามบินส่วนใหญ่รับทั้งผู้โดยสารและสินค้า</li><li>✈ สนามบินเล็กเมืองท่องเที่ยว เช่น สมุย ฟูก๊วก ควีนส์ทาวน์ รับเฉพาะผู้โดยสาร</li><li>📦 ฮับสินค้า เช่น เมมฟิส หลุยส์วิลล์ ลีแยฌ ไลพ์ซิก เออโจว ดูไบเวิลด์เซ็นทรัล รับเฉพาะสินค้า (จุดสี่เหลี่ยมสีม่วงบนแผนที่)</li></ul><p>ป้าย 👥 บนแผนที่ข้างสนามบินของคุณคือจำนวนคนที่ขึ้นเครื่องที่นั่นวันนี้ แตะสนามบินเพื่อดูคนขึ้น คนลง และสินค้าเข้าออก เทียบกับเมื่อวาน</p></div></details>
 <details class="g"><summary>โหมด AFK และรายได้ตอนไม่อยู่</summary><div><p>กดปุ่ม 💤 บนแถบด้านบนเพื่อเข้าโหมด AFK เกมจะเดินต่อเอง ตัดสินใจเหตุการณ์แบบปลอดภัย และรับรางวัลภารกิจให้ โดยไม่วาดแผนที่เพื่อประหยัดแบต</p><p>ถ้าไม่แตะจอ 10 วินาที (หรือกด 🌙 หรี่จอเลย) จอจะมืดเหมือนโหมดนอนหลับ เหลือแค่นาฬิกาจางๆ กับเงิน แตะจอครั้งเดียวเพื่อปลุก</p><p>ถ้าปิดเกมหรือสลับไปแอปอื่นเกิน 2 นาที กลับมาจะได้รายได้ตามกำไรเฉลี่ย 7 วันล่าสุด</p><ul><li>ปกติ: 12 วันของกำไรต่อชั่วโมง สูงสุด 8 ชม.</li><li>เปิด AFK ไว้ก่อนออก: 24 วันต่อชั่วโมง สูงสุด 12 ชม.</li><li>ถ้ากำไรเฉลี่ยติดลบจะไม่ได้รายได้ แต่ก็ไม่หักเงิน</li><li>เวลาในเกมไม่เดินระหว่างที่ไม่อยู่</li></ul></div></details>
 <details class="g"><summary>การแข่งขันและคะแนน</summary><div><p>แข่งกับสายการบินคู่แข่ง 5 เจ้าด้วยคะแนนรวม ดูได้จากปุ่ม 🏆 มุมขวาบนของแผนที่ หรือในหน้าภาพรวม</p><ul><li>มูลค่ากิจการ 1 คะแนนต่อ ฿2 ล้าน</li><li>ผู้โดยสารสะสม 1 คะแนนต่อ 100 คน</li><li>สินค้าทางอากาศ 1 คะแนนต่อ 2 ตัน</li><li>ตู้ทางเรือ 1 คะแนนต่อ 10 TEU</li><li>เรตติ้ง 1,000 คะแนนต่อดาว</li><li>ภารกิจ 300 คะแนนต่อภารกิจ</li></ul><p>ลูกศร ▲▼ บอกว่าอันดับเปลี่ยนไปเท่าไรจากเมื่อวาน</p></div></details>
 <details class="g"><summary>เรตติ้ง 5 ดาว</summary><div><p>เรตติ้งโดยรวมคือค่าเฉลี่ยของ 4 ด้านที่เริ่มทำแล้ว:</p><ul><li><b>สายการบิน</b> จำนวนปลายทาง ที่นั่งเต็มใกล้ 85% สภาพเครื่อง และสัดส่วนเส้นทางที่มีกำไร</li><li><b>การเดินเรือ</b> ตู้เต็ม เส้นทางเรือที่มีกำไร ขนาดกองเรือ และระดับสาขาท่าเรือ</li><li><b>สินค้าทางอากาศ</b> ระวางเต็ม ปริมาณสินค้า และจำนวนเครื่องขนสินค้า</li><li><b>ความพอใจของผู้โดยสาร</b> ชื่อเสียง ระดับบริการ ความคุ้มค่าของราคาตั๋ว ความแออัด และเหตุเครื่องขัดข้อง</li></ul><p>เรตติ้งคำนวณใหม่ทุกวัน 0 ดาวทำให้ผู้โดยสารลด 10% ส่วน 5 ดาวเพิ่ม 10% คู่แข่งก็มีเรตติ้งในตารางอันดับ</p></div></details>
@@ -2264,9 +2297,17 @@ function drawMap(){
   x.font="600 11px 'IBM Plex Mono', monospace";x.textBaseline="middle";
   const shown=new Set([...S.bases,...S.routes.map(r=>r.dest)]);mapHits=portHitsTmp;
   for(const c of CITIES){const [px,py]=PX(ulon(c.lon),c.lat);if(px<-10||px>W+10||py<-10||py>H+10)continue;const isB=S.bases.includes(c.c),on=shown.has(c.c),open=isOpen(c.c);
-    x.beginPath();x.arc(px,py,isB?6:on?4:open?2.8:2,0,7);x.fillStyle=isB?acc:on?routeCol:mut;x.globalAlpha=(on?1:open?.7:.35)*(vmode()==='sea'?.22:1);x.fill();
+    const ak=aptKind(c.c);x.beginPath();if(ak==="cargo"&&!isB){const q=isB?6:on?4.4:open?3.2:2.4;x.rect(px-q,py-q,q*2,q*2)}else x.arc(px,py,isB?6:on?4:open?2.8:2,0,7);x.fillStyle=isB?acc:ak==="cargo"?cargoCol:on?routeCol:mut;x.globalAlpha=(on?1:open?.7:.35)*(vmode()==='sea'?.22:1);x.fill();
     if((isB||on)&&vmode()!=='sea'){x.lineWidth=isB?2:1.5;x.strokeStyle=paper;x.stroke()}
     x.globalAlpha=1;if(vmode()!=='sea')mapHits.push({c:c.c,px,py})}
+  // how many people board at each of your airports today (or tons of cargo at a freight hub)
+  if(vmode()!=='sea'&&S.ui_traf!==false){const items=[];for(const code of shown){const c=city(code),[px,py]=PX(ulon(c.lon),c.lat);if(px<0||px>W||py<0||py>H)continue;const {t}=apStat(code);
+      const k=aptKind(code),v=k==="cargo"?t.cu+t.cd:t.up;if(v<1)continue;items.push({px,py,lab:k==="cargo"?`📦${niceShort(t.cu+t.cd)}t`:`👥${niceShort(t.up)}`,isB:S.bases.includes(code),k})}
+    items.sort((a,b)=>b.isB-a.isB);const boxes=[];x.font="600 10.5px 'IBM Plex Mono', monospace";x.textBaseline="middle";
+    for(const it of items){const tw=x.measureText(it.lab).width+10,bx=it.px+(it.isB?9:6),by=it.py-17,bb=[bx,by,bx+tw,by+15];
+      if(boxes.some(o=>bb[0]<o[2]&&bb[2]>o[0]&&bb[1]<o[3]&&bb[3]>o[1]))continue;boxes.push(bb);
+      x.globalAlpha=.92;x.fillStyle=paper;x.beginPath();if(x.roundRect)x.roundRect(bx,by,tw,15,7);else x.rect(bx,by,tw,15);x.fill();x.globalAlpha=1;
+      x.strokeStyle=it.k==="cargo"?cargoCol:it.isB?acc:routeCol;x.lineWidth=1;x.stroke();x.fillStyle=ink;x.fillText(it.lab,bx+5,by+8)}}
   x.font="600 12px Anuphan, sans-serif";x.textBaseline="middle";
   for(const R of REGIONS){if(S.unlocked.includes(R.id))continue;const [px,py]=PX(ulon(R.lab[0]),R.lab[1]);if(px<-60||px>W+60||py<-20||py>H+20)continue;
     const lab=`🔒 ${R.n} ${money(regionCost(R),true)}`,tw=x.measureText(lab).width+16;
