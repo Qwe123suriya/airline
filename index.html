@@ -2245,7 +2245,10 @@ const BORDERS=GEO.B.map(a=>{const p=new Float32Array(a.length);let x0=1e9,x1=-1e
   for(let i=0;i<a.length;i+=2){const x=a[i]/10,y=a[i+1]/10;p[i]=x;p[i+1]=y;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}return {p,x0,x1,y0,y1}});
 const ulon=lon=>{const h=city(S.hub).lon;let l=lon;while(l-h>180)l-=360;while(l-h<-180)l+=360;return l};
 const gcCache=new Map();
-function gcPath(a,b){const key=S.hub+a.c+b.c;if(gcCache.has(key))return gcCache.get(key);
+// Route line on the map: a straight line between the two airports (shortest way round) — the gentle bow is added when drawing.
+// A true great circle loops far north on a flat map for long flights, which looked odd.
+function gcPath(a,b){const key="f"+S.hub+a.c+b.c;if(gcCache.has(key))return gcCache.get(key);
+  {const l0=ulon(a.lon);let l1=ulon(b.lon);while(l1-l0>180)l1-=360;while(l1-l0<-180)l1+=360;const pts=[];for(let i=0;i<=48;i++){const t=i/48;pts.push([l0+(l1-l0)*t,a.lat+(b.lat-a.lat)*t])}gcCache.set(key,pts);return pts}
   const r=Math.PI/180,toV=c=>[Math.cos(c.lat*r)*Math.cos(c.lon*r),Math.cos(c.lat*r)*Math.sin(c.lon*r),Math.sin(c.lat*r)];
   const A=toV(a),B=toV(b),om=Math.acos(clamp(A[0]*B[0]+A[1]*B[1]+A[2]*B[2],-1,1)),s=Math.sin(om)||1,n=64,pts=[];
   let prev=ulon(a.lon);
@@ -2379,7 +2382,7 @@ function drawMap(){
   // each route: outbound arc bows one way, return arc bows the other, both following the great circle
   const arcs=new Map();
   for(const {r,pts:p} of (vmode()==='sea'?[]:routes)){const sp=p.map(q=>PX(q[0],q[1])),A=sp[0],B=sp[sp.length-1],dx=B[0]-A[0],dy=B[1]-A[1],L=Math.hypot(dx,dy)||1;
-    const bulge=L*(rkind(r)==="cargo"?.2:.12),nx=-dy/L,ny=dx/L,mk=sgn=>sp.map((q,i)=>{const t=i/(sp.length-1),o=Math.sin(Math.PI*t)*bulge*sgn;return [q[0]+nx*o,q[1]+ny*o]});
+    const bulge=Math.min(L*(rkind(r)==="cargo"?.14:.12),22+L*.07),nx=-dy/L,ny=dx/L,mk=sgn=>sp.map((q,i)=>{const t=i/(sp.length-1),o=Math.sin(Math.PI*t)*bulge*sgn;return [q[0]+nx*o,q[1]+ny*o]});
     const up=ny>0?-1:1,out=mk(up),back=out.slice().reverse();arcs.set(r.id,{out,back});
     const g=grounded(r.dest)||grounded(r.from),on=r.planes.length;
     if(SX){const x=SX;x.beginPath();out.forEach((q,i)=>i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));
