@@ -1193,6 +1193,7 @@ function renderApp(){
         <div class="muted small" id="hubl"></div>
         <button role="menuitem" id="themebtn"><span class="mi">${themeIcon()}</span><span id="themelbl">โหมดแสง</span></button>
         <button role="menuitem" id="help"><span class="mi">?</span>คู่มือระบบ</button>
+        <button role="menuitem" id="fsbtn"><span class="mi">⛶</span><span id="fslbl">เต็มจอ (ซ่อนแถบเบราว์เซอร์)</span></button>
         <button role="menuitem" id="spotbtn"><span class="mi">🎵</span>เชื่อม Spotify</button>
         <button role="menuitem" id="restart"><span class="mi"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 3.5v5h5"/></svg></span>เริ่มเกมใหม่</button>
        </div></div></div>
@@ -1210,6 +1211,8 @@ function renderApp(){
   $("#barmin").onclick=()=>{S.ui_barmin=!S.ui_barmin;save();applyBarMin()};applyBarMin();
   $("#restart").onclick=()=>{closeMore();openSheet(resetSheet)};
   $("#spotbtn").onclick=()=>{closeMore();openSheet(spotifySheet())};
+  $("#fsbtn").onclick=()=>{closeMore();if(fsEl())fsExit();else if(!fsEnter())toast("เบราว์เซอร์นี้ไม่รองรับโหมดเต็มจอ")};
+  if(!window._fsl){window._fsl=1;const up=()=>{const l=$("#fslbl");if(l)l.textContent=fsEl()?"ออกจากเต็มจอ":"เต็มจอ (ซ่อนแถบเบราว์เซอร์)";setTimeout(()=>{if($("#mapfull"))sizeFullMap()},250)};document.addEventListener("fullscreenchange",up);document.addEventListener("webkitfullscreenchange",up)}
   $("#afkbtn").onclick=()=>startAfk();
   $("#themebtn").onclick=cycleTheme;
   $("#badge").onclick=()=>openSheet(liverySheet({}));
@@ -1834,9 +1837,12 @@ const avgDailyProfit=()=>{const h=S.hist.slice(-7);return h.length?h.reduce((a,x
 const awayRate=on=>on?{dph:24,cap:12}:{dph:12,cap:8};   // game-days of profit per real hour, max hours
 async function wakeOn(){try{if(navigator.wakeLock&&!document.hidden)wakeLock=await navigator.wakeLock.request("screen")}catch(e){}}
 function wakeOff(){try{wakeLock&&wakeLock.release()}catch(e){}wakeLock=null}
-function startAfk(){if(!S||S.over)return;closePop&&closePop();if(sheetFn){sheetFn=null;$("#sheet").innerHTML=""}
+const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement;
+function fsEnter(){const el=document.documentElement,f=el.requestFullscreen||el.webkitRequestFullscreen;if(!f||fsEl())return false;try{const r=f.call(el,{navigationUI:"hide"});if(r&&r.catch)r.catch(()=>{})}catch(e){return false}return true}
+function fsExit(){const f=document.exitFullscreen||document.webkitExitFullscreen;if(f&&fsEl()){try{const r=f.call(document);if(r&&r.catch)r.catch(()=>{})}catch(e){}}}
+function startAfk(){if(!S||S.over)return;const fsMine=!fsEl()&&S.ui_fsafk!==false&&fsEnter();closePop&&closePop();if(sheetFn){sheetFn=null;$("#sheet").innerHTML=""}
   if(paused){paused=false}if(speed<1)speed=1;
-  afk={t0:Date.now(),c0:S.cash,d0:S.day,p0:S.totPax,cg0:S.totCargo,teu0:S.totTeu||0,m0:S.mdone||0,r0:rank(),log:[]};S.afkOn=true;save();
+  afk={fsMine,t0:Date.now(),c0:S.cash,d0:S.day,p0:S.totPax,cg0:S.totCargo,teu0:S.totTeu||0,m0:S.mdone||0,r0:rank(),log:[]};S.afkOn=true;save();
   const el=document.createElement("div");el.id="afk";el.className="afk";el.setAttribute("role","dialog");el.setAttribute("aria-label","โหมด AFK");document.body.appendChild(el);
   el.innerHTML=`<div class="afkin"><div class="afkz" aria-hidden="true"><span>z</span><span>z</span><span>Z</span></div>
     <div class="eyebrow" style="color:#8FA3C0">โหมด AFK · ระบบบริหารให้อัตโนมัติ</div>
@@ -1912,7 +1918,9 @@ function drawMoon(x,now){const W=SKY.W,H=SKY.H,r=Math.max(14,Math.min(W,H)*.04),
   x.closePath();x.fillStyle="#D8E1EE";x.globalAlpha=.85;x.fill();x.globalAlpha=1;
   x.save();x.clip();x.fillStyle="rgba(120,135,160,.22)";for(const [a,b,c] of [[-.3,-.2,.22],[.25,.15,.16],[-.05,.35,.12],[.45,-.35,.1]]){x.beginPath();x.arc(cx+a*r,cy+b*r,c*r,0,7);x.fill()}x.restore()}
 function spawnMeteor(x0,y0,ang,sp,len,col){SKY.met.push({x:x0,y:y0,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,len,life:0,max:.7+Math.random()*.6,col:col||"220,232,255"})}
-function meteorShower(){SKY.showerEnd=performance.now()+7500;const W=SKY.W,H=SKY.H;SKY.rad={x:W*(.25+Math.random()*.5),y:H*(.05+Math.random()*.25)};SKY.label2="🌠 ฝนดาวตก!";SKY.label2Until=performance.now()+8000}
+const MET_ANG=Math.PI*.78;
+function meteorFromSky(sp,len){const W=SKY.W,H=SKY.H,R=Math.random,t=R();const x=W*(.15+t*1.05),y=-H*.05+R()*H*.35-(t>.75?0:0);spawnMeteor(x,y,MET_ANG+(R()-.5)*.05,sp,len)}
+function meteorShower(){SKY.showerEnd=performance.now()+7500;const W=SKY.W,H=SKY.H;SKY.rad={x:0,y:0};SKY.label2="🌠 ฝนดาวตก!";SKY.label2Until=performance.now()+8000}
 function fxSpawn(kind,W,H){const R=Math.random;
   if(kind==="fireworks"||kind==="redfw"){const pal=kind==="redfw"?["255,80,70","255,200,90","255,140,60"]:["255,120,160","120,200,255","255,220,120","170,255,170","200,150,255"],c=pal[Math.floor(R()*pal.length)],cx=W*(.15+R()*.7),cy=H*(.12+R()*.35);
     for(let i=0;i<70;i++){const a=R()*6.283,s=40+R()*90;SKY.fx.push({t:"spark",x:cx,y:cy,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:0,max:1.4+R()*.8,c})}}
@@ -1930,9 +1938,9 @@ function skyFrame(ts){if(!SKY.run)return;SKY.raf=requestAnimationFrame(skyFrame)
   x.globalAlpha=1;drawMoon(x,now);
   // meteors: a lone one every so often, plus showers (more often on real meteor-shower nights)
   const shNight=hasEv("shower");
-  if(ts>SKY.nextMet){SKY.nextMet=ts+(shNight?3500:8000)+R()*9000;const a=(R()<.5?Math.PI*.78:Math.PI*.22)+(R()-.5)*.4;spawnMeteor(W*(.1+R()*.8),R()*H*.35,a,420+R()*260,70+R()*90)}
+  if(ts>SKY.nextMet){SKY.nextMet=ts+(shNight?3500:8000)+R()*9000;meteorFromSky(420+R()*260,70+R()*90)}
   if(ts>SKY.nextShower){SKY.nextShower=ts+(shNight?75e3:200e3)+R()*60e3;meteorShower()}
-  if(ts<SKY.showerEnd&&SKY.rad&&R()<.33){const a=R()*6.283,d=20+R()*60;spawnMeteor(SKY.rad.x+Math.cos(a)*d,SKY.rad.y+Math.sin(a)*d,a,380+R()*300,60+R()*110)}
+  if(ts<SKY.showerEnd&&R()<.4)meteorFromSky(380+R()*320,60+R()*120);
   x.lineCap="round";
   SKY.met=SKY.met.filter(m=>{m.life+=dt;if(m.life>m.max)return false;m.x+=m.vx*dt;m.y+=m.vy*dt;const f=m.life/m.max,al=Math.sin(Math.PI*Math.min(1,f*1.15)),sp=Math.hypot(m.vx,m.vy),tx=m.x-m.vx/sp*m.len,ty=m.y-m.vy/sp*m.len;
     const lg=x.createLinearGradient(tx,ty,m.x,m.y);lg.addColorStop(0,`rgba(${m.col},0)`);lg.addColorStop(1,`rgba(${m.col},${(.85*al).toFixed(3)})`);x.strokeStyle=lg;x.lineWidth=1.6;x.beginPath();x.moveTo(tx,ty);x.lineTo(m.x,m.y);x.stroke();
@@ -1977,7 +1985,7 @@ function afkTick(){if(!afk)return;const el=$("#afk");if(!el)return;
   el.querySelectorAll("[data-asp]").forEach(b=>b.classList.toggle("on",+b.dataset.asp===speed));
   $("#afkl").innerHTML=afk.log.length?afk.log.slice(0,4).map(t=>`<div>${esc(t)}</div>`).join(""):`<div style="opacity:.6">ยังไม่มีเหตุการณ์ · ระบบดูแลให้อยู่</div>`;
   if(S.over){stopAfk()}}
-function stopAfk(){if(!afk)return;skyStop();document.body.classList.remove("afkdim");const a=afk,earn=S.cash-a.c0,days=S.day-a.d0;afk=null;S.afkOn=false;save();wakeOff();const el=$("#afk");if(el)el.remove();
+function stopAfk(){if(!afk)return;if(afk.fsMine)fsExit();skyStop();document.body.classList.remove("afkdim");const a=afk,earn=S.cash-a.c0,days=S.day-a.d0;afk=null;S.afkOn=false;save();wakeOff();const el=$("#afk");if(el)el.remove();
   renderView();updateTop();if(S.over){showOver();return}
   const fn=()=>head("ยินดีต้อนรับกลับ!",`ระหว่าง AFK ผ่านไป ${days} วันในเกม`)+`<div class="kv"><div><div class="k">เงินที่ได้</div><div class="v ${earn>=0?"good":"bad"}">${earn>=0?"+":""}${money(earn,true)}</div></div>
      <div><div class="k">ผู้โดยสาร</div><div class="v">+${Math.round(S.totPax-a.p0).toLocaleString()}</div></div><div><div class="k">ภารกิจที่รับให้</div><div class="v">${(S.mdone||0)-a.m0}</div></div><div><div class="k">อันดับ</div><div class="v">#${a.r0} → #${rank()}</div></div></div>
