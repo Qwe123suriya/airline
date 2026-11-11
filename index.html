@@ -481,6 +481,83 @@ details.g code{font-family:var(--f-num);font-size:12.5px;background:var(--sky);p
 .unlock b{display:block;font-family:var(--f-display);font-size:21px;margin-top:2px}
 @keyframes pop{0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}10%{opacity:1;transform:translate(-50%,-50%) scale(1.06)}16%{transform:translate(-50%,-50%) scale(1)}84%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-70%) scale(.96)}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.flyover,.float{display:none}}
+
+/* ---- v51 polish: depth, livelier surfaces, tidier cards ---- */
+:root{--shadow:0 1px 2px rgba(16,32,56,.05),0 10px 22px -14px rgba(16,32,56,.28)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--shadow:0 12px 26px -16px rgba(0,0,0,.8)}}
+:root[data-theme="dark"]{--shadow:0 12px 26px -16px rgba(0,0,0,.8)}
+main{background:linear-gradient(180deg,color-mix(in srgb,var(--route) 10%,var(--sky)) 0,var(--sky) 300px)}
+.panel,.stats,.strip,.pcard,.model,.seg,.mapbox{box-shadow:var(--shadow)}
+.panel{border-radius:14px}.stats{border-radius:14px}.seg{border-radius:12px}.model,.pcard{border-radius:12px}
+.top::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:linear-gradient(90deg,var(--brand,var(--accent)),var(--brand2,var(--route)) 55%,transparent);pointer-events:none}
+body.onmap .top::after{display:none}
+.btn.primary{background-image:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,0) 60%);box-shadow:0 8px 16px -10px var(--accent)}
+.btn{transition:transform .12s,box-shadow .2s,background .2s}
+nav.tabs{background:color-mix(in srgb,var(--paper) 90%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 -8px 22px -18px rgba(16,32,56,.5)}
+nav.tabs button>*{position:relative}
+nav.tabs button::before{content:"";position:absolute;top:5px;left:50%;width:46px;height:28px;margin-left:-23px;border-radius:14px;background:color-mix(in srgb,var(--accent) 16%,transparent);opacity:0;transform:scale(.6);transition:opacity .2s,transform .25s cubic-bezier(.2,.9,.3,1.3)}
+nav.tabs button.on::before{opacity:1;transform:none}
+nav.tabs button:active svg{transform:scale(.88)}
+/* route / lane cards read like a boarding pass: flight number row on top, then route and result */
+.strip{grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;border-radius:12px;padding:9px 12px 11px}
+.strip .fno{grid-column:1/-1;display:flex;align-items:baseline;gap:8px;font-size:12.5px;color:var(--route);padding-bottom:6px;border-bottom:1px dashed var(--line);white-space:nowrap;overflow:hidden}
+.strip .fno small{display:inline;font-family:var(--f-body);font-size:12px}
+.strip .fno::after{content:"›";margin-left:auto;color:var(--muted);font-size:15px;line-height:1}
+.strip .iata{line-height:1.25}
+.strip .right .num{font-size:15px}
+.hangar{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.pcard .row.between{flex-wrap:wrap;gap:0 8px}
+.mission{border-radius:12px}
+.stats .v{font-size:16px}
+/* hero card: today's live result */
+.hero{position:relative;overflow:hidden;border-radius:16px;padding:14px 16px 12px;color:#fff;box-shadow:var(--shadow);
+  background:radial-gradient(130% 150% at 100% 0%,color-mix(in srgb,var(--brand,#D47A22) 62%,transparent),transparent 58%),linear-gradient(135deg,#1B3A68,#0E1B31)}
+.hero.cg{background:radial-gradient(130% 150% at 100% 0%,color-mix(in srgb,var(--brand,#D47A22) 50%,transparent),transparent 58%),linear-gradient(135deg,#3B2B78,#15102F)}
+.hero::after{content:"✈";position:absolute;right:-6px;bottom:-40px;font-size:128px;line-height:1;opacity:.09;transform:rotate(-18deg);pointer-events:none}
+.hero .hk{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;opacity:.85}
+.hero .live{display:inline-flex;align-items:center;gap:5px;font-size:11px;letter-spacing:.08em;background:rgba(255,255,255,.14);border-radius:999px;padding:1px 8px}
+.hero .live i{width:6px;height:6px;border-radius:50%;background:#7CF2B0;animation:livedot 1.6s ease-in-out infinite}
+@keyframes livedot{50%{opacity:.25}}
+.hero .hv{font-size:30px;font-weight:600;line-height:1.15;margin-top:2px;letter-spacing:-.01em}
+.hero .hv.tk{animation:tk .45s ease-out}
+@keyframes tk{0%{transform:translateY(3px);opacity:.6}100%{transform:none;opacity:1}}
+.hero .hnote{font-size:11.5px;opacity:.6}
+.hero .hrow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.hero .hrow div{background:rgba(255,255,255,.1);border-radius:10px;padding:6px 10px;min-width:0}
+.hero .hrow b{display:block;font-size:16px;font-weight:600}
+.hero .hrow span{font-size:11.5px;opacity:.75;white-space:nowrap}
+.hero .hms{position:relative;display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 10px;font-size:12px;margin-top:10px;opacity:.95}
+.hero .hms .rw{opacity:.85}
+.hero .hbar{flex:1 0 100%;height:5px;border-radius:3px;background:rgba(255,255,255,.18);overflow:hidden;margin-top:3px}
+.hero .hbar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#FFD27A,#FFA63D);transition:width .6s}
+/* departures board (always dark, like the real thing) */
+.fboard{background:#0D1626;color:#E8EEF7;border:1px solid #1F2E47;border-radius:14px;padding:10px 12px 6px;box-shadow:var(--shadow);font-size:12.5px}
+.fbh{display:flex;justify-content:space-between;align-items:center;font-family:var(--f-display);font-size:12.5px;letter-spacing:.08em;color:#FFC857;margin-bottom:6px}
+.fbc,.fbr{display:grid;grid-template-columns:56px minmax(0,1fr) 68px;gap:10px;align-items:center}
+.fbc span:last-child{text-align:right}
+.fbc{font-size:10.5px;color:#7F90AA;padding-bottom:4px;border-bottom:1px solid #1F2E47}
+.fbr{position:relative;width:100%;padding:7px 0;border:0;border-bottom:1px solid #18243A;background:none;color:inherit;text-align:left;font:inherit;font-size:12.5px}
+.fbr:last-child{border-bottom:0}
+.fbr .n{color:#B9C6DA}
+.fbr .trk{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center}
+.fbr .trk b{font-family:var(--f-num);color:#FFC857;font-weight:600}
+.fbr .tl{position:relative;height:16px;margin:0 7px}
+.fbr .tl::before{content:"";position:absolute;left:-7px;right:-7px;top:50%;border-top:1px dashed #3A4C6B}
+.fbr .pl{position:absolute;top:50%;left:0;width:14px;height:14px;margin:-7px 0 0 -7px;color:#F2F6FC;transition:left .12s linear,opacity .3s}
+.fbr .pl svg{display:block;width:100%;height:100%;fill:currentColor}
+.fbr .pl.bk svg{transform:scaleX(-1)}.fbr.sea .pl{color:#7FE3EA;width:16px;height:16px;margin:-9px 0 0 -8px}.fbr.sea .tl::before{border-top-style:dotted;border-color:#2F6F78}.fbr.sea .s{color:#7FE3EA}.fbr .pl.gd{opacity:.4}.fbr .pl.off{opacity:.15}
+.fbr .s{font-size:12.5px;white-space:nowrap;text-align:right;color:#6EE7A8}.fbr .s.neg{color:#FF8A80}.fbr .s.off{color:#8192AA;font-family:var(--f-body)}
+.fbe,.fbm{color:#8FA0B8;padding:8px 0;font-size:12.5px}.fbm{display:block;width:100%;border:0;background:none;font:inherit;text-align:center;padding:7px 0 5px;font-size:12px}
+/* achievements cabinet */
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
+.bdg{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;border:1px solid var(--line);border-radius:12px;padding:8px 4px;font-size:11.5px;line-height:1.25;color:var(--muted);background:var(--sky)}
+.bdg b{font-size:22px;line-height:1.2;filter:grayscale(1);opacity:.45}
+.bdg.got{color:var(--ink);border-color:color-mix(in srgb,var(--accent) 60%,var(--line));background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 16%,var(--paper)),var(--paper))}
+.bdg.got b{filter:none;opacity:1}
+.brand small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#livery{white-space:nowrap;flex:none}
+@media (max-width:400px){.fkseg button{font-size:12.5px;white-space:nowrap;padding-inline:2px}.top .row2 .bmode button{font-size:12px;padding:0 5px}.hero .hv{font-size:27px}}
+@media (prefers-reduced-motion:reduce){.hero .live i,.hero .hv.tk{animation:none}}
 </style>
 </head>
 <body>
@@ -1221,7 +1298,7 @@ function renderApp(){
   renderView(true);updateTop();
   if(S.over)showOver();
 }
-function updateTop(){const hs=$("#hstar");if(hs&&S){const sc=myScore(),l=lvlOf(sc),a=lvlXP(l),b=lvlXP(l+1),pc=Math.round(Math.min(1,(sc-a)/(b-a))*100);hs.innerHTML=`<span class="lvchip" title="อีก ${(b-sc).toLocaleString()} คะแนนถึง Lv ${l+1}"><b>Lv ${l}</b><i style="width:${pc}%"></i></span>${S.rating?`<span style="color:#E9A825">★</span>${S.rating.overall.toFixed(1)}`:""}`}
+function updateTop(){if(S&&S.livery){const k=S.livery.tail+S.livery.stripe;if(updateTop.lv!==k){updateTop.lv=k;const st=document.documentElement.style;st.setProperty("--brand",S.livery.tail);st.setProperty("--brand2",S.livery.stripe)}}const hs=$("#hstar");if(hs&&S){const sc=myScore(),l=lvlOf(sc),a=lvlXP(l),b=lvlXP(l+1),pc=Math.round(Math.min(1,(sc-a)/(b-a))*100);hs.innerHTML=`<span class="lvchip" title="อีก ${(b-sc).toLocaleString()} คะแนนถึง Lv ${l+1}"><b>Lv ${l}</b><i style="width:${pc}%"></i></span>${S.rating?`<span style="color:#E9A825">★</span>${S.rating.overall.toFixed(1)}`:""}`}
   if(!S||!$("#cs"))return;
   const p=S.last?S.last.rev-S.last.cost:0;
   $("#cd").textContent=(p>=0?"+":"")+money(p,true)+"/วัน";$("#cd").className="d num "+(p>=0?"good":"bad");
@@ -1297,13 +1374,75 @@ const niceShort=v=>v>=1e6?(v/1e6).toFixed(1)+"M":v>=1e4?Math.round(v/1e3)+"K":v>
 function legendHTML(){const v=vmode();return `${v!=="sea"?`<span><i style="background:var(--accent)"></i>ฐาน</span>`:""}${v!=="air"?`<span><i style="background:var(--port);border-radius:2px"></i>ท่าเรือ</span>`:""}${v!=="sea"?(bm()==="cargo"?`<span><i style="background:var(--cargo)"></i>ปลายทางสินค้า</span><span><i style="background:var(--cargo);border-radius:1px"></i>ฮับสินค้า</span>`:`<span><i style="background:var(--route)"></i>ปลายทาง</span>`):""}<span><i style="background:var(--fog);outline:1px solid var(--border)"></i>ยังล็อก</span>${S.events.length?`<span><i style="background:var(--bad)"></i>เหตุการณ์</span>`:""}`}
 function refreshHome(){const r=$("#homeRest");if(!r){renderView();return}r.innerHTML=homeRestHTML();$("#legend").innerHTML=legendHTML();
   $("#regbtn").innerHTML=`🔓 ปลดล็อกแผนที่ <span class="num">${S.unlocked.length}/${REGIONS.length}</span>`;bindView(true);if(pop)renderPop()}
+/* Lifetime milestones: a celebration + bonus each time total passengers / air cargo passes a round number */
+const MS={pax:{L:[1e3,5e3,2e4,5e4,1e5,2.5e5,5e5,1e6,2.5e6,5e6,1e7,2.5e7,5e7,1e8,2.5e8,5e8,1e9],v:()=>S.totPax||0,x:30,nm:"ผู้โดยสารสะสม",u:"คน",e:"👥",c:"ผู้โดยสารคนที่"},
+ cargo:{L:[100,500,2e3,5e3,1e4,2.5e4,5e4,1e5,2.5e5,5e5,1e6,2.5e6,5e6,1e7],v:()=>S.totCargo||0,x:400,nm:"สินค้าทางอากาศสะสม",u:"ตัน",e:"📦",c:"สินค้าตันที่"}};
+const msReward=(k,m)=>Math.round(Math.max(2e6,m*MS[k].x)/1e5)*1e5;
+function msCheck(){S.ms=S.ms||{};for(const k in MS){const M=MS[k],v=M.v();if(S.ms[k]==null){S.ms[k]=M.L.filter(m=>v>=m).length;continue}
+  const i=S.ms[k];if(i<M.L.length&&v>=M.L[i]){const m=M.L[i],rw=msReward(k,m);S.ms[k]=i+1;S.cash+=rw;save();
+    celebrate(`!🎉 ${M.c} ${m.toLocaleString()}`,`โบนัสฉลอง ${money(rw,true)}`);addNews(`🎉 ${S.name} ต้อนรับ${M.c} ${m.toLocaleString()} · โบนัสฉลอง ${money(rw)}`)}}}
+const todayNet=T=>T.tix+T.crev+(T.srev||0)-T.fuelC-T.feeC-T.svc-(T.sfuel||0)-(T.sport||0);
+/* Every aircraft of the current mode with its next event (landing or departure), soonest first */
+function liveFlights(){const T=S.day+acc/DAY_MS,out=[];
+  for(const r of visRoutes()){if(!r.planes.length)continue;const a=city(r.from),b=city(r.dest),d=dist(a,b),c=calc(r),gr=grounded(r.from)||grounded(r.dest);
+    r.planes.forEach((id,i)=>{const p=plane(id);if(!p)return;const m=model(p.m),L=c.plan.get(p.id)||legsFor(m,d),fly=flyFrac(m,d,L),x=T*L+(p.off||0),k=Math.floor(x),f=x-k;
+      const shop=p.down>S.day,air=!shop&&!gr&&f<fly,nk=air?k:k+1,to=nk%2===1?a:b,from=nk%2===1?b:a;
+      out.push({no:fno(r)+(r.planes.length>1?String.fromCharCode(65+i%26):""),from:from.c,to:to.c,ton:to.n,air,shop,gr,pr:air?f/fly:0,eta:(air?fly-f:1-f)/L*1440,rid:r.id})})}
+  return out.sort((p,q)=>((p.shop||p.gr)-(q.shop||q.gr))||(p.eta-q.eta))}
+let BRD=[];
+const PLSVG='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12c0 .8-2 1.5-4 1.5h-4L9 21H7l2.5-7.5H5L3.5 15.5H2L3 12 2 8.5h1.5L5 10.5h4.5L7 3h2l5 7.5h4c2 0 4 .7 4 1.5z"/></svg>';
+const SHSVG='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 14h20l-2.5 5h-15zM6 13V9h9v4zM16 13V6h3v7z"/></svg>';
+/* Rows for the live board: air routes of the current mode, plus shipping lanes in cargo mode */
+function boardItems(){const out=[],K=bm(),vm=vmode();
+  if(vm!=="sea")for(const r of visRoutes()){if(!r.planes.length)continue;const c=calc(r);out.push({r,c,pf:c.profit||0})}
+  if(K==="cargo"&&vm!=="air")for(const l of S.lanes){if(!l.ships.length)continue;out.push({l,pf:laneAvg(l)})}
+  return out.sort((x,y)=>y.pf-x.pf)}
+function boardRowsHTML(){const all=boardItems(),R=all.slice(0,6);BRD=[];
+  if(!R.length)return `<div class="fbe">${bm()==="cargo"?"ยังไม่มีเที่ยวบินขนสินค้าหรือเรือที่วิ่งอยู่ · เปิดเส้นทางแล้วใส่เครื่องบินหรือเรือ":"ยังไม่มีเที่ยวบิน · เปิดเส้นทางแล้วใส่เครื่องบินเพื่อเริ่มบิน"}</div>`;
+  return R.map(({r,c,l})=>{
+    if(l){const km=laneCalc(l).km;for(const id of l.ships){const sh=shipById(id);if(!sh)continue;const m=shipM(sh.m),Ld=legDaysS(m,km);BRD.push({id:"s"+sh.id,sid:sh.id,lid:l.id,L:1/Ld,fly:sailDays(m,km)/Ld,off:sh.off||0,el:null})}
+      return `<button class="fbr sea" data-fbl="${l.id}"><span class="num n">${laneNo(l)}</span><span class="trk"><b>${l.from.slice(2)}</b><span class="tl">${l.ships.map(id=>`<i class="pl" data-pl="s${id}">${SHSVG}</i>`).join("")}</span><b>${l.to.slice(2)}</b></span><span class="s num" data-fml="${l.id}"></span></button>`}
+    const d=dist(city(r.from),city(r.dest));
+    for(const id of r.planes){const p=plane(id);if(!p)continue;const m=model(p.m),L=c.plan.get(p.id)||legsFor(m,d);BRD.push({id:p.id,rid:r.id,L,fly:flyFrac(m,d,L),off:p.off||0,el:null})}
+    return `<button class="fbr" data-fbr="${r.id}"><span class="num n">${fno(r)}</span><span class="trk"><b>${r.from}</b><span class="tl">${r.planes.map(id=>`<i class="pl" data-pl="${id}">${PLSVG}</i>`).join("")}</span><b>${r.dest}</b></span><span class="s num" data-fm="${r.id}"></span></button>`}).join("")+
+   (all.length>R.length?`<button class="fbm" data-fbgo>และอีก ${all.length-R.length} เส้นทาง ›</button>`:"")}
+function liveBoard(){const bd=$("#fboard");if(!bd||!BRD.length)return;const T=S.day+acc/DAY_MS;
+  for(const q of BRD){if(!q.el||!q.el.isConnected)q.el=bd.querySelector(`[data-pl="${q.id}"]`);if(!q.el)continue;
+    let off;if(q.sid!=null){const sh=shipById(q.sid);off=!sh||sh.down>S.day}else{const p=plane(q.id),r=S.routes.find(x=>x.id===q.rid);off=!p||!r||p.down>S.day||grounded(r.from)||grounded(r.dest)}
+    const x=T*q.L+q.off,k=Math.floor(x),f=x-k,pr=Math.min(1,f/q.fly),back=k%2===1;
+    q.el.style.left=(off?0:(back?1-pr:pr)*100)+"%";const cn="pl"+(back&&!off?" bk":"")+(off?" off":f>=q.fly?" gd":"");if(q.el.className!==cn)q.el.className=cn}}
+function boardMoney(){const put=(e,t,cn)=>{if(e.textContent!==t)e.textContent=t;if(e.className!==cn)e.className=cn};
+  $$("#fboard [data-fm]").forEach(e=>{const r=S.routes.find(x=>x.id===+e.dataset.fm);if(!r)return;const gr=grounded(r.from)||grounded(r.dest),v=r.today?todayNet(r.today):0;put(e,gr?"งดบิน":(v>=0?"+":"")+money(v,true),"s num"+(gr?" off":v<0?" neg":""))});
+  $$("#fboard [data-fml]").forEach(e=>{const l=S.lanes.find(x=>x.id===+e.dataset.fml);if(!l)return;const v=laneAvg(l);put(e,"≈"+money(v,true),"s num"+(v<0?" neg":""))})}
+/* how many vehicles of the current mode are moving right now */
+function movingNow(F){let n=F.filter(f=>f.air).length;if(bm()==="cargo"&&vmode()!=="air"){const T=S.day+acc/DAY_MS;for(const l of S.lanes){const km=laneCalc(l).km;for(const id of l.ships){const sh=shipById(id);if(!sh||sh.down>S.day)continue;const m=shipM(sh.m),Ld=legDaysS(m,km),x=T/Ld+(sh.off||0);if(x-Math.floor(x)<sailDays(m,km)/Ld)n++}}}return n}
+function msLineHTML(){const k=bm(),M=MS[k],i=(S.ms&&S.ms[k])||0,v=M.v(),prev=i?M.L[i-1]:0,nx=M.L[i];
+  if(nx==null)return `<span>${M.e} ${M.nm} <b class="num">${Math.round(v).toLocaleString()}</b> ${M.u}</span>`;
+  return `<span>${M.e} ${M.nm} <b class="num">${Math.round(v).toLocaleString()}</b> / ${nx.toLocaleString()} ${M.u}</span><span class="rw">🎁 ${money(msReward(k,nx),true)}</span><i class="hbar"><i style="width:${clamp((v-prev)/(nx-prev)*100,0,100)}%"></i></i>`}
+function heroHTML(F){const T=S.today||blankT(),net=todayNet(T),K=bm()==="cargo";
+  return `<div class="hero ${K?"cg":""}"><div class="hk"><span>ทำเงินวันนี้ · ทั้งบริษัท</span><span class="live"><i></i>สด</span></div>
+   <div class="hv num" id="heroNet">${net>=0?"+":""}${money(net,true)}</div><div class="hnote">ก่อนหักค่าคงที่ตอนเที่ยงคืน</div>
+   <div class="hrow"><div><b class="num" id="heroAir">${movingNow(F)}</b><span>${K?"ลำกำลังเดินทาง":"ลำกำลังบิน"}</span></div><div><b class="num" id="heroPax">${K?Math.round(T.cargo).toLocaleString():T.pax.toLocaleString()}</b><span>${K?"ตันวันนี้":"คนวันนี้"}</span></div><div><b class="num" id="heroLegs">${K?Math.round(T.teu||0).toLocaleString():T.legs}</b><span>${K?"ตู้เรือวันนี้":"เที่ยวลงจอด"}</span></div></div>
+   <div class="hms" id="heroMs">${msLineHTML()}</div></div>`}
+function boardHTML(F){const h=boardRowsHTML();return `<div class="fboard"><div class="fbh"><span>${bm()==="cargo"?"📦 ขนส่งสด":"🛫 เที่ยวบินสด"}</span><span id="fbclk">${bm()==="cargo"?"เดินทางอยู่":"บินอยู่"} ${movingNow(F)} ลำ</span></div>
+   <div class="fbc"><span>เที่ยว</span><span>เส้นทาง</span><span>${bm()==="cargo"?"กำไร":"วันนี้"}</span></div><div id="fboard">${h}</div></div>`}
+function liveHome(){if(tab!=="home"||!S||afk)return;const bd=$("#fboard");if(!bd)return;const F=liveFlights(),T=S.today||blankT(),net=todayNet(T),K=bm()==="cargo";
+  const set=(id,v)=>{const e=$(id);if(e&&e.textContent!==v){e.textContent=v;return e}};
+  const hn=set("#heroNet",(net>=0?"+":"")+money(net,true));if(hn){hn.classList.remove("tk");void hn.offsetWidth;hn.classList.add("tk")}
+  const mv=String(movingNow(F));set("#heroAir",mv);set("#heroPax",K?Math.round(T.cargo).toLocaleString():T.pax.toLocaleString());set("#heroLegs",K?Math.round(T.teu||0).toLocaleString():String(T.legs));
+  const ms=$("#heroMs"),mh=msLineHTML();if(ms&&ms.dataset.h!==mh){ms.dataset.h=mh;ms.innerHTML=mh}
+  set("#fbclk",`${K?"เดินทางอยู่":"บินอยู่"} ${mv} ลำ`);const h=boardRowsHTML();if(bd.dataset.h==null)bd.dataset.h=h;else if(bd.dataset.h!==h){bd.dataset.h=h;bd.innerHTML=h}
+  boardMoney();liveBoard();
+  if(!bd.onclick)bd.onclick=e=>{if(e.target.closest("[data-fbgo]")){tab="routes";renderView(true);return}const ln=e.target.closest("[data-fbl]");if(ln){if(S.lanes.some(l=>l.id===+ln.dataset.fbl))openSheet(laneSheet(+ln.dataset.fbl,{}));return}const b=e.target.closest("[data-fbr]");if(b&&S.routes.some(r=>r.id===+b.dataset.fbr))openSheet(routeSheet(+b.dataset.fbr,{}))}}
+const ACHI={plane1:"✈️",route1:"🛫",fleet10:"🛩️",routes8:"🗺️",long:"🌏",a380:"🐋",cargo:"📦",star5:"⭐",ship1:"🚢",teu:"🏗️",pax1m:"👥",base2:"🏢",world:"🧭",year:"🎂",top1:"🏆"};
 function homeRestHTML(){
   const v=valuation(),g=GOALS[Math.min(S.goal,GOALS.length-1)],prev=S.goal?GOALS[S.goal-1][0]:0;
   const pct=S.goal>=GOALS.length?100:clamp((v-prev)/(g[0]-prev)*100,0,100);
   const L=S.last||{pax:0,lf:0,cargo:0};
   const board=standings();
   const fresh=S.news.length?S.news[0].id:0;const isFresh=n=>n.id>seenNews;
-  const out=`${missionsHTML()}${ratingHTML()}<div class="panel stack" id="aplist">${airportListHTML()}</div>
+  const F=liveFlights();
+  const out=`${heroHTML(F)}${boardHTML(F)}${missionsHTML()}${ratingHTML()}<div class="panel stack" id="aplist">${airportListHTML()}</div>
   <div class="stats">
     <div><div class="k">มูลค่ากิจการ</div><div class="v">${money(v,true)}</div></div>
     <div><div class="k">ผู้โดยสาร/วัน</div><div class="v">${L.pax.toLocaleString()}</div></div>
@@ -1315,7 +1454,7 @@ function homeRestHTML(){
     !S.routes.some(r=>r.planes.length)?`<div class="panel row between"><span>มีเครื่องแล้ว ต่อไปเปิดเส้นทางแล้วใส่เครื่องบิน</span><button class="btn primary sm" data-go="routes">ไปเส้นทาง</button></div>`:""}
   <div class="panel"><div class="eyebrow" style="margin-bottom:4px">🏆 อันดับการแข่งขัน · คะแนน</div><div class="board">${board.map((b,i)=>`<div class="r ${b.me?"me":""}"><span class="num muted">#${i+1}</span><span class="nm" style="min-width:0">${esc(b.n)}<br>${starsHTML(b.st||0,11)} <span class="num muted" style="font-size:11px">${(b.st||0).toFixed(1)}</span></span><span class="num">${b.sc.toLocaleString()}<span class="muted small"> คะแนน</span></span></div>`).join("")}</div></div>
   <div class="panel"><div class="eyebrow" style="margin-bottom:6px">ข่าวการบิน</div><ul class="news">${S.news.slice(0,8).map(n=>`<li class="${isFresh(n)?"fresh":""}"><span class="when">${dateOf(n.d)}</span><span>${esc(n.t)}</span></li>`).join("")}</ul></div>
-  <div class="panel"><div class="eyebrow" style="margin-bottom:8px">ความสำเร็จ ${S.ach.length}/${ACH.length}</div><div class="chips">${ACH.map(([id,n])=>`<span class="chip ${S.ach.includes(id)?"got":""}">${S.ach.includes(id)?"✓ ":""}${n}</span>`).join("")}</div></div>`;
+  <div class="panel"><div class="eyebrow" style="margin-bottom:8px">🎖️ ตู้โชว์ความสำเร็จ ${S.ach.length}/${ACH.length}</div><div class="badges">${ACH.map(([id,n])=>{const g=S.ach.includes(id);return `<div class="bdg ${g?"got":""}"><b>${g?(ACHI[id]||"🎖️"):"🔒"}</b><span>${n}</span></div>`}).join("")}</div></div>`;
   seenNews=fresh;return out;
 }
 function apInfoHTML(){const hub=city(S.hub);
@@ -1408,8 +1547,8 @@ function spotifySheet(){const fn=()=>{const linked=spLinked(),cid=spGet("cid")||
    const c=$("#spcopy");if(c)c.onclick=()=>{const i=$("#spru");i.select();try{navigator.clipboard.writeText(i.value)}catch(e){document.execCommand&&document.execCommand("copy")}toast("คัดลอก Redirect URI แล้ว")};
    const o=$("#spoff");if(o)o.onclick=()=>{["acc","exp","refresh"].forEach(k=>spSet(k,null));SP.np=null;toast("ยกเลิกการเชื่อม Spotify แล้ว");drawSheet()}};
  return fn}
-/* Map pickups: VIP passengers / urgent parcels pop up at your airports — tap them before they leave */
-let PICKS=[],pickNext=0,dailyShown=false;
+/* Daily login reward (7-day streak, real calendar days) */
+let dailyShown=false;
 const DAILY_X=[1,1.5,2,2.5,3,4,8];
 const ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 function dailyCheck(){if(dailyShown||!S||S.over||afk||sheetFn||pendingDec)return;const today=ymd(new Date());S.daily=S.daily||{};if(S.daily.last===today){dailyShown=true;return}
@@ -1420,28 +1559,7 @@ function dailyCheck(){if(dailyShown||!S||S.over||afk||sheetFn||pendingDec)return
   fn.bind=()=>{$("#dclaim").onclick=e=>{S.daily={last:today,streak};S.cash+=rw;save();addNews(`🎁 รางวัลรายวัน วันที่ ${streak}: ${money(rw)}`);const b=e.target.getBoundingClientRect();coinBurst(b.left+b.width/2,b.top);floatCash(rw);sheetFn=null;$("#sheet").innerHTML="";renderView();updateTop()};
     $("#scrim").onclick=ev=>{if(ev.target.id==="scrim")$("#dclaim").click()}};
   openSheet(fn)}
-function pickSpawn(){if(!S||S.over||afk||paused||document.hidden||!$("#map"))return;const now=performance.now();if(now<pickNext||PICKS.length>=2)return;pickNext=now+35e3+Math.random()*45e3;
-  const K=bm(),codes=[...new Set([...S.bases,...visRoutes().map(r=>r.dest)])].filter(c=>aptTakes(c,K));if(!codes.length)return;
-  const code=codes[Math.floor(Math.random()*codes.length)],gold=Math.random()<.12,base=Math.max(2e6,avgDailyProfit()*.22,S.startCap*.03);
-  const val=Math.round(base*(gold?5:1)*(.75+Math.random()*.5)/1e4)*1e4;
-  PICKS.push({code,val,gold,k:K,t0:now,ttl:gold?16e3:24e3,px:-99,py:-99})}
-function pickAt(mx,my){return PICKS.find(p=>Math.hypot(p.px-mx,p.py-24-my)<28||Math.hypot(p.px-mx,p.py-10-my)<16)}
-function pickCollect(p,mx,my){PICKS=PICKS.filter(q=>q!==p);S.cash+=p.val;S.pickN=(S.pickN||0)+1;save();
-  const r=$("#map").getBoundingClientRect();coinBurst(r.left+mx,r.top+my);floatCash(p.val);
-  toast(p.gold?`🌟 ลูกค้าทองคำ! จ่ายพิเศษ +${money(p.val,true)}`:p.k==="cargo"?`📦 พัสดุด่วนจาก ${city(p.code).n} +${money(p.val,true)}`:`🎫 ผู้โดยสาร VIP ที่ ${city(p.code).n} +${money(p.val,true)}`);
-  if(S.pickN===1)addNews("✨ เก็บลูกค้าพิเศษครั้งแรก · แตะฟองที่เด้งขึ้นบนแผนที่เพื่อรับเงินโบนัส");updateTop()}
-function drawPicks(x,PX,W,H,ink,paper){const now=performance.now();PICKS=PICKS.filter(p=>now-p.t0<p.ttl);
-  for(const p of PICKS){const c=city(p.code);if(!c)continue;const [px,py]=PX(ulon(c.lon),c.lat);p.px=px;p.py=py;if(px<-30||px>W+30||py<-30||py>H+30)continue;
-    const age=(now-p.t0)/p.ttl,pop=Math.min(1,(now-p.t0)/260),bob=Math.sin(now/300)*3,cy=py-24+bob,r=15*(.6+.4*pop);
-    x.save();x.globalAlpha=age>.8?(1-age)/.2*.9+.1:1;
-    x.beginPath();x.moveTo(px,py-4);x.lineTo(px-5,cy+r-2);x.lineTo(px+5,cy+r-2);x.closePath();x.fillStyle=p.gold?"#E9A825":p.k==="cargo"?cssv("--cargo"):cssv("--accent");x.fill();
-    x.beginPath();x.arc(px,cy,r+2.5,0,7);x.fill();
-    x.beginPath();x.arc(px,cy,r,0,7);x.fillStyle=paper;x.fill();
-    x.beginPath();x.arc(px,cy,r+2.5,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-age));x.strokeStyle=p.gold?"#FFE08A":"#ffffff";x.lineWidth=2;x.stroke();
-    x.font=`${Math.round(r*1.15)}px system-ui,"Apple Color Emoji","Segoe UI Emoji"`;x.textAlign="center";x.textBaseline="middle";x.fillText(p.gold?"🌟":p.k==="cargo"?"📦":"🎫",px,cy+1);
-    x.restore()}}
 function mapTap(mx,my){
-  {const pk=pickAt(mx,my);if(pk){pickCollect(pk,mx,my);return}}
   const rg=mapHits.find(h=>h.reg&&Math.abs(h.px-mx)<h.hw&&Math.abs(h.py-my)<14);
   if(rg){openSheet(regionSheet({id:rg.reg}));return}
   let best=null,bd=22;for(const h of mapHits){if(!h.c)continue;const d=Math.hypot(h.px-mx,h.py-my);if(d<bd){bd=d;best=h}}
@@ -2196,7 +2314,7 @@ function fleetHTML(){
   const list=MODELS.filter(m=>KC?!m.seats&&(ccls==="call"||cargoCls(m)===ccls):m.seats&&(mktCat==="all"||m.cat===mktCat)).sort((a,b)=>KC?a.price-b.price:0);
   const nP=S.fleet.filter(p=>model(p.m).seats).length,nC=S.fleet.length-nP,mine=KC?nC:nP;
   return `<div class="seg fkseg"><button data-fk="pax" class="${!KC?"on":""}">✈ เครื่องบินโดยสาร <span class="num">${nP}</span></button><button data-fk="cargo" class="${KC?"on":""}">📦 เครื่องบินขนสินค้า <span class="num">${nC}</span></button></div>
-  <div class="row between"><h2>${KC?"ฝูงบินขนสินค้า":"ฝูงบินโดยสาร"} <span class="muted num small">${mine} ลำ</span></h2><button class="btn sm" id="livery"><span class="dotlv" style="background:${S.livery.tail}"></span>ลายเครื่องบินและโลโก้</button></div>
+  <div class="row between"><h2>${KC?"ฝูงบินขนสินค้า":"ฝูงบินโดยสาร"} <span class="muted num small">${mine} ลำ</span></h2><button class="btn sm" id="livery"><span class="dotlv" style="background:${S.livery.tail}"></span>ลายและโลโก้</button></div>
   ${mine?[[FK,""]].map(([k,t])=>{const LL=S.fleet.filter(p=>(k==="cargo")===!model(p.m).seats);return LL.length?`<div class="hangar">${LL.map(p=>{const m=model(p.m),r=S.routes.find(x=>x.id===p.route),shop=p.down>S.day;
     const st=shop?`<span class="warn">ในโรงซ่อม ${p.down-S.day} วัน</span>`:r?`บิน ${r.from} → ${r.dest}`:'<span class="muted">จอดว่าง</span>';
     const cc=p.cond<40?"low":p.cond<70?"mid":"";
@@ -2521,7 +2639,7 @@ function guideSheet(){return head("คู่มือระบบ","ทุกร
 <details class="g"><summary>ชื่อเสียงและระดับบริการ</summary><div><p>ชื่อเสียงจะค่อย ๆ เคลื่อนเข้าหาค่าเป้าหมายของระดับบริการ ประหยัด 35 มาตรฐาน 60 พรีเมียม 85 คลิปไวรัลและแคมเปญใหญ่ช่วยดันขึ้น เครื่องเสียกลางทางทำให้ลดลง</p></div></details>
 <details class="g"><summary>การตลาดและล็อกราคาน้ำมัน</summary><div><p>แคมเปญการตลาดเพิ่มคนบินทุกเส้นทางชั่วคราว เปิดได้ทีละแคมเปญ</p><p>ดัชนีน้ำมันขึ้นลงทุกวันและพุ่งแรงได้จากเหตุการณ์ การล็อกราคาจะตรึงดัชนีไว้ 60 วัน ค่าธรรมเนียมประมาณ 3% ของค่าน้ำมันช่วงนั้น เหมาะตอนน้ำมันถูก</p></div></details>
 <details class="g"><summary>เงินกู้และการล้มละลาย</summary><div><p>กู้ได้ทีละ ฿50 ล้าน วงเงินขึ้นกับมูลค่าฝูงบิน ถ้าเงินสดติดลบต่อเนื่อง 30 วัน สายการบินล้มละลายและต้องเริ่มชะตาใหม่</p></div></details>
-<details class="g"><summary>✨ โบนัส: ลูกค้าพิเศษ รางวัลรายวัน และเลเวล</summary><div><ul><li>🎫/📦 ฟองลูกค้าพิเศษจะเด้งขึ้นที่สนามบินของคุณบนแผนที่เป็นระยะ แตะก่อนวงเวลาหมดเพื่อรับเงินโบนัส บางครั้งเป็น 🌟 ลูกค้าทองคำ ได้ 5 เท่า</li><li>🎁 เข้าเกมทุกวัน (วันจริง) รับรางวัลรายวัน ต่อเนื่องครบ 7 วันได้ก้อนใหญ่</li><li>Lv ข้างชื่อสายการบินคือเลเวล คิดจากคะแนนการแข่งขัน ขึ้นเลเวลแต่ละครั้งได้โบนัส แถบเล็กใต้ Lv บอกว่าใกล้เลเวลถัดไปแค่ไหน</li></ul></div></details>
+<details class="g"><summary>✨ โบนัส: ฉลองยอดสะสม รางวัลรายวัน และเลเวล</summary><div><ul><li>🎉 เมื่อผู้โดยสารสะสม (หรือสินค้าทางอากาศสะสม) ถึงหลักสำคัญ เช่น 1,000 · 5,000 · 20,000 ไปจนถึงหลักล้าน จะได้โบนัสฉลองทันที ดูความคืบหน้าได้ในการ์ดบนสุดของหน้าภาพรวม</li><li>🛫 เที่ยวบินสดในหน้าภาพรวม เห็นเครื่องบินวิ่งไปกลับบนแต่ละเส้นทาง พร้อมเงินที่เส้นทางนั้นทำได้วันนี้ แตะแถวเพื่อเปิดเส้นทางนั้น</li><li>🎁 เข้าเกมทุกวัน (วันจริง) รับรางวัลรายวัน ต่อเนื่องครบ 7 วันได้ก้อนใหญ่</li><li>Lv ข้างชื่อสายการบินคือเลเวล คิดจากคะแนนการแข่งขัน ขึ้นเลเวลแต่ละครั้งได้โบนัส แถบเล็กใต้ Lv บอกว่าใกล้เลเวลถัดไปแค่ไหน</li></ul></div></details>
 <details class="g"><summary>🧭 ช่วยเลือกเครื่องบินและเรือ</summary><div><p>ไม่รู้จะซื้อรุ่นไหน ให้กดปุ่ม 🧭 ในแท็บฝูงบินหรือแท็บสินค้า หรือกด "ดูทุกรุ่น" ในกล่องเพิ่มเครื่องบิน/เรือบนแผนที่ เลือกเส้นทาง แล้วเกมจะเรียงทุกรุ่นตามกำไรต่อวันที่จะเพิ่มขึ้น</p><ul><li>⭐ คุ้มที่สุด: ทำกำไรเพิ่มได้มากที่สุด</li><li>⚡ คืนทุนเร็วสุด: ราคาซื้อคืนกลับมาเร็วที่สุด</li><li>รุ่นที่บินไม่ถึง หรือเทียบท่าไม่ได้ จะแยกไว้ด้านล่างพร้อมบอกเหตุผล</li></ul><p>ชนิดเรือ: 📦 ตู้คอนเทนเนอร์ ขนสินค้าทั่วไป · ❄ ห้องเย็น ขนผลไม้และอาหาร ค่าระวาง 1.8 เท่า · 🚗 ขนรถ ค่าระวาง 1.5 เท่า แต่ละชนิดมีสินค้าของตัวเอง เรือต่างชนิดเลยไม่แย่งสินค้ากันบนเส้นทางเดียวกัน</p><p>บนแผนที่ กดปุ่มลูกศรที่มุมแถบด้านบนเพื่อย่อแถบให้เหลือแค่ชื่อกับเงิน</p></div></details>
 <details class="g"><summary>โหมดคน และ โหมดสินค้า</summary><div><p>ปุ่มใต้แถบด้านบนสลับทั้งเกมระหว่าง 2 โหมด</p><ul><li>👥 โหมดคน: แผนที่ เส้นทาง ฝูงบิน และกล่องข้อมูลสนามบิน แสดงเฉพาะเครื่องบินโดยสารและเส้นทางผู้โดยสาร ป้ายบนแผนที่บอกจำนวนคนขึ้นเครื่อง</li><li>📦 โหมดสินค้า: แสดงเฉพาะเครื่องบินขนสินค้า เส้นทางสินค้า และเรือ ป้ายบนแผนที่บอกสินค้าเป็นตัน กดสนามบินแล้ว + เพิ่มเครื่องบิน จะขึ้นเฉพาะเครื่องขนสินค้า</li></ul><p>เงิน สาขา และเวลาใช้ร่วมกันทั้ง 2 โหมด เครื่องบินทุกลำยังบินและทำเงินตลอด ไม่ว่าจะเปิดโหมดไหน</p></div></details>
 <details class="g"><summary>ประเภทสนามบิน</summary><div><ul><li>✈📦 สนามบินส่วนใหญ่รับทั้งผู้โดยสารและสินค้า</li><li>✈ สนามบินเล็กเมืองท่องเที่ยว เช่น สมุย ฟูก๊วก ควีนส์ทาวน์ รับเฉพาะผู้โดยสาร</li><li>📦 ฮับสินค้า เช่น เมมฟิส หลุยส์วิลล์ ลีแยฌ ไลพ์ซิก เออโจว ดูไบเวิลด์เซ็นทรัล รับเฉพาะสินค้า (จุดสี่เหลี่ยมสีม่วงบนแผนที่)</li></ul><p>ป้าย 👥 บนแผนที่ข้างสนามบินของคุณคือจำนวนคนที่ขึ้นเครื่องที่นั่นวันนี้ แตะสนามบินเพื่อดูคนขึ้น คนลง และสินค้าเข้าออก เทียบกับเมื่อวาน</p></div></details>
@@ -2721,7 +2839,6 @@ function drawMap(){
     const ak=aptKind(c.c);x.beginPath();if(ak==="cargo"&&!isB){const q=isB?6:on?4.4:open?3.2:2.4;x.rect(px-q,py-q,q*2,q*2)}else x.arc(px,py,isB?6:on?4:open?2.8:2,0,7);x.fillStyle=isB?acc:ak==="cargo"?cargoCol:on?(bm()==="cargo"?cargoCol:routeCol):mut;x.globalAlpha=(on?1:open?.7:.35)*(!isB&&!aptTakes(c.c,bm())?.18:1)*(vmode()==='sea'?.22:1);x.fill();
     if((isB||on)&&vmode()!=='sea'){x.lineWidth=isB?2:1.5;x.strokeStyle=paper;x.stroke()}
     x.globalAlpha=1;if(vmode()!=='sea')mapHits.push({c:c.c,px,py})}
-  drawPicks(x,PX,W,H,ink,paper);
   // how many people board at each of your airports today (or tons of cargo at a freight hub)
   if(vmode()!=='sea'&&S.ui_traf!==false){const items=[];for(const code of shown){const c=city(code),[px,py]=PX(ulon(c.lon),c.lat);if(px<0||px>W||py<0||py>H)continue;const {t}=apStat(code);
       const k=bm(),v=k==="cargo"?t.cu+t.cd:t.up;if(v<1)continue;items.push({px,py,lab:k==="cargo"?`📦${niceShort(t.cu+t.cd)}t`:`👥${niceShort(t.up)}`,isB:S.bases.includes(code),k})}
@@ -2807,13 +2924,13 @@ function frame(now){
       if(!sheetFn){if(tab==="home")refreshHome();else if(tab==="map")refreshMapTab();else renderView()}
       updateTop();if(S.over){showOver();break}}}
   if(S&&!S.over&&!paused){settleFlights(S.day+acc/DAY_MS);settleShips(S.day+acc/DAY_MS)}
-  if(S&&!S.over&&now-(frame.mc||0)>1200){frame.mc=now;checkMissions();lvlCheck();pickSpawn();dailyCheck();const rn=$("#rankno");if(rn){rn.textContent="#"+rank();const rp=$("#rankpanel");if(rp&&!rp.hidden&&!rp.querySelector("details[open]"))rp.innerHTML=rankPanelHTML()}}
+  if(S&&!S.over&&now-(frame.mc||0)>1200){frame.mc=now;checkMissions();lvlCheck();msCheck();liveHome();dailyCheck();const rn=$("#rankno");if(rn){rn.textContent="#"+rank();const rp=$("#rankpanel");if(rp&&!rp.hidden&&!rp.querySelector("details[open]"))rp.innerHTML=rankPanelHTML()}}
   if(S&&afk&&pendingDec){const d=pendingDec;pendingDec=null;const i=d.c.length-1,msg=d.c[i][2]();addNews(`${d.e} ${msg} (AFK เลือกให้)`);afk.log.unshift(`${d.e} ${d.t}: เลือก "${d.c[i][0]}"`);save()}
   if(S&&afk&&now-(frame.ak||0)>500){frame.ak=now;afkTick()}
   if(S&&now-(frame.sn||0)>10000){frame.sn=now;S.seen=Date.now();save()}
   if(S&&pendingDec&&!sheetFn&&!S.over){const d=pendingDec;pendingDec=null;openDecision(d)}
   if(S&&tab==="money"&&!sheetFn&&now-(frame.lt||0)>400){frame.lt=now;const tp=$("#todayp");if(tp)tp.innerHTML=todayHTML()}
-  if(S){animDay=S.day+acc/DAY_MS;if(!afk&&(tab==="home"||tab==="map")&&$("#map")&&now-(frame.dm||0)>=31){frame.dm=now;drawMap()}
+  if(S){animDay=S.day+acc/DAY_MS;if(!afk&&tab==="home"&&now-(frame.lb||0)>=110){frame.lb=now;liveBoard()}if(!afk&&(tab==="home"||tab==="map")&&$("#map")&&now-(frame.dm||0)>=31){frame.dm=now;drawMap()}
     if(tab==="map"&&now-(frame.hl||0)>500){frame.hl=now;const hd=$("#maphud");if(hd)hd.innerHTML=mapHudHTML()}
     const dt2=$("#dt");if(dt2){const mins=Math.floor((acc/DAY_MS)*1440/5)*5,tx=`วันที่ ${S.day+1} · ${dateOf(S.day)} · ${String(mins/60|0).padStart(2,"0")}:${String(mins%60).padStart(2,"0")} น.`;if(dt2.textContent!==tx)dt2.textContent=tx}
     const cs=$("#cs");if(cs){dispCash+=(S.cash-dispCash)*Math.min(1,dt/180);if(Math.abs(S.cash-dispCash)<1)dispCash=S.cash;cs.textContent=money(dispCash);cs.className="v "+(S.cash<0?"bad":"")}}
