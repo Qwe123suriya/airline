@@ -591,6 +591,11 @@ nav.tabs button:active svg{transform:scale(.88)}
 .model svg.art{max-width:none;margin:0 0 6px}
 .pcard svg.art{margin:0 0 4px}
 
+/* head-to-head competition */
+.cmpchip{display:inline-block;margin-left:6px;font-family:var(--f-body);font-size:11.5px;font-weight:600;color:var(--bad);background:color-mix(in srgb,var(--bad) 13%,var(--paper));border-radius:999px;padding:1px 8px;vertical-align:middle}
+.cmpbox{display:flex;flex-direction:column;gap:6px;border:1px solid color-mix(in srgb,var(--bad) 45%,var(--line));background:color-mix(in srgb,var(--bad) 6%,var(--paper));border-radius:12px;padding:10px 12px}
+.cmpbar{height:8px;border-radius:99px;background:color-mix(in srgb,var(--bad) 35%,var(--line));overflow:hidden}.cmpbar i{display:block;height:100%;background:var(--good)}
+
 /* stockpile */
 .bkchip{font-family:var(--f-body);font-size:11.5px;font-weight:600;color:var(--warn);background:color-mix(in srgb,var(--warn) 15%,var(--paper));border-radius:999px;padding:0 8px;white-space:nowrap}
 .bkline{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.45;border:1px dashed color-mix(in srgb,var(--warn) 55%,var(--line));background:color-mix(in srgb,var(--warn) 8%,var(--paper));border-radius:10px;padding:8px 10px}
@@ -1143,9 +1148,19 @@ function autoCrate(r){const a=city(r.from),b=city(r.dest),d=dist(a,b),ev=evMult(
 const crateOf=r=>r.cmode==="manual"?(r.crate||1):autoCrate(r);
 function evMult(c){let m=1;for(const e of S.events)if(e.city===c&&e.until>S.day&&e.mult)m*=e.mult;return m}
 function grounded(c){return S.events.some(e=>e.city===c&&e.until>S.day&&e.type==="storm")}
+/* Head-to-head competition: a rival flying the same city pair splits the passengers.
+   Your pull = service × reputation × (fare cheapness)^1.5; theirs = rival strength × their fare cheapness^1.5. */
+/* daily cost per aircraft (crew, lease, insurance) as a share of its price, and the airport slot rent each open route pays every day */
+const FIX_RATE=.0014,ROUTE_SLOT=45e3;
+const RV_STR=.62,RV_GRACE=20,RV_EXIT_SHARE=.7,RV_EXIT_DAYS=25;
+const rivalByName=n=>S.rivals.find(x=>x.n===n);
+function compShare(r,price,svc){if(!r.cmp||rkind(r)==="cargo")return 1;
+  const base=baseFare(dist(city(r.from),city(r.dest))),rv=rivalByName(r.cmp.rv),st=rv?rivalStars(rv):3.5;
+  const me=SERVICE[svc??svcOf(r)].f*(.6+S.rep/125)*Math.pow(base/(price||base),1.5),them=RV_STR*(st/4)*Math.pow(1/r.cmp.fare,1.5);
+  return me/(me+them)}
 // Automatic fare: aims for ~90% full on the full schedule — rises when more people want to fly than there are seats, falls when they don't
 function autoPrice(r){const a=city(r.from),b=city(r.dest),d=dist(a,b),base=baseFare(d);
-  const D0=60*Math.sqrt(a.w*b.w)*distF(d)*(.6+S.rep/125)*SERVICE[svcOf(r)].f*evMult(r.dest)*evMult(r.from)*mktMult()*brBoost(r.from)*brBoost(r.dest)*starMult()*pk("pax");
+  const D0=60*Math.sqrt(a.w*b.w)*distF(d)*(.6+S.rep/125)*SERVICE[svcOf(r)].f*evMult(r.dest)*evMult(r.from)*mktMult()*brBoost(r.from)*brBoost(r.dest)*starMult()*pk("pax")*compShare(r,r.price||base);
   let cap=0;for(const id of r.planes){const p=plane(id);if(!p||p.down>S.day)continue;const m=model(p.m);cap+=legsFor(m,d)*m.seats}
   if(!cap)return base;
   return Math.round(base*clamp(Math.pow(D0/(.9*cap),1/1.5),.7,1.6)/10)*10}
@@ -1156,14 +1171,15 @@ function calc(r,price,crate,svc){
   const ps=r.planes.map(plane).filter(Boolean);
   const ground=grounded(r.dest)||grounded(r.from);
   const ev=evMult(r.dest)*evMult(r.from)*brBoost(r.from)*brBoost(r.dest);
-  svc=svc??svcOf(r);const demand=rkind(r)==="cargo"||!aptTakes(r.from,"pax")||!aptTakes(r.dest,"pax")?0:60*Math.sqrt(a.w*b.w)*distF(d)*Math.pow(base/price,1.5)*(.6+S.rep/125)*SERVICE[svc].f*ev*mktMult()*starMult()*pk("pax");
+  svc=svc??svcOf(r);const demand=rkind(r)==="cargo"||!aptTakes(r.from,"pax")||!aptTakes(r.dest,"pax")?0:60*Math.sqrt(a.w*b.w)*distF(d)*Math.pow(base/price,1.5)*(.6+S.rep/125)*SERVICE[svc].f*ev*mktMult()*starMult()*pk("pax")*compShare(r,price,svc);
   crate=crate??crateOf(r);const cdem=(aptTakes(r.from,"cargo")&&aptTakes(r.dest,"cargo")?1:0)*cargoBase(r,a,b,d,ev)*(rkind(r)==="cargo"?1:.5)*Math.pow(1/crate,1.3);
   const plan=legPlan(r,demand+(r.bk||0),cdem+(r.cbk||0),d);
   let cap=0,ccap=0,fuelC=0,feeC=0,fixed=0,legs=0;
-  for(const p of ps){const m=model(p.m);fixed+=m.price*.0012;
+  for(const p of ps){const m=model(p.m);fixed+=m.price*FIX_RATE;
     if(ground||p.down>S.day)continue;
     const L=plan.get(p.id);legs+=L;cap+=L*m.seats;ccap+=L*m.cargo;
     fuelC+=L*d*m.cpk*fuel;feeC+=L*(feeOf(a)+feeOf(b))/2*1000*(m.seats||m.cargo*3)/100}
+  fixed+=ROUTE_SLOT;
   const pax0=Math.floor(Math.min(demand,cap)),cargo0=Math.min(cdem,ccap),bkp=Math.max(0,Math.floor(Math.min(r.bk||0,cap-pax0))),bkc=Math.max(0,Math.min(r.cbk||0,ccap-cargo0)),pax=pax0+bkp,cargo=cargo0+bkc;
   const tix=pax0*price+bkp*Math.min(price,base),crev=(cargo0*crate+bkc*Math.min(crate,1))*d*CARGO_RATE*pk("cargo"),rev=tix+crev,svcC=pax*SERVICE[svc].cost,cost=fuelC+feeC+fixed+svcC;
   return {price,crate,svcLv:svc,plan,bkp,bkc,d,base,cap,ccap,legs,demand:Math.round(demand),cdem,pax,cargo,tix,crev,rev,fuelC,feeC,fly:fuelC+feeC,fixed,svc:svcC,cost,profit:rev-cost,lf:cap?pax/cap:0,ground};
@@ -1227,7 +1243,7 @@ function simDay(){
   // overnight: fixed costs per aircraft, interest, and close the day's books
   let fixed=0;
   for(const r of S.routes){const c=calc(r),t=r.today||blankT();
-    const rf=r.planes.reduce((s,id)=>{const p=plane(id);return s+(p?model(p.m).price*.0012:0)},0);fixed+=rf;
+    const rf=ROUTE_SLOT+r.planes.reduce((s,id)=>{const p=plane(id);return s+(p?model(p.m).price*FIX_RATE:0)},0);fixed+=rf;
     const rev=t.tix+t.crev,cost=t.fuelC+t.feeC+t.svc+rf;
     r.prevPax=r.last?r.last.pax:null;r.last={...c,pax:t.pax,cargo:t.cargo,tix:t.tix,crev:t.crev,rev,fuelC:t.fuelC,feeC:t.feeC,fly:t.fuelC+t.feeC,svc:t.svc,fixed:rf,cost,profit:rev-cost,lf:t.seats?t.pax/t.seats:0,flown:t.legs};
     r.h.push(Math.round(rev-cost));if(r.h.length>30)r.h.shift();r.today=blankT();
@@ -1250,6 +1266,7 @@ function simDay(){
   const target=(wsum?wrep/wsum:SERVICE[S.service].rep)-(avgCond<60?(60-avgCond)*.5:0);
   S.rep=clamp(S.rep+(target-S.rep)*.03,0,100);
   {const prev=standings();prev.forEach((x,i)=>{if(x.me)S.prank=i+1;else{const rv=S.rivals.find(r=>r.n===x.n);if(rv)rv.prank=i+1}})}
+  rivalTurn();
   for(const rv of S.rivals){rv.ops=(rv.ops||0)+rv.v/2e6*.035*(.6+Math.random()*.8);rv.v*=1+.002+(Math.random()-.5)*.02;rv.st=clamp(rivalStars(rv)+(Math.random()-.5)*.06,2.5,4.8)}
   S.hist.push({d:S.day,c:S.cash,r:rev,x:cost});if(S.hist.length>365)S.hist.shift();
   {const had=suezShut();S.events=S.events.filter(e=>e.until>S.day);if(had&&!suezShut()){seaCache.clear();addNews("🚢 คลองสุเอซเปิดใช้ได้อีกครั้ง")}}
@@ -1268,6 +1285,27 @@ function simDay(){
   computeRating();
   checkMissions();
   save();
+}
+function rivalTurn(){
+  const myV=valuation(),pax=S.routes.filter(r=>rkind(r)==="pax"&&r.planes.length&&r.last);
+  const contested=pax.filter(r=>r.cmp).length,lead=rank()===1;
+  for(const r of pax){const base=baseFare(dist(city(r.from),city(r.dest)));
+    if(!r.cmp){
+      if(S.day<RV_GRACE||contested>=Math.ceil(pax.length*.6))continue;
+      const margin=clamp(r.last.profit/Math.max(1,r.last.rev),0,1);
+      if(Math.random()<(.004+.035*margin)*(lead?1.6:1)*(pax.length<2?.4:1)){
+        const tot=S.rivals.reduce((a,x)=>a+x.v,0);let k=Math.random()*tot,rv=S.rivals[0];for(const x of S.rivals){k-=x.v;if(k<=0){rv=x;break}}
+        r.cmp={rv:rv.n,fare:.92,since:S.day,weak:0};
+        addNews(`⚔️ ${rv.n} เปิดบิน ${r.from}→${r.dest} แข่งกับคุณ ตั้งราคาถูกกว่าราคากลาง 8%`);toast(`⚔️ ${rv.n} บุกเส้นทาง ${r.from}→${r.dest} ของคุณ`)}
+      continue}
+    // price war: the rival undercuts whatever you charge, within limits
+    const my=priceOf(r)/base,tg=clamp(my*.96,.65,1.15);r.cmp.fare+=(tg-r.cmp.fare)*.15;
+    const sh=compShare(r,priceOf(r));r.cmp.share=sh;
+    r.cmp.weak=sh>RV_EXIT_SHARE?(r.cmp.weak||0)+1:Math.max(0,(r.cmp.weak||0)-1);
+    if(r.cmp.weak>=RV_EXIT_DAYS){addNews(`🏳️ ${r.cmp.rv} ถอนตัวจาก ${r.from}→${r.dest} คุณครองเส้นทางนี้แล้ว`);celebrate("!ชนะศึกเส้นทาง",`${r.from}→${r.dest}`);S.rep=clamp(S.rep+2,0,100);delete r.cmp}}
+  // rivals keep pace: they grow faster when you pull ahead and from every route they fight you on
+  for(const rv of S.rivals){const fights=S.routes.filter(r=>r.cmp&&r.cmp.rv===rv.n).length;
+    rv.v*=1+.0012*fights+(myV>rv.v?.004*clamp((myV-rv.v)/myV,0,1):0);rv.ops=(rv.ops||0)+fights*3}
 }
 function randomEvent(){
   if(Math.random()>.07)return;
@@ -1625,8 +1663,8 @@ function spotifySheet(){const fn=()=>{const linked=spLinked(),cid=spGet("cid")||
 let dailyShown=false;
 const DAILY_X=[1,1.5,2,2.5,3,4,8];
 const ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-function dailyCheck(){if(dailyShown||!S||S.over||afk||sheetFn||pendingDec)return;const today=ymd(new Date());S.daily=S.daily||{};if(S.daily.last===today){dailyShown=true;return}
-  dailyShown=true;const y=new Date();y.setDate(y.getDate()-1);const streak=S.daily.last===ymd(y)?(S.daily.streak||0)%7+1:1,base=Math.max(5e6,S.startCap*.06,avgDailyProfit()*.6),rw=Math.round(base*DAILY_X[streak-1]/1e5)*1e5;
+function dailyCheck(){if(dailyShown||!S||S.over||afk||sheetFn||pendingDec||!S.fleet.some(p=>p.route))return;const today=ymd(new Date());S.daily=S.daily||{};if(S.daily.last===today){dailyShown=true;return}
+  dailyShown=true;const y=new Date();y.setDate(y.getDate()-1);const streak=S.daily.last===ymd(y)?(S.daily.streak||0)%7+1:1,base=Math.max(1e6,S.startCap*.012,avgDailyProfit()*.25),rw=Math.round(base*DAILY_X[streak-1]/1e5)*1e5;
   const fn=()=>`<div class="dec"><div class="dece">🎁</div><div class="eyebrow">รางวัลเข้าเกมรายวัน</div><h2>วันที่ ${streak} ติดต่อกัน</h2><p class="muted" style="margin:0">เข้าเกมทุกวันรางวัลยิ่งเพิ่ม วันที่ 7 ได้ก้อนใหญ่ ถ้าขาดไปหนึ่งวันจะเริ่มนับใหม่</p></div>
     <div class="dgrid">${DAILY_X.map((m,i)=>`<div class="dday ${i+1<streak?"done":i+1===streak?"now":""}"><span class="small">วัน ${i+1}</span><b>${i===6?"💰":"🪙"}</b><span class="num small">${money(Math.round(base*m/1e5)*1e5,true)}</span></div>`).join("")}</div>
     <button class="btn primary" id="dclaim">รับ ${money(rw,true)}</button>`;
@@ -2007,7 +2045,7 @@ const priceFor=m=>S.deal&&S.deal.m===m.id&&S.deal.until>=S.day?Math.round(m.pric
 const DECISIONS=[
  ()=>{const ps=S.fleet.filter(p=>p.route&&model(p.m).seats&&p.down<=S.day);if(!ps.length)return null;const p=rnd(ps),m=model(p.m),pay=niceN(m.seats*9000+m.price*.006);
    return {e:"🧳",t:"บริษัททัวร์ขอเหมาลำ",d:`ขอเช่า ${m.name} (${p.reg}) 2 วัน พาคณะทัวร์ ${m.seats} คน เสนอเงิน ${money(pay)}`,c:[["รับงาน",`ได้ ${money(pay)} · เครื่องหยุดบินเส้นทางเดิม 2 วัน`,()=>{S.cash+=pay;p.down=S.day+2;return `ได้ค่าเหมาลำ ${money(pay)}`}],["ปฏิเสธ","บินตามตารางเดิม",()=>"ปฏิเสธงานเหมาลำ"]]}},
- ()=>{if(S.fleet.length<3)return null;const cost=niceN(S.fleet.reduce((a,p)=>a+model(p.m).price*.0012,0)*10);
+ ()=>{if(S.fleet.length<3)return null;const cost=niceN(S.fleet.reduce((a,p)=>a+model(p.m).price*FIX_RATE,0)*10);
    return {e:"👩‍✈️",t:"สหภาพลูกเรือขอโบนัส",d:`ลูกเรือขอโบนัสพิเศษ ${money(cost)} ถ้าไม่ให้อาจนัดหยุดงาน`,c:[["จ่ายโบนัส","ชื่อเสียง +5",()=>{S.cash-=cost;S.rep=clamp(S.rep+5,0,100);return "จ่ายโบนัสแล้ว ลูกเรือพอใจ ชื่อเสียง +5"}],["ไม่จ่าย","45% ลูกเรือหยุดงาน 1 วัน",()=>{if(Math.random()<.45){for(const p of S.fleet)p.down=Math.max(p.down,S.day+1);S.rep=clamp(S.rep-4,0,100);return "ลูกเรือหยุดงาน 1 วัน เครื่องบินงดบินทั้งหมด ชื่อเสียง −4"}return "ลูกเรือกลับมาทำงานตามปกติ"}]]}},
  ()=>{if(!S.routes.length)return null;const cost=niceN(Math.max(1e6,valuation()*.002));
    return {e:"📱",t:"อินฟลูเอนเซอร์ขอบินฟรีแลกรีวิว",d:`ยูทูบเบอร์ชื่อดังขอตั๋วพรีเมียมไปกลับ พร้อมค่าตัว ${money(cost)}`,c:[["ตกลง","70% รีวิวดี ชื่อเสียง +6 · 30% รีวิวแย่ −3",()=>{S.cash-=cost;if(Math.random()<.7){S.rep=clamp(S.rep+6,0,100);if(!S.mkt)S.mkt={n:"กระแสรีวิว",mult:1.1,until:S.day+7};return "คลิปรีวิวปังมาก ชื่อเสียง +6"}S.rep=clamp(S.rep-3,0,100);return "รีวิวติเรื่องอาหาร ชื่อเสียง −3"}],["ปฏิเสธ","",()=>"ปฏิเสธคำขอรีวิว"]]}},
@@ -2303,7 +2341,7 @@ function routesHTML(){rseg=bm();const RL=S.routes.filter(r=>rkind(r)===rseg),np=
   ${RL.length?`<div class="strips">${RL.map(r=>{const c=r.last||calc(r),dc=city(r.dest);
     const cls=!r.planes.length?"idle":c.profit<0?"loss":"";
     return `<button class="strip ${cls}" data-route="${r.id}">
-      <div class="fno">${fno(r)}<small>${r.planes.length} ลำ · ${c.legs} เที่ยว/วัน</small>${rkind(r)==="cargo"?bkChip(bkCargo(r),"ตัน"):bkChip(bkPax(r),"คน")}</div>
+      <div class="fno">${fno(r)}<small>${r.planes.length} ลำ · ${c.legs} เที่ยว/วัน</small>${r.cmp?`<span class="cmpchip">⚔️ ${esc(r.cmp.rv)}</span>`:""}${rkind(r)==="cargo"?bkChip(bkCargo(r),"ตัน"):bkChip(bkPax(r),"คน")}</div>
       <div style="min-width:0"><div class="iata">${r.from} → ${r.dest}</div><div class="sub">${dc.n} · ${c.d.toLocaleString()} กม. · ${rkind(r)==="cargo"?(c.crate?crateText(c):""):money(c.price??r.price,true)}${r.pmode==="auto"&&rkind(r)!=="cargo"?' <span class="tagauto">อัตโนมัติ</span>':""}${c.ground?' · <span class="bad">งดบินพายุ</span>':""}${evMult(r.dest)>1?' · <span class="warn">เทศกาล</span>':""}</div><div class="lf"><i style="width:${Math.round((rkind(r)==="cargo"?(c.ccap?(c.cargo||0)/c.ccap:0):c.lf)*100)}%;${rkind(r)==="cargo"?"background:var(--cargo)":""}"></i></div></div>
       <div class="right"><div class="num ${c.profit<0?"bad":"good"}">${c.profit>=0?"+":""}${money(c.profit,true)}</div><div class="sub">${rkind(r)==="cargo"?`${Math.round(c.cargo||0).toLocaleString()} ตัน`:`${(c.pax||0).toLocaleString()} คน ${trend(r)}`}</div></div>
     </button>`}).join("")}</div>`:`<div class="panel muted">${rseg==="cargo"?"ยังไม่มีเส้นทางขนสินค้า เปิดเส้นทางสินค้าจากสาขาไหนก็ได้ แล้วใส่เครื่องบินขนสินค้า":`ยังไม่มีเส้นทางผู้โดยสาร เส้นทางทุกเส้นออกจากสาขา เช่น ${city(S.hub).n} (${S.hub})`}</div>`}
@@ -2574,6 +2612,11 @@ function routeSheet(rid,st){
     const dc=city(r.dest),auto=r.pmode==="auto"&&st.price==null,price=st.price??priceOf(r),c=calc(r,price),cg=rkind(r)==="cargo";
     const idle=S.fleet.filter(p=>!p.route&&fitsKind(model(p.m),r)).sort((a,b)=>(model(b.m).range>=c.d)-(model(a.m).range>=c.d)||model(b.m).range-model(a.m).range);
     let out=head(`${fno(r)} · ${r.from} → ${r.dest}`,`${dc.n} · ระยะทาง ${c.d.toLocaleString()} กม. · เครื่องต้องบินได้ไกลกว่านี้`);
+    if(r.cmp){const sh=compShare(r,price),base=baseFare(c.d);
+      out+=`<div class="cmpbox"><div class="row between"><b>⚔️ แข่งกับ ${esc(r.cmp.rv)}</b><span class="num">ราคาเขา ${money(Math.round(base*r.cmp.fare/10)*10)}</span></div>
+        <div class="cmpbar"><i style="width:${Math.round(sh*100)}%"></i></div>
+        <div class="row between small"><span>ส่วนแบ่งคุณ <b class="num">${Math.round(sh*100)}%</b></span><span class="muted">${esc(r.cmp.rv)} ${Math.round((1-sh)*100)}%</span></div>
+        <div class="small muted">ลดราคา อัปบริการ หรือเพิ่มชื่อเสียงเพื่อแย่งผู้โดยสาร ถ้าครองเกิน ${Math.round(RV_EXIT_SHARE*100)}% ติดต่อกัน ${RV_EXIT_DAYS} วัน คู่แข่งจะถอนตัว${r.cmp.weak?` (ตอนนี้ ${r.cmp.weak}/${RV_EXIT_DAYS} วัน)`:""}</div></div>`}
     out+=`<div id="fc">${forecastHTML(r,c)}</div>`;
     if(!cg)out+=`<div class="stack" style="gap:6px"><div class="row between"><span class="eyebrow">บริการบนเส้นทางนี้</span>${r.svc!=null?`<button class="btn sm" id="svcdef">ใช้ค่าเริ่มต้น (${SERVICE[S.service].n})</button>`:`<span class="muted small">ใช้ค่าเริ่มต้นของสายการบิน</span>`}</div>
       <div class="seg svcseg">${SERVICE.map((sv,i)=>{const cc=calc(r,price,undefined,i);return `<button data-rsvc="${i}" class="${svcOf(r)===i?"on":""}">${sv.n}<br><span class="num" style="font-size:11.5px">฿${sv.cost}/คน</span><br><span class="num ${cc.profit<0?"bad":"good"}" style="font-size:12px;font-weight:700">${cc.profit>=0?"+":""}${money(cc.profit,true)}</span></button>`}).join("")}</div>
