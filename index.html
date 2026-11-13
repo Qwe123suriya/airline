@@ -1073,11 +1073,17 @@ function migrate(s){
 
 /* ---------- start / fate ---------- */
 let fate=null, justRolled=true;
+/* Fair start: remote hubs (Perth, Anchorage, Tahiti, ...) get enough starting money for an aircraft that
+   reaches at least 3 cities in their home region; otherwise the game could not be started at all. */
+const START_CAPS=[40e6,55e6,75e6,100e6,130e6,180e6];
+function starterNeed(hub){const H=city(hub),ds=regionOf(hub).c.filter(c=>c!==hub&&aptTakes(c,"pax")).map(c=>dist(H,city(c))).filter(d=>d>150).sort((a,b)=>a-b);
+  if(!ds.length)return 0;const d3=ds[Math.min(2,ds.length-1)],m=MODELS.filter(m=>m.seats&&m.range*.95>=d3).sort((a,b)=>a.price-b.price)[0];return m?m.price+3e6+15e6:0}
+function fairCap(hub,cap){const need=starterNeed(hub);return cap>=need?cap:(START_CAPS.find(c=>c>=need)||Math.ceil(need/10e6)*10e6)}
 function rollFate(keepName){
-  const hub=rnd(CITIES.filter(c=>aptKind(c.c)!=="cargo"));
-  const cap=rnd([40e6,55e6,75e6,100e6,130e6,180e6]);
+  const hub=rnd(CITIES.filter(c=>aptKind(c.c)!=="cargo"&&c.w>=2));   // tiny island airports can still be picked by hand
+  const cap0=rnd(START_CAPS),cap=fairCap(hub.c,cap0);
   const fuel=+(0.8+Math.random()*0.5).toFixed(2);
-  fate={hub:hub.c,cap,fuel,name:keepName&&fate?fate.name:rnd(NAMES),code:keepName&&fate?fate.code:String.fromCharCode(65+Math.random()*26|0,65+Math.random()*26|0)};
+  fate={hub:hub.c,cap,cap0,fuel,name:keepName&&fate?fate.name:rnd(NAMES),code:keepName&&fate?fate.code:String.fromCharCode(65+Math.random()*26|0,65+Math.random()*26|0)};
   justRolled=true;
 }
 function difficulty(f){let s=0;const h=city(f.hub);s+=h.w>=16?0:h.w>=12?1:h.w>=8?2:3;s+=f.cap>=130e6?0:f.cap>=75e6?1:2;s+=f.fuel>1.1?1:0;return clamp(s,0,4)+1}
@@ -1101,7 +1107,7 @@ function renderStart(){
      <div class="tt"><span>BOARDING PASS · ชะตาของคุณ</span><span class="num">${esc(fate.code)} 001</span></div>
      <div class="tb">
        <div class="full"><div class="k">เมืองฐานการบิน</div><div class="row" style="gap:12px;margin-top:4px"><span class="flap" id="fh"></span><span class="v">${h.n}</span></div></div>
-       <div><div class="k">ทุนตั้งต้น</div><div class="v num" style="font-size:18px">${money(fate.cap)}</div></div>
+       <div><div class="k">ทุนตั้งต้น</div><div class="v num" style="font-size:18px">${money(fate.cap)}</div>${fate.cap0&&fate.cap>fate.cap0?`<div class="small muted" style="line-height:1.35">🧭 ฐานห่างไกล ได้ทุนเพิ่มจาก ${money(fate.cap0)} ให้พอซื้อเครื่องที่บินถึงเมืองใกล้เคียง</div>`:""}</div>
        <div><div class="k">ราคาน้ำมัน</div><div class="v" style="font-size:16px">${fuelText(fate.fuel)}</div></div>
        <div class="full"><div class="k">ความยาก</div><div class="stars">${"★".repeat(d)}${"☆".repeat(5-d)}</div></div>
      </div>
@@ -1117,7 +1123,7 @@ function renderStart(){
   flap($("#fh"),h.c,justRolled?900:1);justRolled=false;
   const keep=()=>{fate.name=$("#nm").value.trim()||fate.name;fate.code=($("#cd").value.replace(/[^a-z]/gi,"").toUpperCase()+"XX").slice(0,2)};
   $("#re").onclick=()=>{keep();rollFate(true);renderStart()};
-  $("#hb").onchange=e=>{keep();fate.hub=e.target.value;justRolled=true;renderStart()};
+  $("#hb").onchange=e=>{keep();fate.hub=e.target.value;fate.cap0??=fate.cap;fate.cap=fairCap(fate.hub,fate.cap0);justRolled=true;renderStart()};
   $("#go").onclick=()=>{keep();newGame()};
   $("#hlp").onclick=()=>openSheet(guideSheet);
 }
