@@ -25,7 +25,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--f);font-size:14px;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
-canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;display:block;background:#7FAE5C}
+canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;display:block;background:#5E8C44}
 
 .bar{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;gap:12px;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
 .stat{display:flex;flex-direction:column;line-height:1.15;min-width:0}
@@ -542,90 +542,252 @@ function updateHud(){
 }
 
 /* ================= rendering ================= */
-const GRASS = ["#86B862", "#82B45E"];
+const hash = (i, s = 0) => { let x = Math.imul(i ^ (0x9e3779b9 + s * 0x632be5ab), 0x85ebca6b); x ^= x >>> 13; x = Math.imul(x, 0xc2b2ae35); x ^= x >>> 16; return (x >>> 0) / 4294967296; };
+const GRASS = ["#7CB259", "#7AB057", "#7EB45B", "#7BB158"];
+const TREE = ["#3E7D32", "#4A8C3A", "#2F6B2A", "#5A9A3E"];
+const ROOF_R = ["#C0533F", "#8E4A36", "#4E6E9A", "#7A8B3C", "#A85E2E", "#6D5A8C"];
+const WALL_R = ["#F3E8D2", "#EADBC2", "#F6F0E4", "#E5D4BC"];
+const SIGN_C = ["#E0473A", "#F08A24", "#8D4FD1", "#1E9E8B", "#D93D7A"];
+const LOT = {1: "rgba(76,175,80,.30)", 2: "rgba(61,139,224,.26)", 3: "rgba(226,178,39,.30)"};
+const LINE = {1: "#2E8B3A", 2: "#2A6FC0", 3: "#B88A10"};
+let T = 0; // seconds, for animation
+
+function rect(x, y, w, h, c){ ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
+function rrect(x, y, w, h, r, c){ ctx.fillStyle = c; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h); ctx.fill(); }
+function circ(x, y, r, c){ ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.2832); ctx.fill(); }
+// pseudo-3D box: footprint (x,y,w,d), height h. Roof sits h px above the footprint, front wall shows below it.
+function box(x, y, w, d, h, roof, wall){
+  ctx.fillStyle = "rgba(20,30,20,.25)";
+  ctx.beginPath(); ctx.moveTo(x + w, y - h + 1); ctx.lineTo(x + w + h * .45, y - h * .55 + 1); ctx.lineTo(x + w + h * .45, y + d + 1 - h * .1); ctx.lineTo(x + 1, y + d + 1.5); ctx.lineTo(x + w, y + d); ctx.closePath(); ctx.fill();
+  rect(x, y + d - h, w, h, wall);
+  rect(x, y + d - 1, w, 1, "rgba(0,0,0,.18)");
+  rect(x, y - h, w, d, roof);
+  rect(x, y - h, w, 1, "rgba(255,255,255,.35)");
+}
+function windows(x, y, w, rows, cols, ww, wh, gapY, col){
+  const gx = (w - cols * ww) / (cols + 1);
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) rect(x + gx + c * (ww + gx), y + r * (wh + gapY), ww, wh, col);
+}
+function smoke(x, y, v, big){
+  for (let k = 0; k < 3; k++){
+    const p = (T * .35 + k / 3 + v) % 1;
+    ctx.globalAlpha = .45 * (1 - p);
+    circ(x + p * 5, y - p * (big ? 16 : 11), 1.6 + p * (big ? 4 : 3), "#E8EBEE");
+  }
+  ctx.globalAlpha = 1;
+}
+function tree(cx, cy, r, v){
+  ctx.fillStyle = "rgba(20,40,20,.25)"; ctx.beginPath(); ctx.ellipse(cx + 2, cy + r * .6, r, r * .55, 0, 0, 6.2832); ctx.fill();
+  rect(cx - .8, cy, 1.6, r * .7, "#6B4A2F");
+  circ(cx, cy - r * .2, r, TREE[(v * 4) | 0]);
+  circ(cx - r * .3, cy - r * .5, r * .45, "rgba(255,255,255,.16)");
+}
+
+function drawGround(i, x, y){
+  const px = x * TS, py = y * TS, {road} = G;
+  if (terr[i]){
+    rect(px, py, TS, TS, "#3F86C6");
+    const v = hash(i);
+    if (v < .45){ ctx.fillStyle = "rgba(255,255,255,.22)"; const o = Math.sin(T * 1.2 + v * 9) * 2; ctx.fillRect(px + 3 + v * 8 + o, py + 6 + v * 8, 6, 1.2); }
+    ctx.fillStyle = "#86C0E6";
+    if (x > 0 && !terr[i - 1]) ctx.fillRect(px, py, 2, TS);
+    if (x < W - 1 && !terr[i + 1]) ctx.fillRect(px + TS - 2, py, 2, TS);
+    if (y > 0 && !terr[i - W]) ctx.fillRect(px, py, TS, 2);
+    if (y < H - 1 && !terr[i + W]) ctx.fillRect(px, py + TS - 2, TS, 2);
+    return;
+  }
+  const v = hash(i);
+  rect(px, py, TS, TS, GRASS[(v * 4) | 0]);
+  if (v > .5){ ctx.fillStyle = "rgba(40,90,30,.25)"; ctx.fillRect(px + v * 14, py + hash(i, 1) * 14, 2, 2); ctx.fillRect(px + hash(i, 2) * 14, py + v * 12 + 4, 2, 2); }
+  // sandy shore
+  ctx.fillStyle = "#E3D6A6";
+  if (x > 0 && terr[i - 1] && !road[i - 1]) ctx.fillRect(px, py, 3, TS);
+  if (x < W - 1 && terr[i + 1] && !road[i + 1]) ctx.fillRect(px + TS - 3, py, 3, TS);
+  if (y > 0 && terr[i - W] && !road[i - W]) ctx.fillRect(px, py, TS, 3);
+  if (y < H - 1 && terr[i + W] && !road[i + W]) ctx.fillRect(px, py + TS - 3, TS, 3);
+  const z = G.zone[i];
+  if (z && !road[i]){
+    const served = access && access[i] >= 0;
+    ctx.globalAlpha = served ? 1 : .45;
+    rect(px + 1, py + 1, TS - 2, TS - 2, LOT[z]);
+    if (!G.bld[i]){
+      ctx.strokeStyle = LINE[z]; ctx.lineWidth = 1; ctx.setLineDash([2, 2]);
+      ctx.strokeRect(px + 2.5, py + 2.5, TS - 5, TS - 5); ctx.setLineDash([]);
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawRoad(i, x, y){
+  const {road} = G, px = x * TS, py = y * TS, hw = road[i] === 2, br = terr[i];
+  const L = x > 0 && road[i - 1], R = x < W - 1 && road[i + 1], U = y > 0 && road[i - W], D = y < H - 1 && road[i + W];
+  if (br){ rect(px + 2, py + 3, TS, TS, "rgba(10,30,60,.35)"); }
+  rect(px, py, TS, TS, hw ? "#3A3F46" : br ? "#666C74" : "#4B5058");
+  // sidewalks / railings on open sides
+  const sw = br ? "#D6D9DD" : hw ? "#5A6068" : "#BFC5CC", t = br ? 2 : 3;
+  if (!L) rect(px, py, t, TS, sw);
+  if (!R) rect(px + TS - t, py, t, TS, sw);
+  if (!U) rect(px, py, TS, t, sw);
+  if (!D) rect(px, py + TS - t, TS, t, sw);
+  if (showTraffic && conn){
+    const l = load[i];
+    rect(px + 4, py + 4, TS - 8, TS - 8, l < .01 ? "rgba(150,160,170,.45)" : l < .7 ? "rgba(70,205,110,.85)" : l < 1 ? "rgba(245,190,40,.9)" : "rgba(235,60,50,.95)");
+    return;
+  }
+  const n = (L ? 1 : 0) + (R ? 1 : 0) + (U ? 1 : 0) + (D ? 1 : 0), cx = px + TS / 2, cy = py + TS / 2;
+  const mark = hw ? "#F2C230" : "rgba(255,255,255,.85)";
+  if (n >= 3){
+    ctx.fillStyle = "rgba(255,255,255,.75)";
+    for (let k = 0; k < 4; k++){
+      const o = 5 + k * 3;
+      if (L) ctx.fillRect(px + 1, py + o, 2.5, 1.6);
+      if (R) ctx.fillRect(px + TS - 3.5, py + o, 2.5, 1.6);
+      if (U) ctx.fillRect(px + o, py + 1, 1.6, 2.5);
+      if (D) ctx.fillRect(px + o, py + TS - 3.5, 1.6, 2.5);
+    }
+  } else {
+    ctx.strokeStyle = mark; ctx.lineWidth = hw ? 1.2 : 1; ctx.setLineDash(hw ? [] : [3.5, 3]);
+    ctx.beginPath();
+    if (L){ ctx.moveTo(cx, cy); ctx.lineTo(px, cy); }
+    if (R){ ctx.moveTo(cx, cy); ctx.lineTo(px + TS, cy); }
+    if (U){ ctx.moveTo(cx, cy); ctx.lineTo(cx, py); }
+    if (D){ ctx.moveTo(cx, cy); ctx.lineTo(cx, py + TS); }
+    if (!n){ ctx.moveTo(px + 4, cy); ctx.lineTo(px + TS - 4, cy); }
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+  if (conn && !conn[i]) rect(px, py, TS, TS, "rgba(230,60,50,.3)");
+}
+
+function drawBuilding(i, x, y){
+  const z = G.zone[i], l = G.bld[i], v = hash(i, 7), px = x * TS, py = y * TS;
+  if (z === 1){
+    if (l === 1){
+      rect(px + 2, py + 13, 16, 5, "#8CC46A");                         // yard
+      tree(px + 16, py + 15, 2.6, v);
+      const bx = px + 3, by = py + 6, w = 11, d = 9, h = 4;
+      box(bx, by, w, d, h, ROOF_R[(v * 6) | 0], WALL_R[(v * 4) | 0]);
+      rect(bx, by - h + d / 2, w, d / 2, "rgba(0,0,0,.18)");            // pitched-roof shade
+      rect(bx, by - h + d / 2 - .5, w, 1, "rgba(255,255,255,.25)");
+      rect(bx + 4.5, by + d - 3, 2, 3, "#7A4E2D");                     // door
+      rect(bx + 1.5, by + d - 3, 2, 1.6, "#9FD0F0"); rect(bx + 7.5, by + d - 3, 2, 1.6, "#9FD0F0");
+    } else if (l === 2){
+      const bx = px + 2, by = py + 6, w = 16, d = 11, h = 8;
+      box(bx, by, w, d, h, ROOF_R[(v * 6) | 0], WALL_R[(v * 4) | 0]);
+      rect(bx, by - h, w, 2, "rgba(0,0,0,.15)");
+      windows(bx, by + d - h + 1.5, w, 2, 4, 2, 2, 1.2, "#8EC6EC");
+      rect(bx + w / 2 - 1, by + d - 2.5, 2, 2.5, "#6B4426");
+    } else {
+      const bx = px + 2, by = py + 6, w = 16, d = 13, h = 17;
+      box(bx, by, w, d, h, "#9AA3AD", v < .5 ? "#E6E1D8" : "#D7DEE6");
+      rect(bx + 2, by - h + 2, 4, 3, "#7E8893"); rect(bx + 10, by - h + 5, 3, 3, "#7E8893");
+      windows(bx, by + d - h + 1.5, w, 5, 4, 2, 1.6, 1.4, v < .5 ? "#7DB3DF" : "#89A9C9");
+      for (let k = 0; k < 4; k++) rect(bx + 1, by + d - h + 3.5 + k * 3, w - 2, .6, "rgba(0,0,0,.12)");
+    }
+  } else if (z === 2){
+    const sign = SIGN_C[(v * 5) | 0];
+    if (l === 1){
+      const bx = px + 3, by = py + 6, w = 14, d = 10, h = 5;
+      box(bx, by, w, d, h, "#B9C3CE", "#F5F5F2");
+      for (let k = 0; k < 7; k++) rect(bx + k * 2, by + d - h, 2, 2, k & 1 ? "#FFFFFF" : sign);   // awning
+      rect(bx + 2, by + d - 2.6, w - 4, 2.6, "#8CC0E8");
+    } else if (l === 2){
+      const bx = px + 2, by = py + 5, w = 16, d = 12, h = 10;
+      box(bx, by, w, d, h, "#A4AFBB", "#7FB2E0");
+      for (let k = 1; k < 4; k++) rect(bx + k * 4, by + d - h, .6, h, "rgba(255,255,255,.55)");
+      rect(bx, by + d - h + 4.5, w, .8, "rgba(255,255,255,.6)");
+      rect(bx + 2, by + d - h, w - 4, 2.4, sign);
+    } else {
+      const bx = px + 3, by = py + 4, w = 14, d = 14, h = 27;
+      box(bx, by, w, d, h, "#4A5868", v < .5 ? "#5D8FC4" : "#4FA3B5");
+      for (let k = 0; k < 9; k++) rect(bx, by + d - h + 2 + k * 2.8, w, .7, "rgba(255,255,255,.45)");
+      rect(bx + w * .3, by + d - h, .6, h, "rgba(255,255,255,.3)");
+      ctx.strokeStyle = "rgba(255,255,255,.5)"; ctx.lineWidth = .7; ctx.beginPath(); ctx.arc(bx + w / 2, by - h + d / 2, 3.5, 0, 6.2832); ctx.stroke();
+      rect(bx + w - 3, by - h - 5, .8, 5, "#C9CED4");
+      if ((T * 2 + v * 3) % 2 < 1) circ(bx + w - 2.6, by - h - 5, .9, "#FF5A4A");
+    }
+  } else if (z === 3){
+    rect(px + 1, py + 1, TS - 2, TS - 2, "#CFC7AE");
+    if (l === 1){
+      const bx = px + 2, by = py + 6, w = 16, d = 10, h = 5;
+      box(bx, by, w, d, h, "#BFAE7E", "#DCCDA4");
+      for (let k = 1; k < 8; k++) rect(bx + k * 2, by - h, .6, d, "rgba(0,0,0,.14)");
+      rect(bx + 3, by + d - 3.5, 5, 3.5, "#8A7B58"); rect(bx + 10, by + d - 3.5, 4, 3.5, "#8A7B58");
+    } else if (l === 2){
+      const bx = px + 2, by = py + 6, w = 16, d = 11, h = 7;
+      box(bx, by, w, d, h, "#C9B98C", "#B9A47A");
+      for (let k = 0; k < 4; k++){ ctx.fillStyle = k & 1 ? "#A99868" : "#DCCFA8"; ctx.beginPath(); ctx.moveTo(bx + k * 4, by - h + d); ctx.lineTo(bx + k * 4 + 4, by - h); ctx.lineTo(bx + k * 4 + 4, by - h + d); ctx.fill(); }
+      rect(bx + w - 4, by - h - 7, 3, 9, "#8C5A48"); rect(bx + w - 4, by - h - 6, 3, 1.2, "#EDEDED");
+      smoke(bx + w - 2.5, by - h - 8, v, false);
+    } else {
+      circ(px + 5, py + 13, 3.6, "rgba(0,0,0,.2)"); circ(px + 4.5, py + 12, 3.6, "#E8E8E8"); circ(px + 4.5, py + 12, 2.2, "#D0D4D8");
+      const bx = px + 8, by = py + 5, w = 11, d = 12, h = 10;
+      box(bx, by, w, d, h, "#B49C6A", "#A88E5E");
+      windows(bx, by + d - h + 2, w, 2, 3, 2, 1.5, 2, "#E6D7A6");
+      rect(bx + 1, by - h - 12, 3, 14, "#D8DCE0");
+      for (let k = 0; k < 3; k++) rect(bx + 1, by - h - 11 + k * 4, 3, 1.6, "#D9473A");
+      smoke(bx + 2.5, by - h - 13, v, true);
+    }
+  }
+  if (access && access[i] < 0 && zoom * TS > 10){ circ(px + TS - 4, py + 4, 3, "#E0473A"); rect(px + TS - 4.4, py + 2, .8, 2.4, "#fff"); rect(px + TS - 4.4, py + 5, .8, .8, "#fff"); }
+}
+
+function drawCar(c){
+  const a = c.path[c.k], b = c.path[Math.min(c.k + 1, c.path.length - 1)];
+  const ax = a % W, ay = (a / W) | 0, dx = b % W - ax, dy = ((b / W) | 0) - ay;
+  // Thailand: keep left
+  const x = (ax + dx * c.t + .5) * TS + dy * TS * .2, y = (ay + dy * c.t + .5) * TS - dx * TS * .2;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(dy, dx));
+  rrect(-3.6, -1.6, 8, 4.2, 1.2, "rgba(0,0,0,.25)");
+  rrect(-4, -2.1, 8, 4.2, 1.3, c.col);
+  rect(.8, -1.6, 1.7, 3.2, "#1E2833");          // windshield
+  rect(-3, -1.4, 1.1, 2.8, "#2A3644");          // rear window
+  rect(-1.9, -1.5, 2.6, 3, "rgba(255,255,255,.18)");
+  ctx.restore();
+}
+
 function draw(){
+  T = performance.now() / 1000;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = "#6E9C50"; ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.fillStyle = "#5E8C44"; ctx.fillRect(0, 0, cv.width, cv.height);
   const s = dpr * zoom;
   ctx.setTransform(s, 0, 0, s, -cam.x * s, -cam.y * s);
   const x0 = clamp(Math.floor(cam.x / TS), 0, W - 1), y0 = clamp(Math.floor(cam.y / TS), 0, H - 1);
-  const x1 = clamp(Math.ceil((cam.x + vw / zoom) / TS), 0, W - 1), y1 = clamp(Math.ceil((cam.y + vh / zoom) / TS), 0, H - 1);
+  const x1 = clamp(Math.ceil((cam.x + vw / zoom) / TS), 0, W - 1), y1 = clamp(Math.ceil((cam.y + vh / zoom) / TS) + 2, 0, H - 1);
   const {road, zone, bld} = G;
 
-  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++){
-    const i = y * W + x, px = x * TS, py = y * TS;
-    if (terr[i]){ ctx.fillStyle = "#4F8FC4"; ctx.fillRect(px, py, TS, TS); if ((x * 7 + y * 3) % 5 === 0){ ctx.fillStyle = "rgba(255,255,255,.18)"; ctx.fillRect(px + 4, py + 8, 8, 1.5); } }
-    else { ctx.fillStyle = GRASS[(x + y) & 1]; ctx.fillRect(px, py, TS, TS); }
-    const z = zone[i];
-    if (z && !road[i]){
-      const l = bld[i];
-      if (!l){
-        ctx.fillStyle = ZCOL[z][0]; ctx.globalAlpha = access && access[i] >= 0 ? .75 : .35;
-        ctx.fillRect(px + 1, py + 1, TS - 2, TS - 2); ctx.globalAlpha = 1;
-      } else {
-        const m = [0, 4, 2.5, 1.5][l], hgt = [0, 2, 4, 7][l];
-        ctx.fillStyle = "rgba(0,0,0,.22)"; ctx.fillRect(px + m + 2, py + m + 2, TS - 2 * m, TS - 2 * m);
-        ctx.fillStyle = ZCOL[z][l]; ctx.fillRect(px + m, py + m - hgt * .3, TS - 2 * m, TS - 2 * m);
-        ctx.fillStyle = "rgba(255,255,255,.28)"; ctx.fillRect(px + m, py + m - hgt * .3, TS - 2 * m, 3);
-        if (l === 3){ ctx.fillStyle = "rgba(255,255,255,.35)"; for (let k = 0; k < 3; k++) ctx.fillRect(px + m + 3 + k * 5, py + m + 5, 2, TS - 2 * m - 9); }
-        if (access && access[i] < 0){ ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.fillRect(px + m, py + m, TS - 2 * m, TS - 2 * m); }
-      }
-    }
-  }
-  // roads
-  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++){
-    const i = y * W + x; if (!road[i]) continue;
-    const px = x * TS, py = y * TS;
-    ctx.fillStyle = road[i] === 2 ? "#3A3F46" : terr[i] ? "#6B6F75" : "#555A61";
-    ctx.fillRect(px, py, TS, TS);
-    if (terr[i]){ ctx.fillStyle = "#C9CCD0"; const h = x > 0 && road[i - 1], v = y > 0 && road[i - W];
-      if (h || (x < W - 1 && road[i + 1])){ ctx.fillRect(px, py, TS, 1.5); ctx.fillRect(px, py + TS - 1.5, TS, 1.5); }
-      if (v || (y < H - 1 && road[i + W])){ ctx.fillRect(px, py, 1.5, TS); ctx.fillRect(px + TS - 1.5, py, 1.5, TS); } }
-    if (showTraffic && conn){
-      const l = load[i]; ctx.fillStyle = l < .01 ? "rgba(120,130,140,.35)" : l < .7 ? "rgba(70,200,110,.75)" : l < 1 ? "rgba(240,190,40,.85)" : "rgba(230,60,50,.9)";
-      ctx.fillRect(px + 3, py + 3, TS - 6, TS - 6);
-    } else {
-      ctx.strokeStyle = road[i] === 2 ? "#F2F2F2" : "rgba(240,210,90,.8)"; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
-      ctx.beginPath(); const cx = px + TS / 2, cy = py + TS / 2;
-      if (x > 0 && road[i - 1]){ ctx.moveTo(cx, cy); ctx.lineTo(px, cy); }
-      if (x < W - 1 && road[i + 1]){ ctx.moveTo(cx, cy); ctx.lineTo(px + TS, cy); }
-      if (y > 0 && road[i - W]){ ctx.moveTo(cx, cy); ctx.lineTo(cx, py); }
-      if (y < H - 1 && road[i + W]){ ctx.moveTo(cx, cy); ctx.lineTo(cx, py + TS); }
-      ctx.stroke(); ctx.setLineDash([]);
-    }
-    if (conn && !conn[i]){ ctx.fillStyle = "rgba(230,60,50,.35)"; ctx.fillRect(px, py, TS, TS); }
-  }
-  // edge arrows for outside connections
-  ctx.fillStyle = "#fff"; ctx.font = "bold 12px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) drawGround(y * W + x, x, y);
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++){ const i = y * W + x; if (road[i]) drawRoad(i, x, y); }
+  ctx.fillStyle = "#fff"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
   for (let i = 0; i < N; i++) if (road[i] === 2 && (i % W === 0 || i % W === W - 1)) ctx.fillText(i % W === 0 ? "◀" : "▶", (i % W) * TS + TS / 2, ((i / W) | 0) * TS + TS / 2);
-
-  // cars
-  if (zoom * TS >= 7) for (const c of cars){
-    const a = c.path[c.k], b = c.path[Math.min(c.k + 1, c.path.length - 1)];
-    const ax = a % W, ay = (a / W) | 0, bx = b % W, by = (b / W) | 0;
-    const dx = bx - ax, dy = by - ay;
-    const x = (ax + dx * c.t + .5) * TS - dy * TS * .2, y = (ay + dy * c.t + .5) * TS + dx * TS * .2;
-    ctx.fillStyle = c.col;
-    if (dx) ctx.fillRect(x - 3.5, y - 2, 7, 4); else ctx.fillRect(x - 2, y - 3.5, 4, 7);
+  if (zoom * TS >= 7) for (const c of cars) drawCar(c);
+  // buildings & trees, row by row so taller ones overlap the row behind
+  const detail = zoom * TS >= 9;
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++){
+    const i = y * W + x;
+    if (road[i] || terr[i]) continue;
+    if (zone[i]){ if (bld[i]) drawBuilding(i, x, y); continue; }
+    const v = hash(i, 3);
+    if (v < .16 && detail){
+      tree(x * TS + 6 + hash(i, 4) * 8, y * TS + 8 + hash(i, 5) * 6, 3.5 + hash(i, 6) * 2.5, v * 6);
+      if (v < .06) tree(x * TS + 4 + hash(i, 8) * 12, y * TS + 4 + hash(i, 9) * 8, 3 + v * 20, hash(i, 10));
+    }
   }
 
   // tool preview
   if (!pinch && hover && tool !== "pan"){
     const a = drag && !drag.pan ? drag.start : hover, b = hover;
-    let tiles, col;
-    if (tool === "road"){ tiles = lPath(a, b); col = "rgba(80,80,90,.6)"; }
-    else { tiles = rectTiles(a, b); col = "rgba(220,60,50,.35)"; }
+    const tiles = tool === "road" ? lPath(a, b) : rectTiles(a, b);
     for (const i of tiles){
       const px = (i % W) * TS, py = ((i / W) | 0) * TS;
-      if (tool === "road") ctx.fillStyle = terr[i] && !road[i] ? "rgba(150,150,160,.7)" : col;
-      else if (tool === "bull") ctx.fillStyle = col;
-      else { if (road[i] || terr[i]) continue; ctx.fillStyle = ZCOL[Z[tool]][1]; ctx.globalAlpha = .55; }
-      ctx.fillRect(px, py, TS, TS); ctx.globalAlpha = 1;
+      if (tool === "road") ctx.fillStyle = terr[i] && !road[i] ? "rgba(170,170,180,.75)" : "rgba(60,64,72,.7)";
+      else if (tool === "bull") ctx.fillStyle = "rgba(220,60,50,.4)";
+      else { if (road[i] || terr[i]) continue; ctx.fillStyle = LOT[Z[tool]].replace(/[\d.]+\)$/, ".7)"); }
+      ctx.fillRect(px, py, TS, TS);
     }
     ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5;
     ctx.strokeRect(b.x * TS + .75, b.y * TS + .75, TS - 1.5, TS - 1.5);
     if (drag && !drag.pan){
-      const cost = toolCost(a, b), label = tool === "road" ? `🪙${fmt(cost)}` : tool === "bull" ? `🪙${fmt(cost)}` : `${tiles.length} ช่อง`;
+      const cost = toolCost(a, b), label = (tool === "road" || tool === "bull") ? `🪙${fmt(cost)}` : `${tiles.length} ช่อง`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const sx = ((b.x + 1) * TS - cam.x) * zoom + 6, sy = (b.y * TS - cam.y) * zoom - 6;
       ctx.font = "600 13px Anuphan, sans-serif"; ctx.textAlign = "left";
