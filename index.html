@@ -2,385 +2,670 @@
 <html lang="th">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="เกมปลูกผัก ขายของ ขยายฟาร์ม เล่นง่าย เล่นฟรีบนเบราว์เซอร์">
-<meta name="theme-color" content="#6BA33F">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%BB%3C/text%3E%3C/svg%3E">
-<title>ฟาร์มสุขใจ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="description" content="เกมสร้างเมือง วางถนน วางโซน แก้รถติด เล่นฟรีบนเบราว์เซอร์">
+<meta name="theme-color" content="#1F2A36">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%99%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<title>เมืองกริด</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
 :root{
-  --bg:#F3EEDC; --card:#FFFDF6; --ink:#3B2F1E; --muted:#7D6E57; --line:#E2D8BE;
-  --accent:#5E9A34; --accent-ink:#FFFFFF; --gold:#C98A12; --bad:#C0463A;
-  --soil:#9B6B43; --soil-dark:#7A5131; --sky:#CFE8F2;
+  --bg:#E9EEF2; --panel:#FFFFFF; --ink:#1C2733; --muted:#5F6E7E; --line:#D4DCE4;
+  --accent:#2F6FD0; --accent-ink:#FFFFFF; --good:#2E8B57; --bad:#C2413A; --warn:#B7862A;
+  --r:#4CAF50; --c:#3D8BE0; --i:#E2B227;
+  --f:"Anuphan",system-ui,sans-serif; --num:"IBM Plex Mono",ui-monospace,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#1C1A14; --card:#29261D; --ink:#F1EAD8; --muted:#B3A68A; --line:#3E3929;
-  --accent:#86C25A; --accent-ink:#14200A; --gold:#F0B53C; --bad:#F07A6C;
-  --soil:#6E4C30; --soil-dark:#553922; --sky:#1E2B33; color-scheme:dark}}
+  --bg:#11171E; --panel:#1C2530; --ink:#E6EDF4; --muted:#93A2B3; --line:#2D3A48;
+  --accent:#6FA4F2; --accent-ink:#0B1420; --good:#58C48A; --bad:#F07A70; --warn:#E3B34F; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#1C1A14; --card:#29261D; --ink:#F1EAD8; --muted:#B3A68A; --line:#3E3929;
-  --accent:#86C25A; --accent-ink:#14200A; --gold:#F0B53C; --bad:#F07A6C;
-  --soil:#6E4C30; --soil-dark:#553922; --sky:#1E2B33; color-scheme:dark}
+  --bg:#11171E; --panel:#1C2530; --ink:#E6EDF4; --muted:#93A2B3; --line:#2D3A48;
+  --accent:#6FA4F2; --accent-ink:#0B1420; --good:#58C48A; --bad:#F07A70; --warn:#E3B34F; color-scheme:dark}
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink)}
-body{font-family:"Mitr",system-ui,sans-serif;font-size:15px;line-height:1.45;-webkit-tap-highlight-color:transparent;overflow-x:hidden;padding-bottom:84px}
-button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
-button:disabled{cursor:not-allowed;opacity:.45}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--f);font-size:14px;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;display:block;background:#7FAE5C}
 
-/* status bar */
-.top{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;gap:12px;align-items:center}
-.coins{font-weight:600;font-size:18px;color:var(--gold);white-space:nowrap}
-.lvl{flex:1;min-width:0}
-.lvl-row{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
-.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
-.bar>i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+.bar{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;gap:12px;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.stat{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.stat small{font-size:11px;color:var(--muted)}
+.stat b{font-family:var(--num);font-size:15px;font-weight:600;white-space:nowrap}
+.neg{color:var(--bad)}
+.speed{display:flex;gap:2px;background:var(--bg);border-radius:10px;padding:2px}
+.speed button{padding:4px 8px;border-radius:8px;font-size:13px}
+.speed button.on{background:var(--accent);color:var(--accent-ink)}
+.rci{display:flex;gap:4px;align-items:flex-end;height:34px;margin-left:auto}
+.rci div{width:14px;height:100%;position:relative;background:var(--bg);border-radius:4px;overflow:hidden}
+.rci i{position:absolute;left:0;right:0;bottom:50%;height:0}
+.rci span{position:absolute;bottom:-1px;left:0;right:0;text-align:center;font-size:9px;font-weight:600;color:var(--ink);z-index:1}
+.rci div::after{content:"";position:absolute;left:0;right:0;top:50%;border-top:1px solid var(--muted);opacity:.5}
 
-main{max-width:640px;margin:0 auto;padding:16px}
-h2{font-size:18px;font-weight:600;margin:0 0 10px}
-.hint{color:var(--muted);font-size:13px;margin:0 0 12px}
-.panel{display:none}.panel.on{display:block}
+#hint{position:fixed;left:50%;transform:translateX(-50%);z-index:4;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 12px;font-size:13px;max-width:calc(100% - 32px);text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+#hint:empty{display:none}
+#hint.warn{border-color:var(--bad);color:var(--bad)}
 
-/* seed bar */
-.seeds{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:14px;scrollbar-width:thin}
-.seed{flex:0 0 auto;min-width:76px;padding:8px 6px;border-radius:14px;background:var(--card);border:2px solid var(--line);text-align:center}
-.seed .e{font-size:26px;display:block;line-height:1.1}
-.seed small{display:block;font-size:12px;color:var(--muted)}
-.seed.sel{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
-.seed.locked{opacity:.5}
+.tools{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;gap:4px;padding:6px 8px;padding-bottom:max(6px,env(safe-area-inset-bottom));background:var(--panel);border-top:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.tools button{flex:1 0 auto;min-width:56px;display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 6px;border-radius:10px;font-size:11px;color:var(--muted)}
+.tools button .e{font-size:20px;line-height:1.1}
+.tools button.on{background:var(--bg);color:var(--ink);font-weight:600;box-shadow:inset 0 -3px 0 var(--accent)}
+.tools .sep{flex:0 0 1px;background:var(--line);margin:4px 2px}
+.tools button[data-tool="R"].on{box-shadow:inset 0 -3px 0 var(--r)}
+.tools button[data-tool="C"].on{box-shadow:inset 0 -3px 0 var(--c)}
+.tools button[data-tool="I"].on{box-shadow:inset 0 -3px 0 var(--i)}
 
-/* farm */
-.farm{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:var(--sky);padding:10px;border-radius:18px}
-.plot{position:relative;aspect-ratio:1;border-radius:12px;background:var(--soil);box-shadow:inset 0 -5px 0 var(--soil-dark);display:flex;align-items:center;justify-content:center;font-size:34px;overflow:hidden}
-.plot .p{position:absolute;left:6px;right:6px;bottom:8px;height:5px;border-radius:9px;background:rgba(0,0,0,.25);overflow:hidden}
-.plot .p i{display:block;height:100%;background:#FFE27A;width:0}
-.plot .t{position:absolute;top:3px;right:6px;font-size:11px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6)}
-.plot.ready{animation:bob 1s ease-in-out infinite}
-.plot.ready::after{content:"เก็บ!";position:absolute;top:3px;left:6px;font-size:11px;color:#fff;background:var(--accent);padding:0 5px;border-radius:6px}
-@keyframes bob{50%{transform:translateY(-3px)}}
-.plot.buy{background:transparent;box-shadow:none;border:2px dashed var(--muted);font-size:12px;line-height:1.25;color:var(--muted);flex-direction:column;text-align:center}
-.plot.buy b{font-size:18px}
-.row-btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-
-/* generic */
-.btn{background:var(--accent);color:var(--accent-ink);padding:9px 14px;border-radius:12px;font-weight:500}
-.btn.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line)}
-.btn.sm{padding:6px 10px;font-size:13px;border-radius:10px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:10px}
-.item{display:flex;align-items:center;gap:10px}
-.item .e{font-size:30px}
-.item .info{flex:1;min-width:0}
-.item .info small{color:var(--muted);display:block;font-size:12px}
-.empty{color:var(--muted);text-align:center;padding:24px 0}
-.order-need{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 10px}
-.order-need span{background:var(--bg);padding:3px 8px;border-radius:9px;font-size:14px}
-.order-need span.ok{outline:2px solid var(--accent)}
-.reward{color:var(--gold);font-weight:600}
-
-/* nav */
-nav{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
-nav button{flex:1;padding:8px 0 10px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;position:relative}
-nav button .e{font-size:22px}
-nav button.on{color:var(--accent);font-weight:600}
-nav .dot{position:absolute;top:6px;left:55%;background:var(--bad);color:#fff;font-size:10px;border-radius:9px;padding:0 5px;display:none}
-
-.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:12px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9;max-width:calc(100% - 32px);text-align:center}
+.sheet{position:fixed;left:12px;right:12px;z-index:6;max-width:420px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 14px;box-shadow:0 8px 30px rgba(0,0,0,.2);display:none}
+.sheet.on{display:block}
+.sheet h3{margin:0 0 8px;font-size:16px;display:flex;justify-content:space-between;align-items:center}
+.sheet .x{font-size:18px;padding:0 4px;color:var(--muted)}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:3px 0;border-bottom:1px dashed var(--line);font-size:13px}
+.kv:last-child{border:0}
+.kv b{font-family:var(--num);font-weight:600}
+.tax{display:grid;grid-template-columns:90px 1fr 44px;align-items:center;gap:8px;margin:6px 0}
+.tax input{width:100%;accent-color:var(--accent)}
+.tax b{font-family:var(--num);text-align:right}
+.sec{font-size:12px;color:var(--muted);margin:12px 0 4px;font-weight:600}
+.btn{background:var(--accent);color:var(--accent-ink);padding:7px 12px;border-radius:10px;font-weight:500;font-size:13px}
+.btn.ghost{background:var(--bg);color:var(--ink)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);z-index:9;background:var(--ink);color:var(--bg);padding:7px 14px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:calc(100% - 32px);text-align:center}
 .toast.on{opacity:1}
-@media (max-width:380px){.plot{font-size:28px}}
+@media (max-width:520px){.bar{gap:8px;padding-left:8px;padding-right:8px}.stat b{font-size:13px}.hide-sm{display:none}}
 </style>
 </head>
 <body>
-<header class="top">
-  <div class="coins">🪙 <span id="coins">0</span></div>
-  <div class="lvl">
-    <div class="lvl-row"><span id="lvlText">เลเวล 1</span><span id="xpText">0/20</span></div>
-    <div class="bar"><i id="xpBar"></i></div>
+<canvas id="cv"></canvas>
+
+<header class="bar" id="bar">
+  <div class="stat"><small>เงิน</small><b id="sMoney">0</b></div>
+  <div class="stat"><small>ประชากร</small><b id="sPop">0</b></div>
+  <div class="stat hide-sm"><small>เดินทางทัน</small><b id="sCommute">–</b></div>
+  <div class="stat"><small id="sDate">ปี 1</small><b id="sDay">ม.1</b></div>
+  <div class="speed" id="speed">
+    <button data-speed="0" title="หยุด (Space)">⏸</button>
+    <button data-speed="1" class="on" title="ปกติ">▶</button>
+    <button data-speed="3" title="เร็ว">⏩</button>
+  </div>
+  <div class="rci" title="ดีมานด์ RCI: เมืองต้องการโซนไหนเพิ่ม">
+    <div><i id="dR" style="background:var(--r)"></i><span>R</span></div>
+    <div><i id="dC" style="background:var(--c)"></i><span>C</span></div>
+    <div><i id="dI" style="background:var(--i)"></i><span>I</span></div>
   </div>
 </header>
+<div id="hint"></div>
 
-<main>
-  <section class="panel on" id="p-farm">
-    <h2>🌻 ฟาร์มของฉัน</h2>
-    <p class="hint">เลือกเมล็ด แล้วแตะแปลงว่างเพื่อปลูก · พืชโตแล้วแตะเพื่อเก็บ</p>
-    <div class="seeds" id="seeds"></div>
-    <div class="farm" id="farm"></div>
-    <div class="row-btns">
-      <button class="btn" id="harvestAll">🧺 เก็บทั้งหมด</button>
-      <button class="btn ghost" id="plantAll">🌱 ปลูกทุกแปลงว่าง</button>
-    </div>
-  </section>
-
-  <section class="panel" id="p-market">
-    <h2>📦 ออเดอร์ลูกค้า</h2>
-    <p class="hint">ส่งของครบตามออเดอร์ ได้เงินมากกว่าขายปกติ</p>
-    <div id="orders"></div>
-    <h2 style="margin-top:18px">🛒 ขายในตลาด</h2>
-    <div id="inv"></div>
-  </section>
-
-  <section class="panel" id="p-up">
-    <h2>🔧 อัปเกรด</h2>
-    <div id="ups"></div>
-    <h2 style="margin-top:18px">⚙️ ตั้งค่า</h2>
-    <div class="card">
-      <div class="row-btns" style="margin:0">
-        <button class="btn ghost sm" id="themeBtn">🌓 สลับธีม</button>
-        <button class="btn ghost sm" id="resetBtn">🗑️ เริ่มเกมใหม่</button>
-      </div>
-    </div>
-  </section>
-</main>
-
-<nav>
-  <button class="on" data-tab="farm"><span class="e">🌾</span>ฟาร์ม</button>
-  <button data-tab="market"><span class="e">🏪</span>ตลาด<span class="dot" id="orderDot"></span></button>
-  <button data-tab="up"><span class="e">⭐</span>อัปเกรด</button>
+<nav class="tools" id="tools">
+  <button data-tool="pan" class="on"><span class="e">✋</span>เลื่อน/ดู</button>
+  <button data-tool="road"><span class="e">🛣️</span>ถนน</button>
+  <button data-tool="R"><span class="e">🏠</span>ที่อยู่</button>
+  <button data-tool="C"><span class="e">🏪</span>พาณิชย์</button>
+  <button data-tool="I"><span class="e">🏭</span>อุตสาห.</button>
+  <button data-tool="bull"><span class="e">🧹</span>รื้อถอน</button>
+  <span class="sep"></span>
+  <button id="trafficBtn"><span class="e">🚦</span>จราจร</button>
+  <button id="budgetBtn"><span class="e">💰</span>งบประมาณ</button>
 </nav>
+
+<div class="sheet" id="info"></div>
+<div class="sheet" id="budget">
+  <h3>💰 งบประมาณเมือง <button class="x" data-close="budget">✕</button></h3>
+  <div class="sec">อัตราภาษี (สูงไป ดีมานด์ลด)</div>
+  <div class="tax"><span>🏠 ที่อยู่</span><input type="range" min="0" max="20" data-tax="r"><b id="tR"></b></div>
+  <div class="tax"><span>🏪 พาณิชย์</span><input type="range" min="0" max="20" data-tax="c"><b id="tC"></b></div>
+  <div class="tax"><span>🏭 อุตสาห.</span><input type="range" min="0" max="20" data-tax="i"><b id="tI"></b></div>
+  <div class="sec">ต่อเดือน (ประมาณ)</div>
+  <div id="bStats"></div>
+  <div class="row">
+    <button class="btn ghost" id="themeBtn">🌓 สลับธีม</button>
+    <button class="btn ghost" id="newBtn">🗺️ เริ่มเมืองใหม่</button>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
 "use strict";
-const CROPS = [
-  {id:"lettuce",    name:"ผักกาด",       e:"🥬", seed:5,   time:10,  sell:12,  xp:1,  lvl:1},
-  {id:"carrot",     name:"แครอท",        e:"🥕", seed:10,  time:20,  sell:25,  xp:2,  lvl:1},
-  {id:"corn",       name:"ข้าวโพด",      e:"🌽", seed:20,  time:40,  sell:50,  xp:3,  lvl:2},
-  {id:"tomato",     name:"มะเขือเทศ",    e:"🍅", seed:35,  time:60,  sell:85,  xp:5,  lvl:3},
-  {id:"strawberry", name:"สตรอว์เบอร์รี", e:"🍓", seed:60,  time:90,  sell:150, xp:8,  lvl:4},
-  {id:"pumpkin",    name:"ฟักทอง",       e:"🎃", seed:100, time:150, sell:260, xp:12, lvl:5},
-  {id:"watermelon", name:"แตงโม",        e:"🍉", seed:180, time:240, sell:460, xp:20, lvl:6},
-];
-const CROP = Object.fromEntries(CROPS.map(c => [c.id, c]));
-const START_PLOTS = 6, MAX_PLOTS = 16, MAX_ORDERS = 3, SAVE_KEY = "happyfarm-v1";
+/* ================= constants ================= */
+const W = 64, H = 44, N = W * H, TS = 20;
+const ROAD_COST = 60, BRIDGE_COST = 400, BULL_COST = 10;
+const ROAD_UPKEEP = 0.5, BRIDGE_UPKEEP = 2.5;          // per day
+const CAP = 80;                                         // trip units per road tile
+const MAX_COMMUTE = 80;                                 // travel-time units
+const RES  = [0, 6, 16, 36];                            // residents per R level
+const JOBC = [0, 4, 10, 22];                            // jobs per C level
+const JOBI = [0, 6, 14, 28];                            // jobs per I level
+const DAY_MS = 600, MONTH = 30, SAVE_KEY = "citygrid-v1";
+const Z = {R: 1, C: 2, I: 3};
+const ZCOL = {1: ["#9ED39A", "#5DB35A", "#3F9A3E", "#2C7B2E"], 2: ["#A6C9EE", "#5C9BE0", "#3B7DCB", "#2963AB"], 3: ["#F0DA92", "#E2B83A", "#C99A1C", "#A47C12"]};
+const CAR_COLORS = ["#F4F4F4", "#E04B3C", "#2F6FD0", "#F2C230", "#333", "#9AA4AE", "#3BA676"];
+const MAX_CARS = 400;
 
-const newState = () => ({
-  coins: 40, xp: 0, level: 1, sel: "lettuce",
-  plots: Array.from({length: START_PLOTS}, () => ({c: null, at: 0})),
-  inv: {}, up: {speed: 0, price: 0}, orders: [],
-});
-let S = load() || newState();
-
-function load(){
-  try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); return s && Array.isArray(s.plots) ? s : null; }
-  catch { return null; }
-}
-function save(){ try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch {} }
-
+/* ================= utils ================= */
 const $ = id => document.getElementById(id);
-const fmt = n => Math.floor(n).toLocaleString("th-TH");
-const xpNeed = l => Math.round(20 * Math.pow(l, 1.5));
-const growTime = c => CROP[c].time * (1 - 0.1 * S.up.speed) * 1000;
-const sellPrice = c => Math.round(CROP[c].sell * (1 + 0.1 * S.up.price));
-const plotCost = () => Math.round(100 * Math.pow(1.6, S.plots.length - START_PLOTS));
-const upCost = (k) => Math.round((k === "speed" ? 150 : 200) * Math.pow(2, S.up[k]));
-const unlocked = () => CROPS.filter(c => c.lvl <= S.level);
-const isReady = p => p.c && Date.now() - p.at >= growTime(p.c);
+const fmt = n => Math.round(n).toLocaleString("th-TH");
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+function mulberry32(a){ return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+let toastT;
+function toast(m){ const t = $("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 1800); }
 
-let toastTimer;
-function toast(msg){
-  const t = $("toast"); t.textContent = msg; t.classList.add("on");
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("on"), 1600);
-}
+/* ================= state ================= */
+let G;               // saved state
+let terr;            // 0 land, 1 water (from seed)
+let conn, access;    // derived: road connected to outside, access road per tile
+let flow = new Float32Array(N), load = new Float32Array(N);
+let routes = new Map(), rList = [], jobList = [], rr = 0;
+let cars = [];
+let stats = {pop: 0, jobsC: 0, jobsI: 0, dR: 1, dC: .5, dI: 1, commute: 1, routed: 0, income: 0, expense: 0, roads: 0, bridges: 0, unemp: 0, unconnected: 0};
+let netDirty = true;
 
-function addXp(n){
-  S.xp += n;
-  while (S.xp >= xpNeed(S.level)) {
-    S.xp -= xpNeed(S.level); S.level++;
-    const nu = CROPS.filter(c => c.lvl === S.level).map(c => c.e + " " + c.name).join(", ");
-    toast(`🎉 เลเวล ${S.level}!` + (nu ? ` ปลดล็อก ${nu}` : ""));
-    renderSeeds();
+function genTerrain(seed){
+  const rnd = mulberry32(seed), t = new Uint8Array(N);
+  let c = 30 + rnd() * 8;
+  for (let y = 0; y < H; y++){
+    c = clamp(c + (rnd() - .5) * 1.8, 26, 40);
+    const w = 3 + (rnd() < .35 ? 1 : 0);
+    for (let x = Math.round(c - w / 2); x < Math.round(c + w / 2); x++) t[y * W + x] = 1;
   }
+  // a small lake
+  const lx = 10 + Math.floor(rnd() * 8), ly = 4 + Math.floor(rnd() * 6);
+  for (let y = -2; y <= 2; y++) for (let x = -3; x <= 3; x++) if (x * x / 9 + y * y / 4 <= 1) t[(ly + y) * W + lx + x] = 1;
+  return t;
+}
+function newGame(){
+  const seed = (Math.random() * 1e9) | 0;
+  G = {seed, money: 30000, day: 0, tax: {r: 9, c: 9, i: 9}, road: new Uint8Array(N), zone: new Uint8Array(N), bld: new Uint8Array(N)};
+  terr = genTerrain(seed);
+  // highway connections to the outside world (locked = 2)
+  for (const [y, x0, x1] of [[22, 0, 3], [12, W - 3, W]]) for (let x = x0; x < x1; x++){ G.road[y * W + x] = 2; terr[y * W + x] = 0; }
+  routes.clear(); cars = []; netDirty = true;
+}
+function save(){
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({...G, road: Array.from(G.road), zone: Array.from(G.zone), bld: Array.from(G.bld)})); } catch {}
+}
+function loadGame(){
+  try {
+    const s = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (!s || !Array.isArray(s.road) || s.road.length !== N) return false;
+    G = {...s, road: Uint8Array.from(s.road), zone: Uint8Array.from(s.zone), bld: Uint8Array.from(s.bld)};
+    terr = genTerrain(G.seed);
+    for (let i = 0; i < N; i++) if (G.road[i] === 2) terr[i] = 0;
+    return true;
+  } catch { return false; }
 }
 
-/* ---------- actions ---------- */
-function plant(i, quiet){
-  const p = S.plots[i], c = CROP[S.sel];
-  if (p.c) return false;
-  if (S.coins < c.seed){ if (!quiet) toast("เงินไม่พอซื้อเมล็ด"); return false; }
-  S.coins -= c.seed; p.c = c.id; p.at = Date.now();
-  return true;
-}
-function harvest(i){
-  const p = S.plots[i];
-  if (!isReady(p)) return false;
-  S.inv[p.c] = (S.inv[p.c] || 0) + 1;
-  addXp(CROP[p.c].xp);
-  p.c = null; p.at = 0;
-  return true;
-}
-function tapPlot(i){
-  const p = S.plots[i];
-  if (!p.c){ if (plant(i)) changed(); }
-  else if (isReady(p)){ const c = CROP[p.c]; harvest(i); toast(`เก็บ ${c.e} ${c.name} +${c.xp} XP`); changed(); }
-  else {
-    const left = Math.ceil((growTime(p.c) - (Date.now() - p.at)) / 1000);
-    toast(`${CROP[p.c].e} ${CROP[p.c].name} อีก ${left} วินาที`);
-  }
-}
-function buyPlot(){
-  const cost = plotCost();
-  if (S.plots.length >= MAX_PLOTS || S.coins < cost) return toast("เงินไม่พอ");
-  S.coins -= cost; S.plots.push({c: null, at: 0});
-  toast("ขยายแปลงใหม่แล้ว 🌱"); renderFarm(true); changed();
-}
-function sell(id, n){
-  n = Math.min(n, S.inv[id] || 0); if (!n) return;
-  S.inv[id] -= n; if (!S.inv[id]) delete S.inv[id];
-  const got = sellPrice(id) * n; S.coins += got;
-  toast(`ขาย ${CROP[id].e} ×${n} ได้ ${fmt(got)} 🪙`); changed();
-}
-function sellAll(){
-  let got = 0;
-  for (const id in S.inv){ got += sellPrice(id) * S.inv[id]; }
-  if (!got) return;
-  S.inv = {}; S.coins += got; toast(`ขายทั้งหมดได้ ${fmt(got)} 🪙`); changed();
-}
+/* ================= network ================= */
+const nbrs = i => { const x = i % W, y = (i / W) | 0, o = []; if (x > 0) o.push(i - 1); if (x < W - 1) o.push(i + 1); if (y > 0) o.push(i - W); if (y < H - 1) o.push(i + W); return o; };
+const NB = Array.from({length: N}, (_, i) => nbrs(i));
 
-/* ---------- orders ---------- */
-const NAMES = ["ป้าแดง","ลุงสม","น้องมิว","ร้านข้าวมันไก่","ครัวคุณยาย","แม่ค้าตลาดเช้า","เชฟต้น","คาเฟ่ริมทุ่ง"];
-function makeOrder(){
-  const pool = unlocked(), kinds = Math.min(pool.length, 1 + Math.floor(Math.random() * 3));
-  const picks = [...pool].sort(() => Math.random() - .5).slice(0, kinds);
-  const need = {}; let value = 0, xp = 0;
-  for (const c of picks){ const q = 2 + Math.floor(Math.random() * 4); need[c.id] = q; value += c.sell * q; xp += c.xp * q; }
-  return {who: NAMES[Math.floor(Math.random() * NAMES.length)], need, coins: Math.round(value * 1.6), xp: Math.round(xp * 1.5)};
-}
-function fillOrders(){ while (S.orders.length < MAX_ORDERS) S.orders.push(makeOrder()); }
-const canDeliver = o => Object.entries(o.need).every(([id, q]) => (S.inv[id] || 0) >= q);
-function deliver(i){
-  const o = S.orders[i]; if (!canDeliver(o)) return;
-  for (const [id, q] of Object.entries(o.need)){ S.inv[id] -= q; if (!S.inv[id]) delete S.inv[id]; }
-  S.coins += o.coins; addXp(o.xp);
-  S.orders.splice(i, 1); fillOrders();
-  toast(`ส่งของให้${o.who}แล้ว +${fmt(o.coins)} 🪙`); changed();
-}
-function skipOrder(i){ S.orders.splice(i, 1); fillOrders(); changed(); }
-
-/* ---------- upgrades ---------- */
-const UPS = [
-  {k:"speed", e:"💧", name:"สปริงเกอร์", desc: l => `พืชโตเร็วขึ้น ${l*10}%`, max:5},
-  {k:"price", e:"🪧", name:"ป้ายร้านสวย", desc: l => `ขายแพงขึ้น ${l*10}%`, max:5},
-];
-function buyUp(k){
-  const u = UPS.find(x => x.k === k), cost = upCost(k);
-  if (S.up[k] >= u.max || S.coins < cost) return toast("เงินไม่พอ");
-  S.coins -= cost; S.up[k]++; toast(`อัปเกรด${u.name}แล้ว!`); changed();
-}
-
-/* ---------- render ---------- */
-function renderTop(){
-  $("coins").textContent = fmt(S.coins);
-  $("lvlText").textContent = "เลเวล " + S.level;
-  $("xpText").textContent = `${S.xp}/${xpNeed(S.level)} XP`;
-  $("xpBar").style.width = (S.xp / xpNeed(S.level) * 100) + "%";
-  const n = S.orders.filter(canDeliver).length, d = $("orderDot");
-  d.style.display = n ? "block" : "none"; d.textContent = n;
-}
-function renderSeeds(){
-  $("seeds").innerHTML = CROPS.map(c => {
-    const lock = c.lvl > S.level;
-    return `<button class="seed ${c.id === S.sel ? "sel" : ""} ${lock ? "locked" : ""}" data-seed="${c.id}" ${lock ? "disabled" : ""}>
-      <span class="e">${lock ? "🔒" : c.e}</span>${c.name}
-      <small>${lock ? "เลเวล " + c.lvl : "🪙" + c.seed + " · " + c.time + "วิ"}</small></button>`;
-  }).join("");
-}
-let plotEls = [];
-function renderFarm(rebuild){
-  const farm = $("farm");
-  if (rebuild || plotEls.length !== S.plots.length){
-    farm.innerHTML = S.plots.map((_, i) => `<button class="plot" data-plot="${i}"></button>`).join("") +
-      (S.plots.length < MAX_PLOTS ? `<button class="plot buy" id="buyPlot"><b>＋</b>แปลงใหม่<br>🪙<span id="plotCost"></span></button>` : "");
-    plotEls = [...farm.querySelectorAll("[data-plot]")];
-  }
-  const now = Date.now();
-  S.plots.forEach((p, i) => {
-    const el = plotEls[i];
-    let html = "", ready = false;
-    if (p.c){
-      const f = Math.min(1, (now - p.at) / growTime(p.c));
-      ready = f >= 1;
-      if (ready) html = CROP[p.c].e;
-      else {
-        const left = Math.ceil((growTime(p.c) - (now - p.at)) / 1000);
-        html = (f < .5 ? "🌱" : "🌿") + `<span class="t">${left}วิ</span><span class="p"><i style="width:${f*100}%"></i></span>`;
-      }
+function rebuildNetwork(){
+  conn = new Uint8Array(N); access = new Int32Array(N).fill(-1);
+  const q = [];
+  for (let i = 0; i < N; i++) if (G.road[i] === 2){ conn[i] = 1; q.push(i); }
+  while (q.length){ const i = q.pop(); for (const j of NB[i]) if (G.road[j] && !conn[j]){ conn[j] = 1; q.push(j); } }
+  for (let i = 0; i < N; i++){
+    if (G.road[i] || terr[i]) continue;
+    for (const j of NB[i]) if (G.road[j] && conn[j]){ access[i] = j; break; }
+    if (access[i] >= 0) continue;
+    const x = i % W, y = (i / W) | 0;
+    for (const [dx, dy] of [[2, 0], [-2, 0], [0, 2], [0, -2]]){
+      const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      const j = ny * W + nx, m = (y + dy / 2) * W + x + dx / 2;
+      if (G.road[j] && conn[j] && !G.road[m] && !terr[m]){ access[i] = j; break; }
     }
-    if (el._h !== html){ el.innerHTML = html; el._h = html; }
-    el.classList.toggle("ready", ready);
-    el.setAttribute("aria-label", p.c ? CROP[p.c].name + (ready ? " พร้อมเก็บ" : " กำลังโต") : "แปลงว่าง");
-  });
-  const pc = $("plotCost"); if (pc) pc.textContent = fmt(plotCost());
-}
-function renderMarket(){
-  $("orders").innerHTML = S.orders.map((o, i) => {
-    const ok = canDeliver(o);
-    return `<div class="card"><div class="item"><div class="info"><b>${o.who}</b>
-      <small>รางวัล <span class="reward">🪙${fmt(o.coins)}</span> · ⭐${o.xp} XP</small></div></div>
-      <div class="order-need">${Object.entries(o.need).map(([id, q]) =>
-        `<span class="${(S.inv[id]||0) >= q ? "ok" : ""}">${CROP[id].e} ${S.inv[id]||0}/${q}</span>`).join("")}</div>
-      <div class="row-btns" style="margin:0"><button class="btn sm" data-deliver="${i}" ${ok ? "" : "disabled"}>ส่งของ</button>
-      <button class="btn ghost sm" data-skip="${i}">ข้าม</button></div></div>`;
-  }).join("");
-  const ids = Object.keys(S.inv);
-  $("inv").innerHTML = ids.length ? ids.map(id => `<div class="card item"><span class="e">${CROP[id].e}</span>
-      <div class="info">${CROP[id].name} ×${S.inv[id]}<small>ชิ้นละ 🪙${sellPrice(id)}</small></div>
-      <button class="btn ghost sm" data-sell="${id}" data-n="1">ขาย 1</button>
-      <button class="btn sm" data-sell="${id}" data-n="999999">ขายหมด</button></div>`).join("") +
-      `<button class="btn" id="sellAll" style="width:100%">💰 ขายทุกอย่าง</button>`
-    : `<div class="empty">ยังไม่มีผลผลิต ไปปลูกผักก่อนนะ 🌱</div>`;
-}
-function renderUps(){
-  $("ups").innerHTML = UPS.map(u => {
-    const l = S.up[u.k], max = l >= u.max;
-    return `<div class="card item"><span class="e">${u.e}</span><div class="info">${u.name} (${l}/${u.max})
-      <small>${u.desc(l)}${max ? "" : " → " + u.desc(l + 1)}</small></div>
-      <button class="btn sm" data-up="${u.k}" ${max ? "disabled" : ""}>${max ? "สูงสุด" : "🪙" + fmt(upCost(u.k))}</button></div>`;
-  }).join("");
-}
-function changed(){ renderTop(); renderFarm(); renderMarket(); renderUps(); save(); }
-
-/* ---------- events ---------- */
-document.addEventListener("click", e => {
-  const t = e.target.closest("button"); if (!t) return;
-  if (t.dataset.plot !== undefined) return tapPlot(+t.dataset.plot);
-  if (t.dataset.seed){ S.sel = t.dataset.seed; renderSeeds(); save(); return; }
-  if (t.id === "buyPlot") return buyPlot();
-  if (t.dataset.sell) return sell(t.dataset.sell, +t.dataset.n);
-  if (t.id === "sellAll") return sellAll();
-  if (t.dataset.deliver !== undefined) return deliver(+t.dataset.deliver);
-  if (t.dataset.skip !== undefined) return skipOrder(+t.dataset.skip);
-  if (t.dataset.up) return buyUp(t.dataset.up);
-  if (t.dataset.tab){
-    document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b === t));
-    document.querySelectorAll(".panel").forEach(p => p.classList.toggle("on", p.id === "p-" + t.dataset.tab));
-    window.scrollTo(0, 0); return;
   }
+  routes.clear(); rr = 0;
+  cars = cars.filter(c => c.path.every(p => G.road[p]));
+  netDirty = false;
+}
+
+// A* on road tiles, cost grows with congestion
+const tileCost = i => { const l = load[i]; return 1 + (l > .7 ? 4 * (l - .7) * (l - .7) : 0) + (l > 1 ? 6 * (l - 1) : 0); };
+const gS = new Float32Array(N), from = new Int32Array(N), stamp = new Uint32Array(N), closed = new Uint32Array(N);
+let stampId = 0;
+function astar(a, b){
+  if (a === b) return [a];
+  stampId++;
+  const bx = b % W, by = (b / W) | 0, h = i => Math.abs(i % W - bx) + Math.abs(((i / W) | 0) - by);
+  const heap = [[h(a), a]]; gS[a] = 0; stamp[a] = stampId; from[a] = -1;
+  const push = n => { heap.push(n); let k = heap.length - 1; while (k > 0){ const p = (k - 1) >> 1; if (heap[p][0] <= heap[k][0]) break; [heap[p], heap[k]] = [heap[k], heap[p]]; k = p; } };
+  const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length){ heap[0] = last; let k = 0; for (;;){ const l = 2 * k + 1, r = l + 1; let m = k; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === k) break; [heap[m], heap[k]] = [heap[k], heap[m]]; k = m; } } return top; };
+  while (heap.length){
+    const [, i] = pop();
+    if (closed[i] === stampId) continue;
+    closed[i] = stampId;
+    if (i === b){ const p = []; for (let k = b; k !== -1; k = from[k]) p.push(k); return p.reverse(); }
+    for (const j of NB[i]){
+      if (!G.road[j] || closed[j] === stampId) continue;
+      const g = gS[i] + tileCost(j);
+      if (stamp[j] !== stampId || g < gS[j]){ stamp[j] = stampId; gS[j] = g; from[j] = i; push([g + h(j), j]); }
+    }
+  }
+  return null;
+}
+
+/* ================= simulation (one day) ================= */
+function simDay(){
+  if (netDirty) rebuildNetwork();
+  const {road, zone, bld} = G;
+  let pop = 0, jobsC = 0, jobsI = 0, roads = 0, bridges = 0, unconnected = 0;
+  rList = []; jobList = [];
+  const growable = [];
+  for (let i = 0; i < N; i++){
+    if (road[i]){ if (road[i] === 1){ terr[i] ? bridges++ : roads++; } continue; }
+    const z = zone[i]; if (!z) continue;
+    const ok = access[i] >= 0;
+    if (!ok) unconnected++;
+    if (ok) growable.push(i);
+    const l = bld[i]; if (!l) continue;
+    if (z === 1){ pop += RES[l]; if (ok) rList.push(i); }
+    else if (z === 2){ jobsC += JOBC[l]; if (ok) jobList.push(i); }
+    else { jobsI += JOBI[l]; if (ok) jobList.push(i); }
+  }
+  for (const k of routes.keys()) if (zone[k] !== 1 || !bld[k] || access[k] < 0) routes.delete(k);
+
+  // --- RCI demand ---
+  const workers = pop * .5, jobs = jobsC + jobsI, tx = G.tax;
+  const taxPen = r => (r - 9) * .06;
+  const dR = clamp((jobs - workers + 30) / (30 + workers * .5) - taxPen(tx.r), -1, 1);
+  const dC = clamp((pop * .15 + jobsI * .1 - jobsC + 5) / (10 + pop * .1) - taxPen(tx.c), -1, 1);
+  const dI = clamp((workers * .7 - jobsI + 15) / (15 + workers * .5) - taxPen(tx.i), -1, 1);
+
+  // --- trips: re-route a slice of homes each day (A*) ---
+  if (rList.length){
+    const n = Math.min(rList.length, 60);
+    for (let k = 0; k < n; k++){
+      const i = rList[rr++ % rList.length];
+      const w = RES[bld[i]] * .3;
+      if (!jobList.length){ routes.set(i, {nojob: true, w}); continue; }
+      let best = -1, bd = 1e9;
+      for (let s = 0; s < 4; s++){
+        const j = jobList[(Math.random() * jobList.length) | 0];
+        const d = Math.abs(j % W - i % W) + Math.abs(((j / W) | 0) - ((i / W) | 0));
+        if (d < bd){ bd = d; best = j; }
+      }
+      const path = astar(access[i], access[best]);
+      routes.set(i, path ? {path, w, dest: best} : {fail: true, w});
+    }
+  }
+  // --- traffic: aggregate flow per road tile ---
+  flow.fill(0);
+  for (const r of routes.values()) if (r.path) for (const p of r.path) flow[p] += r.w;
+  for (let i = 0; i < N; i++) load[i] = road[i] ? flow[i] / CAP : 0;
+  let okW = 0, totW = 0;
+  for (const r of routes.values()){
+    if (r.nojob) continue;
+    totW += r.w;
+    if (r.path){ let t = 0; for (const p of r.path) t += tileCost(p); r.time = t; r.ok = t <= MAX_COMMUTE; }
+    else { r.time = Infinity; r.ok = false; }
+    if (r.ok) okW += r.w;
+  }
+  const commute = totW ? okW / totW : 1;
+  const growOK = commute >= .6;
+
+  // --- growth / decline ---
+  const D = {1: dR, 2: dC, 3: dI};
+  const tries = 2 + Math.floor(growable.length / 25);
+  for (let t = 0; t < tries && growable.length; t++){
+    const i = growable[(Math.random() * growable.length) | 0];
+    const z = zone[i], d = D[z], l = bld[i], r = routes.get(i);
+    if (l === 0){
+      if (growOK && d > 0 && Math.random() < .3 + d * .6) bld[i] = 1;
+    } else if (l < 3){
+      const need = l === 1 ? 120 : 600;
+      const fine = z !== 1 || !r || r.ok || r.nojob;
+      if (growOK && fine && d > .15 && pop >= need && Math.random() < d * .25) bld[i]++;
+      else if (d < -.4 && Math.random() < .08) bld[i]--;
+    } else if (d < -.5 && Math.random() < .05) bld[i]--;
+    if (z === 1 && r && r.ok === false && l > 0 && Math.random() < .05) bld[i]--;
+  }
+  // buildings that lost their road slowly empty out
+  if (unconnected) for (let k = 0; k < 6; k++){
+    const i = (Math.random() * N) | 0;
+    if (bld[i] && access[i] < 0) bld[i]--;
+  }
+
+  // --- money ---
+  const income = (pop * tx.r + jobsC * tx.c * 1.3 + jobsI * tx.i * 1.3) / 100 * 1.6;
+  const expense = roads * ROAD_UPKEEP + bridges * BRIDGE_UPKEEP;
+  G.money += income - expense;
+  G.day++;
+
+  // --- cars ---
+  for (const r of routes.values()){
+    if (!r.path || r.path.length < 2 || cars.length >= MAX_CARS) continue;
+    if (Math.random() < r.w * .035) cars.push({path: r.path, k: 0, t: Math.random() * .3, col: CAR_COLORS[(Math.random() * CAR_COLORS.length) | 0]});
+  }
+
+  stats = {pop, jobsC, jobsI, dR, dC, dI, commute, routed: totW, income, expense, roads, bridges, unconnected,
+    unemp: workers ? Math.max(0, workers - jobs) / workers : 0, zoned: growable.length + unconnected};
+  updateHud();
+}
+
+/* ================= camera & input ================= */
+const cv = $("cv"), ctx = cv.getContext("2d");
+let dpr = 1, vw = 0, vh = 0, zoom = 1, cam = {x: 0, y: 0};
+let tool = "pan", showTraffic = false, speed = 1, hover = null, drag = null, pinch = null;
+const ptrs = new Map();
+
+function resize(){
+  dpr = Math.min(2, window.devicePixelRatio || 1); vw = innerWidth; vh = innerHeight;
+  cv.width = vw * dpr; cv.height = vh * dpr;
+  const bh = $("bar").offsetHeight;
+  $("hint").style.top = (bh + 8) + "px";
+  const th = $("tools").offsetHeight;
+  $("toast").style.bottom = (th + 12) + "px";
+  $("info").style.bottom = (th + 12) + "px";
+  $("budget").style.bottom = (th + 12) + "px";
+}
+function fitCamera(){
+  const fit = Math.min(vw / (W * TS), (vh - 140) / (H * TS));
+  zoom = clamp(Math.max(fit, .9), .35, 3);
+  const cx = fit >= .9 ? W / 2 : 8, cy = fit >= .9 ? H / 2 : 22;
+  cam.x = cx * TS - vw / 2 / zoom; cam.y = cy * TS - vh / 2 / zoom;
+}
+function setZoom(z, sx, sy){
+  const wx = sx / zoom + cam.x, wy = sy / zoom + cam.y;
+  zoom = clamp(z, .3, 3.5);
+  cam.x = wx - sx / zoom; cam.y = wy - sy / zoom;
+}
+function clampCam(){
+  const mw = W * TS, mh = H * TS, ww = vw / zoom, wh = vh / zoom, pad = 60;
+  cam.x = ww >= mw + 2 * pad ? (mw - ww) / 2 : clamp(cam.x, -pad, mw - ww + pad);
+  cam.y = wh >= mh + 2 * pad ? (mh - wh) / 2 : clamp(cam.y, -pad - 60, mh - wh + pad + 60);
+}
+const tileAt = (sx, sy) => ({x: clamp(Math.floor((sx / zoom + cam.x) / TS), 0, W - 1), y: clamp(Math.floor((sy / zoom + cam.y) / TS), 0, H - 1)});
+
+cv.addEventListener("contextmenu", e => e.preventDefault());
+cv.addEventListener("wheel", e => { e.preventDefault(); setZoom(zoom * Math.exp(-e.deltaY * .0015), e.clientX, e.clientY); }, {passive: false});
+cv.addEventListener("pointerdown", e => {
+  cv.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId, {x: e.clientX, y: e.clientY});
+  closeSheets();
+  if (ptrs.size === 2){
+    const [a, b] = [...ptrs.values()];
+    pinch = {d: Math.hypot(a.x - b.x, a.y - b.y), zoom, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, cx: cam.x, cy: cam.y}; drag = null; return;
+  }
+  const pan = tool === "pan" || e.button === 1 || e.button === 2;
+  drag = {pan, sx: e.clientX, sy: e.clientY, cx: cam.x, cy: cam.y, start: tileAt(e.clientX, e.clientY), moved: false};
+  hover = drag.start;
 });
-$("harvestAll").onclick = () => {
-  let n = 0; S.plots.forEach((_, i) => { if (harvest(i)) n++; });
-  toast(n ? `เก็บได้ ${n} อย่าง 🧺` : "ยังไม่มีอะไรพร้อมเก็บ"); changed();
-};
-$("plantAll").onclick = () => {
-  let n = 0; S.plots.forEach((_, i) => { if (plant(i, true)) n++; });
-  toast(n ? `ปลูก${CROP[S.sel].name} ${n} แปลง` : (S.plots.some(p => !p.c) ? "เงินไม่พอซื้อเมล็ด" : "ไม่มีแปลงว่าง")); changed();
-};
+cv.addEventListener("pointermove", e => {
+  if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, {x: e.clientX, y: e.clientY});
+  if (pinch && ptrs.size >= 2){
+    const [a, b] = [...ptrs.values()];
+    const d = Math.hypot(a.x - b.x, a.y - b.y), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    cam.x = pinch.cx; cam.y = pinch.cy; zoom = pinch.zoom;
+    setZoom(pinch.zoom * d / pinch.d, pinch.mx, pinch.my);
+    cam.x -= (mx - pinch.mx) / zoom; cam.y -= (my - pinch.my) / zoom;
+    return;
+  }
+  hover = tileAt(e.clientX, e.clientY);
+  if (!drag) return;
+  if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 6) drag.moved = true;
+  if (drag.pan){ cam.x = drag.cx - (e.clientX - drag.sx) / zoom; cam.y = drag.cy - (e.clientY - drag.sy) / zoom; }
+});
+function endPtr(e){
+  ptrs.delete(e.pointerId);
+  if (pinch){ if (ptrs.size < 2) pinch = null; drag = null; return; }
+  if (!drag) return;
+  const end = tileAt(e.clientX, e.clientY);
+  if (drag.pan){ if (!drag.moved && e.button !== 2) showInfo(end); }
+  else if (e.type === "pointerup") applyTool(drag.start, end);
+  drag = null;
+  if (e.pointerType !== "mouse") hover = null;
+}
+cv.addEventListener("pointerup", endPtr);
+cv.addEventListener("pointercancel", endPtr);
+cv.addEventListener("pointerleave", e => { if (!drag) hover = null; });
+
+/* ================= tools ================= */
+function lPath(a, b){
+  const out = [], sx = Math.sign(b.x - a.x), sy = Math.sign(b.y - a.y);
+  for (let x = a.x; ; x += sx){ out.push(a.y * W + x); if (x === b.x) break; }
+  if (sy) for (let y = a.y + sy; ; y += sy){ out.push(y * W + b.x); if (y === b.y) break; }
+  return out;
+}
+function rectTiles(a, b){
+  const out = [];
+  for (let y = Math.min(a.y, b.y); y <= Math.max(a.y, b.y); y++) for (let x = Math.min(a.x, b.x); x <= Math.max(a.x, b.x); x++) out.push(y * W + x);
+  return out;
+}
+function toolCost(a, b){
+  if (tool === "road") return lPath(a, b).reduce((s, i) => s + (G.road[i] ? 0 : terr[i] ? BRIDGE_COST : ROAD_COST), 0);
+  if (tool === "bull") return rectTiles(a, b).reduce((s, i) => s + ((G.road[i] === 1 || G.zone[i]) ? BULL_COST : 0), 0);
+  return 0;
+}
+function applyTool(a, b){
+  const cost = toolCost(a, b);
+  if (cost > 0 && cost > G.money) return toast(`เงินไม่พอ (ต้องใช้ ${fmt(cost)})`);
+  let n = 0;
+  if (tool === "road"){
+    for (const i of lPath(a, b)) if (!G.road[i]){ G.road[i] = 1; G.zone[i] = 0; G.bld[i] = 0; n++; }
+    if (n){ netDirty = true; toast(`สร้างถนน ${n} ช่อง −${fmt(cost)}`); }
+  } else if (tool === "bull"){
+    for (const i of rectTiles(a, b)){
+      if (G.road[i] === 1){ G.road[i] = 0; n++; netDirty = true; }
+      else if (G.zone[i]){ G.zone[i] = 0; G.bld[i] = 0; n++; }
+    }
+    if (n) toast(`รื้อ ${n} ช่อง −${fmt(cost)}`);
+  } else if (Z[tool]){
+    const z = Z[tool];
+    for (const i of rectTiles(a, b)) if (!G.road[i] && !terr[i] && G.zone[i] !== z){ G.zone[i] = z; G.bld[i] = 0; n++; }
+    if (n) netDirty = true;
+  }
+  G.money -= cost;
+  updateHud();
+}
+function setTool(t){
+  tool = t;
+  document.querySelectorAll("[data-tool]").forEach(b => b.classList.toggle("on", b.dataset.tool === t));
+}
+$("tools").addEventListener("click", e => { const b = e.target.closest("[data-tool]"); if (b) setTool(b.dataset.tool); });
+$("trafficBtn").onclick = () => { showTraffic = !showTraffic; $("trafficBtn").classList.toggle("on", showTraffic); };
+$("speed").addEventListener("click", e => { const b = e.target.closest("[data-speed]"); if (b) setSpeed(+b.dataset.speed); });
+function setSpeed(s){ speed = s; document.querySelectorAll("[data-speed]").forEach(b => b.classList.toggle("on", +b.dataset.speed === s)); }
+addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT") return;
+  const map = {"1": "pan", "2": "road", "3": "R", "4": "C", "5": "I", "6": "bull"};
+  if (map[e.key]) setTool(map[e.key]);
+  if (e.key === " "){ e.preventDefault(); setSpeed(speed ? 0 : 1); }
+  if (e.key === "t") $("trafficBtn").click();
+});
+
+/* ================= panels ================= */
+function closeSheets(){ $("info").classList.remove("on"); $("budget").classList.remove("on"); }
+document.addEventListener("click", e => { const c = e.target.closest("[data-close]"); if (c) $(c.dataset.close).classList.remove("on"); });
+function kv(k, v){ return `<div class="kv"><span>${k}</span><b>${v}</b></div>`; }
+function showInfo(t){
+  const i = t.y * W + t.x, z = G.zone[i], l = G.bld[i];
+  let title, rows = "";
+  if (G.road[i]){
+    title = G.road[i] === 2 ? "🛣️ ทางหลวงออกนอกเมือง" : terr[i] ? "🌉 สะพาน" : "🛣️ ถนน";
+    const ld = load[i];
+    rows += kv("ปริมาณรถ", `${fmt(flow[i])} / ${CAP}`) + kv("สภาพจราจร", ld < .7 ? "🟢 คล่องตัว" : ld < 1 ? "🟡 หนาแน่น" : "🔴 ติดขัด");
+    if (!conn[i]) rows += kv("สถานะ", "⚠️ ไม่เชื่อมทางหลวง");
+  } else if (z){
+    const nm = {1: "🏠 ที่อยู่อาศัย", 2: "🏪 พาณิชย์", 3: "🏭 อุตสาหกรรม"}[z];
+    title = nm + (l ? ` ระดับ ${l}` : " (ว่าง)");
+    if (access[i] < 0) rows += kv("สถานะ", "⚠️ ไม่ติดถนนที่เชื่อมทางหลวง");
+    if (z === 1){
+      rows += kv("ผู้อยู่อาศัย", RES[l]);
+      const r = routes.get(i);
+      if (r) rows += kv("เดินทางไปทำงาน", r.nojob ? "ยังไม่มีที่ทำงาน" : r.fail ? "❌ ไม่มีเส้นทาง" : `${Math.round(r.time)} ${r.ok ? "✅" : "❌ ไม่ทัน"}`);
+    } else rows += kv("ตำแหน่งงาน", z === 2 ? JOBC[l] : JOBI[l]);
+  } else {
+    title = terr[i] ? "🌊 แม่น้ำ" : "🌳 พื้นที่ว่าง";
+    rows += kv("สร้างได้", terr[i] ? `สะพาน ${fmt(BRIDGE_COST)}/ช่อง` : `ถนน ${fmt(ROAD_COST)}/ช่อง, โซนฟรี`);
+  }
+  $("info").innerHTML = `<h3>${title} <button class="x" data-close="info">✕</button></h3>${rows}`;
+  $("info").classList.add("on");
+}
+function renderBudget(){
+  for (const k of ["r", "c", "i"]){ document.querySelector(`[data-tax="${k}"]`).value = G.tax[k]; $("t" + k.toUpperCase()).textContent = G.tax[k] + "%"; }
+  const s = stats;
+  $("bStats").innerHTML = kv("รายได้ภาษี", "+" + fmt(s.income * MONTH)) + kv("ค่าบำรุงถนน", "−" + fmt(s.expense * MONTH)) +
+    kv("สุทธิ", (s.income >= s.expense ? "+" : "−") + fmt(Math.abs(s.income - s.expense) * MONTH)) +
+    kv("ถนน / สะพาน", `${s.roads} / ${s.bridges} ช่อง`) + kv("งาน พาณิชย์ / อุตสาห.", `${fmt(s.jobsC)} / ${fmt(s.jobsI)}`) +
+    kv("ว่างงาน", Math.round(s.unemp * 100) + "%") + kv("เดินทางไปทำงานทัน", s.routed ? Math.round(s.commute * 100) + "%" : "–");
+}
+$("budgetBtn").onclick = () => { const b = $("budget"), on = !b.classList.contains("on"); closeSheets(); if (on){ renderBudget(); b.classList.add("on"); } };
+document.querySelectorAll("[data-tax]").forEach(inp => inp.addEventListener("input", () => { G.tax[inp.dataset.tax] = +inp.value; renderBudget(); }));
+$("newBtn").onclick = () => { if (confirm("เริ่มเมืองใหม่? เมืองปัจจุบันจะหายไป")){ newGame(); simDay(); fitCamera(); closeSheets(); save(); } };
 $("themeBtn").onclick = () => {
   const r = document.documentElement, dark = r.dataset.theme ? r.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
   r.dataset.theme = dark ? "light" : "dark";
   try { localStorage.setItem(SAVE_KEY + "-theme", r.dataset.theme); } catch {}
 };
-$("resetBtn").onclick = () => {
-  if (!confirm("เริ่มเกมใหม่? ความคืบหน้าทั้งหมดจะหายไป")) return;
-  S = newState(); fillOrders(); renderSeeds(); renderFarm(true); changed();
-};
 try { const th = localStorage.getItem(SAVE_KEY + "-theme"); if (th) document.documentElement.dataset.theme = th; } catch {}
 
-/* ---------- start ---------- */
-if (!CROP[S.sel]) S.sel = "lettuce";
-S.up = Object.assign({speed: 0, price: 0}, S.up);
-fillOrders(); renderSeeds(); renderFarm(true); changed();
-setInterval(() => { renderFarm(); }, 250);
-setInterval(save, 5000);
+function updateHud(){
+  const s = stats;
+  $("sMoney").textContent = fmt(G.money); $("sMoney").classList.toggle("neg", G.money < 0);
+  $("sPop").textContent = fmt(s.pop);
+  $("sCommute").textContent = s.routed ? Math.round(s.commute * 100) + "%" : "–";
+  $("sCommute").classList.toggle("neg", s.routed > 0 && s.commute < .6);
+  const y = Math.floor(G.day / (MONTH * 12)) + 1, m = Math.floor(G.day / MONTH) % 12 + 1;
+  $("sDate").textContent = "ปี " + y; $("sDay").textContent = "เดือน " + m;
+  for (const [id, d] of [["dR", s.dR], ["dC", s.dC], ["dI", s.dI]]){
+    const el = $(id); el.style.height = Math.abs(d) * 50 + "%";
+    el.style.bottom = d >= 0 ? "50%" : (50 - Math.abs(d) * 50) + "%"; el.style.opacity = d >= 0 ? 1 : .45;
+  }
+  let h = "", warn = false;
+  const built = G.road.some(v => v === 1);
+  if (!built) h = "เริ่มจากเลือก 🛣️ ถนน แล้วลากต่อจากทางหลวงขอบซ้ายของแผนที่";
+  else if (!s.zoned) h = "เลือก 🏠 ที่อยู่ แล้วลากวางโซนสีเขียวติดถนน";
+  else if (s.routed && s.commute < .6){ h = `⚠️ รถติด! คนไปทำงานทันแค่ ${Math.round(s.commute * 100)}% เมืองหยุดโต — เปิด 🚦 ดูจุดติด`; warn = true; }
+  else if (G.money < 0){ h = "⚠️ เงินติดลบ — ลองขึ้นภาษีหรือรื้อถนนที่ไม่ใช้"; warn = true; }
+  else if (s.pop > 0 && !s.jobsC && !s.jobsI) h = "คนย้ายเข้ามาแล้ว! วางโซน 🏭 อุตสาหกรรม และ 🏪 พาณิชย์ ให้มีที่ทำงาน";
+  else if (s.unconnected > 4) h = "บางโซนยังไม่ติดถนนที่เชื่อมทางหลวง อาคารจะไม่ขึ้น";
+  $("hint").textContent = h; $("hint").classList.toggle("warn", warn);
+  if ($("budget").classList.contains("on")) renderBudget();
+}
+
+/* ================= rendering ================= */
+const GRASS = ["#86B862", "#82B45E"];
+function draw(){
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = "#6E9C50"; ctx.fillRect(0, 0, cv.width, cv.height);
+  const s = dpr * zoom;
+  ctx.setTransform(s, 0, 0, s, -cam.x * s, -cam.y * s);
+  const x0 = clamp(Math.floor(cam.x / TS), 0, W - 1), y0 = clamp(Math.floor(cam.y / TS), 0, H - 1);
+  const x1 = clamp(Math.ceil((cam.x + vw / zoom) / TS), 0, W - 1), y1 = clamp(Math.ceil((cam.y + vh / zoom) / TS), 0, H - 1);
+  const {road, zone, bld} = G;
+
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++){
+    const i = y * W + x, px = x * TS, py = y * TS;
+    if (terr[i]){ ctx.fillStyle = "#4F8FC4"; ctx.fillRect(px, py, TS, TS); if ((x * 7 + y * 3) % 5 === 0){ ctx.fillStyle = "rgba(255,255,255,.18)"; ctx.fillRect(px + 4, py + 8, 8, 1.5); } }
+    else { ctx.fillStyle = GRASS[(x + y) & 1]; ctx.fillRect(px, py, TS, TS); }
+    const z = zone[i];
+    if (z && !road[i]){
+      const l = bld[i];
+      if (!l){
+        ctx.fillStyle = ZCOL[z][0]; ctx.globalAlpha = access && access[i] >= 0 ? .75 : .35;
+        ctx.fillRect(px + 1, py + 1, TS - 2, TS - 2); ctx.globalAlpha = 1;
+      } else {
+        const m = [0, 4, 2.5, 1.5][l], hgt = [0, 2, 4, 7][l];
+        ctx.fillStyle = "rgba(0,0,0,.22)"; ctx.fillRect(px + m + 2, py + m + 2, TS - 2 * m, TS - 2 * m);
+        ctx.fillStyle = ZCOL[z][l]; ctx.fillRect(px + m, py + m - hgt * .3, TS - 2 * m, TS - 2 * m);
+        ctx.fillStyle = "rgba(255,255,255,.28)"; ctx.fillRect(px + m, py + m - hgt * .3, TS - 2 * m, 3);
+        if (l === 3){ ctx.fillStyle = "rgba(255,255,255,.35)"; for (let k = 0; k < 3; k++) ctx.fillRect(px + m + 3 + k * 5, py + m + 5, 2, TS - 2 * m - 9); }
+        if (access && access[i] < 0){ ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.fillRect(px + m, py + m, TS - 2 * m, TS - 2 * m); }
+      }
+    }
+  }
+  // roads
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++){
+    const i = y * W + x; if (!road[i]) continue;
+    const px = x * TS, py = y * TS;
+    ctx.fillStyle = road[i] === 2 ? "#3A3F46" : terr[i] ? "#6B6F75" : "#555A61";
+    ctx.fillRect(px, py, TS, TS);
+    if (terr[i]){ ctx.fillStyle = "#C9CCD0"; const h = x > 0 && road[i - 1], v = y > 0 && road[i - W];
+      if (h || (x < W - 1 && road[i + 1])){ ctx.fillRect(px, py, TS, 1.5); ctx.fillRect(px, py + TS - 1.5, TS, 1.5); }
+      if (v || (y < H - 1 && road[i + W])){ ctx.fillRect(px, py, 1.5, TS); ctx.fillRect(px + TS - 1.5, py, 1.5, TS); } }
+    if (showTraffic && conn){
+      const l = load[i]; ctx.fillStyle = l < .01 ? "rgba(120,130,140,.35)" : l < .7 ? "rgba(70,200,110,.75)" : l < 1 ? "rgba(240,190,40,.85)" : "rgba(230,60,50,.9)";
+      ctx.fillRect(px + 3, py + 3, TS - 6, TS - 6);
+    } else {
+      ctx.strokeStyle = road[i] === 2 ? "#F2F2F2" : "rgba(240,210,90,.8)"; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+      ctx.beginPath(); const cx = px + TS / 2, cy = py + TS / 2;
+      if (x > 0 && road[i - 1]){ ctx.moveTo(cx, cy); ctx.lineTo(px, cy); }
+      if (x < W - 1 && road[i + 1]){ ctx.moveTo(cx, cy); ctx.lineTo(px + TS, cy); }
+      if (y > 0 && road[i - W]){ ctx.moveTo(cx, cy); ctx.lineTo(cx, py); }
+      if (y < H - 1 && road[i + W]){ ctx.moveTo(cx, cy); ctx.lineTo(cx, py + TS); }
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    if (conn && !conn[i]){ ctx.fillStyle = "rgba(230,60,50,.35)"; ctx.fillRect(px, py, TS, TS); }
+  }
+  // edge arrows for outside connections
+  ctx.fillStyle = "#fff"; ctx.font = "bold 12px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  for (let i = 0; i < N; i++) if (road[i] === 2 && (i % W === 0 || i % W === W - 1)) ctx.fillText(i % W === 0 ? "◀" : "▶", (i % W) * TS + TS / 2, ((i / W) | 0) * TS + TS / 2);
+
+  // cars
+  if (zoom * TS >= 7) for (const c of cars){
+    const a = c.path[c.k], b = c.path[Math.min(c.k + 1, c.path.length - 1)];
+    const ax = a % W, ay = (a / W) | 0, bx = b % W, by = (b / W) | 0;
+    const dx = bx - ax, dy = by - ay;
+    const x = (ax + dx * c.t + .5) * TS - dy * TS * .2, y = (ay + dy * c.t + .5) * TS + dx * TS * .2;
+    ctx.fillStyle = c.col;
+    if (dx) ctx.fillRect(x - 3.5, y - 2, 7, 4); else ctx.fillRect(x - 2, y - 3.5, 4, 7);
+  }
+
+  // tool preview
+  if (!pinch && hover && tool !== "pan"){
+    const a = drag && !drag.pan ? drag.start : hover, b = hover;
+    let tiles, col;
+    if (tool === "road"){ tiles = lPath(a, b); col = "rgba(80,80,90,.6)"; }
+    else { tiles = rectTiles(a, b); col = "rgba(220,60,50,.35)"; }
+    for (const i of tiles){
+      const px = (i % W) * TS, py = ((i / W) | 0) * TS;
+      if (tool === "road") ctx.fillStyle = terr[i] && !road[i] ? "rgba(150,150,160,.7)" : col;
+      else if (tool === "bull") ctx.fillStyle = col;
+      else { if (road[i] || terr[i]) continue; ctx.fillStyle = ZCOL[Z[tool]][1]; ctx.globalAlpha = .55; }
+      ctx.fillRect(px, py, TS, TS); ctx.globalAlpha = 1;
+    }
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5;
+    ctx.strokeRect(b.x * TS + .75, b.y * TS + .75, TS - 1.5, TS - 1.5);
+    if (drag && !drag.pan){
+      const cost = toolCost(a, b), label = tool === "road" ? `🪙${fmt(cost)}` : tool === "bull" ? `🪙${fmt(cost)}` : `${tiles.length} ช่อง`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const sx = ((b.x + 1) * TS - cam.x) * zoom + 6, sy = (b.y * TS - cam.y) * zoom - 6;
+      ctx.font = "600 13px Anuphan, sans-serif"; ctx.textAlign = "left";
+      const w = ctx.measureText(label).width + 12;
+      ctx.fillStyle = cost > G.money ? "#C2413A" : "rgba(20,28,36,.85)"; ctx.fillRect(sx, sy - 11, w, 22);
+      ctx.fillStyle = "#fff"; ctx.fillText(label, sx + 6, sy);
+    }
+  }
+}
+
+/* ================= main loop ================= */
+let last = performance.now(), acc = 0;
+function frame(now){
+  const dt = Math.min(.1, (now - last) / 1000); last = now;
+  if (speed){
+    acc += dt * 1000 * speed;
+    let guard = 0;
+    while (acc >= DAY_MS && guard++ < 4){ acc -= DAY_MS; simDay(); }
+    if (acc > DAY_MS) acc = 0;
+    // move cars
+    for (const c of cars){
+      const p = c.path[Math.min(c.k + 1, c.path.length - 1)], l = load[p];
+      c.t += dt * speed * 2.6 / (1 + (l > .7 ? 3 * (l - .7) : 0) + (l > 1 ? 4 * (l - 1) : 0));
+      while (c.t >= 1 && c.k < c.path.length - 1){ c.t -= 1; c.k++; }
+    }
+    cars = cars.filter(c => c.k < c.path.length - 1 && G.road[c.path[c.k]]);
+  }
+  if (netDirty) rebuildNetwork();
+  clampCam(); draw();
+  requestAnimationFrame(frame);
+}
+
+/* ================= boot ================= */
+if (!loadGame()) newGame();
+addEventListener("resize", resize);
+resize(); fitCamera();
+rebuildNetwork(); simDay();
+setInterval(save, 10000);
+document.addEventListener("visibilitychange", () => { if (document.hidden) save(); });
+requestAnimationFrame(frame);
 </script>
 </body>
 </html>
