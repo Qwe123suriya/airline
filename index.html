@@ -68,6 +68,12 @@ canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;display:b
 .btn{background:var(--accent);color:var(--accent-ink);padding:7px 12px;border-radius:10px;font-weight:500;font-size:13px}
 .btn.ghost{background:var(--bg);color:var(--ink)}
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.sub{position:fixed;left:50%;transform:translateX(-50%);z-index:5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px 10px;display:none;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;max-width:calc(100% - 24px);box-shadow:0 4px 14px rgba(0,0,0,.12);font-size:13px}
+.sub.on{display:flex}
+.sub small{color:var(--muted);font-size:12px;width:100%;text-align:center}
+.lanes{display:flex;gap:3px}
+.lanes button{min-width:32px;padding:4px 0;border-radius:8px;background:var(--bg);font-family:var(--num);font-weight:600}
+.lanes button.on{background:var(--accent);color:var(--accent-ink)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);z-index:9;background:var(--ink);color:var(--bg);padding:7px 14px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:calc(100% - 32px);text-align:center}
 .toast.on{opacity:1}
 @media (max-width:520px){.bar{gap:8px;padding-left:8px;padding-right:8px}.stat b{font-size:13px}.hide-sm{display:none}}
@@ -100,12 +106,19 @@ canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;display:b
   <button data-tool="R"><span class="e">🏠</span>ที่อยู่</button>
   <button data-tool="C"><span class="e">🏪</span>พาณิชย์</button>
   <button data-tool="I"><span class="e">🏭</span>อุตสาห.</button>
+  <button data-tool="lane+"><span class="e">➕</span>เพิ่มเลน</button>
+  <button data-tool="lane-"><span class="e">➖</span>ลดเลน</button>
   <button data-tool="bull"><span class="e">🧹</span>รื้อถอน</button>
   <span class="sep"></span>
   <button id="trafficBtn"><span class="e">🚦</span>จราจร</button>
   <button id="budgetBtn"><span class="e">💰</span>งบประมาณ</button>
 </nav>
 
+<div class="sub" id="sub">
+  <span>จำนวนเลน</span>
+  <div class="lanes" id="laneSel"></div>
+  <small id="laneInfo"></small>
+</div>
 <div class="sheet" id="info"></div>
 <div class="sheet" id="budget">
   <h3>💰 งบประมาณเมือง <button class="x" data-close="budget">✕</button></h3>
@@ -126,9 +139,15 @@ canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;display:b
 "use strict";
 /* ================= constants ================= */
 const W = 64, H = 44, N = W * H, TS = 20;
-const ROAD_COST = 60, BRIDGE_COST = 400, BULL_COST = 10;
-const ROAD_UPKEEP = 0.5, BRIDGE_UPKEEP = 2.5;          // per day
-const CAP = 80;                                         // trip units per road tile
+const LANE_COST = 30, BRIDGE_LANE_COST = 200, BULL_COST = 10, NARROW_COST = 10;  // per lane per tile
+const LANE_UPKEEP = 0.25, BRIDGE_LANE_UPKEEP = 1.2;    // per lane per day
+const LANE_CAP = 80, TURN_LANE_CAP = 30, SOI_CAP = 50; // trip units (LANE_CAP = one lane each way)
+const JUNCTION_FACTOR = .75;                            // signalised junctions lose capacity
+const MAX_LANES = 6, HWY_LANES = 4;
+// capacity of a road tile with L lanes (L odd & >1 = centre turn lane)
+const laneCap = L => L <= 1 ? SOI_CAP : Math.floor(L / 2) * LANE_CAP + (L % 2 ? TURN_LANE_CAP : 0);
+const perDir = L => L <= 1 ? 1 : Math.floor(L / 2);
+const laneDesc = L => L <= 1 ? "1 เลน (ซอย สวนกันได้)" : L % 2 ? `${L} เลน (ไป ${perDir(L)} / กลับ ${perDir(L)} + เลนกลางเลี้ยว)` : `${L} เลน (ไป ${perDir(L)} / กลับ ${perDir(L)})`;
 const MAX_COMMUTE = 80;                                 // travel-time units
 const RES  = [0, 6, 16, 36];                            // residents per R level
 const JOBC = [0, 4, 10, 22];                            // jobs per C level
@@ -151,7 +170,7 @@ function toast(m){ const t = $("toast"); t.textContent = m; t.classList.add("on"
 let G;               // saved state
 let terr;            // 0 land, 1 water (from seed)
 let conn, access;    // derived: road connected to outside, access road per tile
-let flow = new Float32Array(N), load = new Float32Array(N);
+let flow = new Float32Array(N), load = new Float32Array(N), capArr = new Float32Array(N), junction = new Uint8Array(N);
 let routes = new Map(), rList = [], jobList = [], rr = 0;
 let cars = [];
 let stats = {pop: 0, jobsC: 0, jobsI: 0, dR: 1, dC: .5, dI: 1, commute: 1, routed: 0, income: 0, expense: 0, roads: 0, bridges: 0, unemp: 0, unconnected: 0};
@@ -172,20 +191,21 @@ function genTerrain(seed){
 }
 function newGame(){
   const seed = (Math.random() * 1e9) | 0;
-  G = {seed, money: 30000, day: 0, tax: {r: 9, c: 9, i: 9}, road: new Uint8Array(N), zone: new Uint8Array(N), bld: new Uint8Array(N)};
+  G = {seed, money: 30000, day: 0, tax: {r: 9, c: 9, i: 9}, road: new Uint8Array(N), lanes: new Uint8Array(N), zone: new Uint8Array(N), bld: new Uint8Array(N)};
   terr = genTerrain(seed);
   // highway connections to the outside world (locked = 2)
-  for (const [y, x0, x1] of [[22, 0, 3], [12, W - 3, W]]) for (let x = x0; x < x1; x++){ G.road[y * W + x] = 2; terr[y * W + x] = 0; }
+  for (const [y, x0, x1] of [[22, 0, 3], [12, W - 3, W]]) for (let x = x0; x < x1; x++){ G.road[y * W + x] = 2; G.lanes[y * W + x] = HWY_LANES; terr[y * W + x] = 0; }
   routes.clear(); cars = []; netDirty = true;
 }
 function save(){
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({...G, road: Array.from(G.road), zone: Array.from(G.zone), bld: Array.from(G.bld)})); } catch {}
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({...G, road: Array.from(G.road), lanes: Array.from(G.lanes), zone: Array.from(G.zone), bld: Array.from(G.bld)})); } catch {}
 }
 function loadGame(){
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (!s || !Array.isArray(s.road) || s.road.length !== N) return false;
     G = {...s, road: Uint8Array.from(s.road), zone: Uint8Array.from(s.zone), bld: Uint8Array.from(s.bld)};
+    G.lanes = Array.isArray(s.lanes) && s.lanes.length === N ? Uint8Array.from(s.lanes) : G.road.map(r => r === 2 ? HWY_LANES : r ? 2 : 0);
     terr = genTerrain(G.seed);
     for (let i = 0; i < N; i++) if (G.road[i] === 2) terr[i] = 0;
     return true;
@@ -215,6 +235,16 @@ function rebuildNetwork(){
   routes.clear(); rr = 0;
   cars = cars.filter(c => c.path.every(p => G.road[p]));
   netDirty = false;
+  computeCaps();
+}
+function computeCaps(){
+  for (let i = 0; i < N; i++){
+    if (!G.road[i]){ capArr[i] = 0; junction[i] = 0; continue; }
+    let n = 0; for (const j of NB[i]) if (G.road[j]) n++;
+    junction[i] = n >= 3 ? 1 : 0;
+    capArr[i] = laneCap(G.lanes[i] || 2) * (junction[i] ? JUNCTION_FACTOR : 1);
+  }
+  for (let i = 0; i < N; i++) load[i] = capArr[i] ? flow[i] / capArr[i] : 0;
 }
 
 // A* on road tiles, cost grows with congestion
@@ -246,11 +276,11 @@ function astar(a, b){
 function simDay(){
   if (netDirty) rebuildNetwork();
   const {road, zone, bld} = G;
-  let pop = 0, jobsC = 0, jobsI = 0, roads = 0, bridges = 0, unconnected = 0;
+  let pop = 0, jobsC = 0, jobsI = 0, roads = 0, bridges = 0, unconnected = 0, laneUp = 0;
   rList = []; jobList = [];
   const growable = [];
   for (let i = 0; i < N; i++){
-    if (road[i]){ if (road[i] === 1){ terr[i] ? bridges++ : roads++; } continue; }
+    if (road[i]){ if (road[i] === 1){ terr[i] ? bridges++ : roads++; laneUp += G.lanes[i] * (terr[i] ? BRIDGE_LANE_UPKEEP : LANE_UPKEEP); } continue; }
     const z = zone[i]; if (!z) continue;
     const ok = access[i] >= 0;
     if (!ok) unconnected++;
@@ -289,7 +319,7 @@ function simDay(){
   // --- traffic: aggregate flow per road tile ---
   flow.fill(0);
   for (const r of routes.values()) if (r.path) for (const p of r.path) flow[p] += r.w;
-  for (let i = 0; i < N; i++) load[i] = road[i] ? flow[i] / CAP : 0;
+  for (let i = 0; i < N; i++) load[i] = capArr[i] ? flow[i] / capArr[i] : 0;
   let okW = 0, totW = 0;
   for (const r of routes.values()){
     if (r.nojob) continue;
@@ -325,14 +355,14 @@ function simDay(){
 
   // --- money ---
   const income = (pop * tx.r + jobsC * tx.c * 1.3 + jobsI * tx.i * 1.3) / 100 * 1.6;
-  const expense = roads * ROAD_UPKEEP + bridges * BRIDGE_UPKEEP;
+  const expense = laneUp;
   G.money += income - expense;
   G.day++;
 
   // --- cars ---
   for (const r of routes.values()){
     if (!r.path || r.path.length < 2 || cars.length >= MAX_CARS) continue;
-    if (Math.random() < r.w * .035) cars.push({path: r.path, k: 0, t: Math.random() * .3, col: CAR_COLORS[(Math.random() * CAR_COLORS.length) | 0]});
+    if (Math.random() < r.w * .035) cars.push({path: r.path, k: 0, t: Math.random() * .3, lane: (Math.random() * 3) | 0, col: CAR_COLORS[(Math.random() * CAR_COLORS.length) | 0]});
   }
 
   stats = {pop, jobsC, jobsI, dR, dC, dI, commute, routed: totW, income, expense, roads, bridges, unconnected,
@@ -354,6 +384,7 @@ function resize(){
   const th = $("tools").offsetHeight;
   $("toast").style.bottom = (th + 12) + "px";
   $("info").style.bottom = (th + 12) + "px";
+  $("sub").style.bottom = (th + 8) + "px";
   $("budget").style.bottom = (th + 12) + "px";
 }
 function fitCamera(){
@@ -429,8 +460,23 @@ function rectTiles(a, b){
   for (let y = Math.min(a.y, b.y); y <= Math.max(a.y, b.y); y++) for (let x = Math.min(a.x, b.x); x <= Math.max(a.x, b.x); x++) out.push(y * W + x);
   return out;
 }
+const laneUnit = i => terr[i] ? BRIDGE_LANE_COST : LANE_COST;
+const isLineTool = t => t === "road" || t === "lane+" || t === "lane-";
+// target lanes per tile for the current tool (null = untouched)
+function laneTarget(i){
+  const r = G.road[i], L = G.lanes[i];
+  if (tool === "road") return r === 2 ? null : !r ? laneSel : L === laneSel ? null : laneSel;
+  if (!r || r === 2) return null;
+  if (tool === "lane+") return L < MAX_LANES ? L + 1 : null;
+  if (tool === "lane-") return L > 1 ? L - 1 : null;
+  return null;
+}
+function laneChangeCost(i, to){
+  const from = G.road[i] ? G.lanes[i] : 0;
+  return to > from ? (to - from) * laneUnit(i) : (from - to) * NARROW_COST;
+}
 function toolCost(a, b){
-  if (tool === "road") return lPath(a, b).reduce((s, i) => s + (G.road[i] ? 0 : terr[i] ? BRIDGE_COST : ROAD_COST), 0);
+  if (isLineTool(tool)) return lPath(a, b).reduce((s, i) => { const t = laneTarget(i); return s + (t == null ? 0 : laneChangeCost(i, t)); }, 0);
   if (tool === "bull") return rectTiles(a, b).reduce((s, i) => s + ((G.road[i] === 1 || G.zone[i]) ? BULL_COST : 0), 0);
   return 0;
 }
@@ -438,9 +484,16 @@ function applyTool(a, b){
   const cost = toolCost(a, b);
   if (cost > 0 && cost > G.money) return toast(`เงินไม่พอ (ต้องใช้ ${fmt(cost)})`);
   let n = 0;
-  if (tool === "road"){
-    for (const i of lPath(a, b)) if (!G.road[i]){ G.road[i] = 1; G.zone[i] = 0; G.bld[i] = 0; n++; }
-    if (n){ netDirty = true; toast(`สร้างถนน ${n} ช่อง −${fmt(cost)}`); }
+  if (isLineTool(tool)){
+    let built = 0;
+    for (const i of lPath(a, b)){
+      const t = laneTarget(i); if (t == null) continue;
+      if (!G.road[i]){ G.road[i] = 1; G.zone[i] = 0; G.bld[i] = 0; built++; }
+      G.lanes[i] = t; n++;
+    }
+    if (built) netDirty = true; else if (n) computeCaps();
+    const what = tool === "road" ? (built ? `สร้างถนน ${laneSel} เลน ${n} ช่อง` : `ปรับเป็น ${laneSel} เลน ${n} ช่อง`) : tool === "lane+" ? `เพิ่ม 1 เลน ${n} ช่อง` : `ลด 1 เลน ${n} ช่อง`;
+    if (n) toast(`${what} −${fmt(cost)}`); else toast(tool === "lane+" ? "ลากบนถนนที่มีอยู่ (สูงสุด 6 เลน)" : tool === "lane-" ? "ลากบนถนนที่มีอยู่ (ต่ำสุด 1 เลน)" : "ไม่มีอะไรเปลี่ยน");
   } else if (tool === "bull"){
     for (const i of rectTiles(a, b)){
       if (G.road[i] === 1){ G.road[i] = 0; n++; netDirty = true; }
@@ -455,8 +508,11 @@ function applyTool(a, b){
   G.money -= cost;
   updateHud();
 }
+let laneSel = 2;
 function setTool(t){
   tool = t;
+  $("sub").classList.toggle("on", t === "road");
+  $("toast").style.bottom = ($("tools").offsetHeight + (t === "road" ? $("sub").offsetHeight + 16 : 12)) + "px";
   document.querySelectorAll("[data-tool]").forEach(b => b.classList.toggle("on", b.dataset.tool === t));
 }
 $("tools").addEventListener("click", e => { const b = e.target.closest("[data-tool]"); if (b) setTool(b.dataset.tool); });
@@ -465,11 +521,18 @@ $("speed").addEventListener("click", e => { const b = e.target.closest("[data-sp
 function setSpeed(s){ speed = s; document.querySelectorAll("[data-speed]").forEach(b => b.classList.toggle("on", +b.dataset.speed === s)); }
 addEventListener("keydown", e => {
   if (e.target.tagName === "INPUT") return;
-  const map = {"1": "pan", "2": "road", "3": "R", "4": "C", "5": "I", "6": "bull"};
+  const map = {"1": "pan", "2": "road", "3": "R", "4": "C", "5": "I", "6": "bull", "+": "lane+", "=": "lane+", "-": "lane-"};
   if (map[e.key]) setTool(map[e.key]);
   if (e.key === " "){ e.preventDefault(); setSpeed(speed ? 0 : 1); }
   if (e.key === "t") $("trafficBtn").click();
 });
+
+function renderLaneSel(){
+  $("laneSel").innerHTML = [1, 2, 3, 4, 5, 6].map(n => `<button data-lanes="${n}" class="${n === laneSel ? "on" : ""}">${n}</button>`).join("");
+  $("laneInfo").textContent = `${laneDesc(laneSel)} · รับรถ ${laneCap(laneSel)} · 🪙${laneSel * LANE_COST}/ช่อง (สะพาน ${laneSel * BRIDGE_LANE_COST})`;
+}
+$("laneSel").addEventListener("click", e => { const b = e.target.closest("[data-lanes]"); if (b){ laneSel = +b.dataset.lanes; renderLaneSel(); } });
+renderLaneSel();
 
 /* ================= panels ================= */
 function closeSheets(){ $("info").classList.remove("on"); $("budget").classList.remove("on"); }
@@ -481,7 +544,8 @@ function showInfo(t){
   if (G.road[i]){
     title = G.road[i] === 2 ? "🛣️ ทางหลวงออกนอกเมือง" : terr[i] ? "🌉 สะพาน" : "🛣️ ถนน";
     const ld = load[i];
-    rows += kv("ปริมาณรถ", `${fmt(flow[i])} / ${CAP}`) + kv("สภาพจราจร", ld < .7 ? "🟢 คล่องตัว" : ld < 1 ? "🟡 หนาแน่น" : "🔴 ติดขัด");
+    rows += kv("ช่องจราจร", laneDesc(G.lanes[i])) + (junction[i] ? kv("ทางแยก", "🚦 มีไฟจราจร ความจุ −25%") : "") +
+      kv("ปริมาณรถ", `${fmt(flow[i])} / ${fmt(capArr[i])}`) + kv("ค่าบำรุง", `${(G.lanes[i] * (terr[i] ? BRIDGE_LANE_UPKEEP : LANE_UPKEEP) * MONTH).toFixed(0)}/เดือน`) + kv("สภาพจราจร", ld < .7 ? "🟢 คล่องตัว" : ld < 1 ? "🟡 หนาแน่น" : "🔴 ติดขัด");
     if (!conn[i]) rows += kv("สถานะ", "⚠️ ไม่เชื่อมทางหลวง");
   } else if (z){
     const nm = {1: "🏠 ที่อยู่อาศัย", 2: "🏪 พาณิชย์", 3: "🏭 อุตสาหกรรม"}[z];
@@ -494,7 +558,7 @@ function showInfo(t){
     } else rows += kv("ตำแหน่งงาน", z === 2 ? JOBC[l] : JOBI[l]);
   } else {
     title = terr[i] ? "🌊 แม่น้ำ" : "🌳 พื้นที่ว่าง";
-    rows += kv("สร้างได้", terr[i] ? `สะพาน ${fmt(BRIDGE_COST)}/ช่อง` : `ถนน ${fmt(ROAD_COST)}/ช่อง, โซนฟรี`);
+    rows += kv("สร้างได้", terr[i] ? `สะพาน ${fmt(BRIDGE_LANE_COST)}/เลน/ช่อง` : `ถนน ${fmt(LANE_COST)}/เลน/ช่อง, โซนฟรี`);
   }
   $("info").innerHTML = `<h3>${title} <button class="x" data-close="info">✕</button></h3>${rows}`;
   $("info").classList.add("on");
@@ -618,44 +682,79 @@ function drawGround(i, x, y){
   }
 }
 
+const swOf = L => L <= 1 ? 5 : L <= 2 ? 3.2 : L <= 4 ? 2 : 1.2;
+function laneLine(x1, y1, x2, y2, col, dashed, w){
+  ctx.strokeStyle = col; ctx.lineWidth = w || .8;
+  ctx.setLineDash(dashed ? [3.5, 3] : []); ctx.lineDashOffset = dashed ? -(x1 + y1) : 0;
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+}
 function drawRoad(i, x, y){
-  const {road} = G, px = x * TS, py = y * TS, hw = road[i] === 2, br = terr[i];
-  const L = x > 0 && road[i - 1], R = x < W - 1 && road[i + 1], U = y > 0 && road[i - W], D = y < H - 1 && road[i + W];
-  if (br){ rect(px + 2, py + 3, TS, TS, "rgba(10,30,60,.35)"); }
-  rect(px, py, TS, TS, hw ? "#3A3F46" : br ? "#666C74" : "#4B5058");
-  // sidewalks / railings on open sides
-  const sw = br ? "#D6D9DD" : hw ? "#5A6068" : "#BFC5CC", t = br ? 2 : 3;
-  if (!L) rect(px, py, t, TS, sw);
-  if (!R) rect(px + TS - t, py, t, TS, sw);
-  if (!U) rect(px, py, TS, t, sw);
-  if (!D) rect(px, py + TS - t, TS, t, sw);
+  const {road} = G, px = x * TS, py = y * TS, hw = road[i] === 2, br = terr[i], Ln = G.lanes[i] || 2;
+  const cl = x > 0 && road[i - 1], cr = x < W - 1 && road[i + 1], cu = y > 0 && road[i - W], cd = y < H - 1 && road[i + W];
+  const sw = swOf(Ln), rw = TS - 2 * sw, lw = rw / Ln;
+  if (br){
+    rect(px + 2, py + 4, TS, TS, "rgba(10,30,60,.35)");
+    rect(px + TS / 2 - 2, py + TS / 2 - 2, 4, 4, "rgba(10,30,60,.45)");
+  }
+  rect(px, py, TS, TS, hw ? "#3A3F46" : br ? "#62686F" : "#4B5058");
+  // sidewalks / bridge railings on open sides; curb corners on connected ones
+  const swc = br ? "#D6D9DD" : hw ? "#596068" : "#C0C6CD";
+  if (!cl) rect(px, py, sw, TS, swc);
+  if (!cr) rect(px + TS - sw, py, sw, TS, swc);
+  if (!cu) rect(px, py, TS, sw, swc);
+  if (!cd) rect(px, py + TS - sw, TS, sw, swc);
+  rect(px, py, sw, sw, swc); rect(px + TS - sw, py, sw, sw, swc); rect(px, py + TS - sw, sw, sw, swc); rect(px + TS - sw, py + TS - sw, sw, sw, swc);
+  if (br){ ctx.fillStyle = "#8D949C"; for (let k = 2; k < TS; k += 5){ if (!cu) ctx.fillRect(px + k, py, 1, sw); if (!cd) ctx.fillRect(px + k, py + TS - sw, 1, sw); if (!cl) ctx.fillRect(px, py + k, sw, 1); if (!cr) ctx.fillRect(px + TS - sw, py + k, sw, 1); } }
   if (showTraffic && conn){
     const l = load[i];
-    rect(px + 4, py + 4, TS - 8, TS - 8, l < .01 ? "rgba(150,160,170,.45)" : l < .7 ? "rgba(70,205,110,.85)" : l < 1 ? "rgba(245,190,40,.9)" : "rgba(235,60,50,.95)");
+    rect(px + sw + .5, py + sw + .5, rw - 1, rw - 1, l < .01 ? "rgba(150,160,170,.45)" : l < .7 ? "rgba(70,205,110,.85)" : l < 1 ? "rgba(245,190,40,.9)" : "rgba(235,60,50,.95)");
     return;
   }
-  const n = (L ? 1 : 0) + (R ? 1 : 0) + (U ? 1 : 0) + (D ? 1 : 0), cx = px + TS / 2, cy = py + TS / 2;
-  const mark = hw ? "#F2C230" : "rgba(255,255,255,.85)";
+  const n = (cl ? 1 : 0) + (cr ? 1 : 0) + (cu ? 1 : 0) + (cd ? 1 : 0);
+  const horiz = !cu && !cd, vert = !cl && !cr && (cu || cd);
+  const yellow = "#F2C230", white = "rgba(255,255,255,.85)";
   if (n >= 3){
-    ctx.fillStyle = "rgba(255,255,255,.75)";
-    for (let k = 0; k < 4; k++){
-      const o = 5 + k * 3;
-      if (L) ctx.fillRect(px + 1, py + o, 2.5, 1.6);
-      if (R) ctx.fillRect(px + TS - 3.5, py + o, 2.5, 1.6);
-      if (U) ctx.fillRect(px + o, py + 1, 1.6, 2.5);
-      if (D) ctx.fillRect(px + o, py + TS - 3.5, 1.6, 2.5);
+    // zebra crossings + stop lines + traffic lights
+    ctx.fillStyle = "rgba(255,255,255,.8)";
+    for (let o = sw + .6; o < TS - sw - .8; o += 2.2){
+      if (cl) ctx.fillRect(px + .5, py + o, 2.4, 1.3);
+      if (cr) ctx.fillRect(px + TS - 2.9, py + o, 2.4, 1.3);
+      if (cu) ctx.fillRect(px + o, py + .5, 1.3, 2.4);
+      if (cd) ctx.fillRect(px + o, py + TS - 2.9, 1.3, 2.4);
     }
-  } else {
-    ctx.strokeStyle = mark; ctx.lineWidth = hw ? 1.2 : 1; ctx.setLineDash(hw ? [] : [3.5, 3]);
-    ctx.beginPath();
-    if (L){ ctx.moveTo(cx, cy); ctx.lineTo(px, cy); }
-    if (R){ ctx.moveTo(cx, cy); ctx.lineTo(px + TS, cy); }
-    if (U){ ctx.moveTo(cx, cy); ctx.lineTo(cx, py); }
-    if (D){ ctx.moveTo(cx, cy); ctx.lineTo(cx, py + TS); }
-    if (!n){ ctx.moveTo(px + 4, cy); ctx.lineTo(px + TS - 4, cy); }
-    ctx.stroke(); ctx.setLineDash([]);
+    const ph = Math.floor((T + hash(i) * 6) / 3) % 2;
+    const hc = ph ? "#3DDC6B" : "#FF4A3D", vc = ph ? "#FF4A3D" : "#3DDC6B";
+    for (const [ox, oy, c] of [[1.6, 1.6, vc], [TS - 1.6, TS - 1.6, vc], [TS - 1.6, 1.6, hc], [1.6, TS - 1.6, hc]]){ circ(px + ox, py + oy, 1.5, "#1B1F24"); circ(px + ox, py + oy, .9, c); }
+    return;
   }
-  if (conn && !conn[i]) rect(px, py, TS, TS, "rgba(230,60,50,.3)");
+  if (horiz || vert || !n){
+    // lane dividers along the axis
+    const H_ = horiz || !n, a0 = H_ ? py + sw : px + sw;
+    const ln = (pos, col, dashed, w) => H_ ? laneLine(px, pos, px + TS, pos, col, dashed, w) : laneLine(pos, py, pos, py + TS, col, dashed, w);
+    for (let k = 1; k < Ln; k++){
+      const pos = a0 + k * lw;
+      const centre = Ln % 2 === 0 ? k === Ln / 2 : (k === (Ln - 1) / 2 || k === (Ln + 1) / 2);
+      if (centre && Ln % 2 === 0){ ln(pos - .55, yellow, false, .6); ln(pos + .55, yellow, false, .6); }
+      else if (centre) ln(pos, yellow, k === (Ln - 1) / 2 ? false : true, .7);
+      else ln(pos, white, true, .6);
+    }
+    if (hw){ ln(a0 + .6, white, false, .5); ln(a0 + rw - .6, white, false, .5); }
+    if (Ln % 2 && Ln > 1 && zoom * TS > 26){             // turn-lane arrows
+      const c = a0 + rw / 2; ctx.fillStyle = "rgba(255,255,255,.75)";
+      if (H_){ ctx.fillRect(px + 5, c - .3, 4, .6); ctx.fillRect(px + 11, c - .3, 4, .6); }
+      else { ctx.fillRect(c - .3, py + 5, .6, 4); ctx.fillRect(c - .3, py + 11, .6, 4); }
+    }
+    ctx.setLineDash([]);
+    return;
+  }
+  // bend: centre line follows the turn
+  if (Ln >= 2){
+    const cx = px + TS / 2, cy = py + TS / 2;
+    ctx.strokeStyle = yellow; ctx.lineWidth = .8; ctx.setLineDash([]); ctx.beginPath();
+    if (cl){ ctx.moveTo(px, cy); ctx.lineTo(cx, cy); } if (cr){ ctx.moveTo(px + TS, cy); ctx.lineTo(cx, cy); }
+    if (cu){ ctx.moveTo(cx, py); ctx.lineTo(cx, cy); } if (cd){ ctx.moveTo(cx, py + TS); ctx.lineTo(cx, cy); }
+    ctx.stroke();
+  }
 }
 
 function drawBuilding(i, x, y){
@@ -734,14 +833,17 @@ function drawBuilding(i, x, y){
 function drawCar(c){
   const a = c.path[c.k], b = c.path[Math.min(c.k + 1, c.path.length - 1)];
   const ax = a % W, ay = (a / W) | 0, dx = b % W - ax, dy = ((b / W) | 0) - ay;
+  const Ln = G.lanes[c.t < .5 ? a : b] || 2, lw = (TS - 2 * swOf(Ln)) / Ln, li = c.lane % perDir(Ln);
+  const off = Ln <= 1 ? 0 : (Ln % 2 ? lw / 2 : 0) + (li + .5) * lw;
   // Thailand: keep left
-  const x = (ax + dx * c.t + .5) * TS + dy * TS * .2, y = (ay + dy * c.t + .5) * TS - dx * TS * .2;
+  const x = (ax + dx * c.t + .5) * TS + dy * off, y = (ay + dy * c.t + .5) * TS - dx * off;
+  const hwid = Math.min(2.1, lw * .42);
   ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(dy, dx));
-  rrect(-3.6, -1.6, 8, 4.2, 1.2, "rgba(0,0,0,.25)");
-  rrect(-4, -2.1, 8, 4.2, 1.3, c.col);
-  rect(.8, -1.6, 1.7, 3.2, "#1E2833");          // windshield
-  rect(-3, -1.4, 1.1, 2.8, "#2A3644");          // rear window
-  rect(-1.9, -1.5, 2.6, 3, "rgba(255,255,255,.18)");
+  rrect(-3.4, -hwid + .5, 7.4, hwid * 2, 1.2, "rgba(0,0,0,.25)");
+  rrect(-3.8, -hwid, 7.4, hwid * 2, 1.2, c.col);
+  rect(.9, -hwid + .4, 1.6, hwid * 2 - .8, "#1E2833");
+  rect(-2.8, -hwid + .5, 1, hwid * 2 - 1, "#2A3644");
+  rect(-1.8, -hwid + .5, 2.6, hwid * 2 - 1, "rgba(255,255,255,.18)");
   ctx.restore();
 }
 
@@ -776,10 +878,11 @@ function draw(){
   // tool preview
   if (!pinch && hover && tool !== "pan"){
     const a = drag && !drag.pan ? drag.start : hover, b = hover;
-    const tiles = tool === "road" ? lPath(a, b) : rectTiles(a, b);
+    const tiles = isLineTool(tool) ? lPath(a, b) : rectTiles(a, b);
     for (const i of tiles){
       const px = (i % W) * TS, py = ((i / W) | 0) * TS;
       if (tool === "road") ctx.fillStyle = terr[i] && !road[i] ? "rgba(170,170,180,.75)" : "rgba(60,64,72,.7)";
+      else if (tool === "lane+" || tool === "lane-"){ if (laneTarget(i) == null) continue; ctx.fillStyle = tool === "lane+" ? "rgba(60,140,240,.5)" : "rgba(240,140,40,.5)"; }
       else if (tool === "bull") ctx.fillStyle = "rgba(220,60,50,.4)";
       else { if (road[i] || terr[i]) continue; ctx.fillStyle = LOT[Z[tool]].replace(/[\d.]+\)$/, ".7)"); }
       ctx.fillRect(px, py, TS, TS);
@@ -787,7 +890,7 @@ function draw(){
     ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5;
     ctx.strokeRect(b.x * TS + .75, b.y * TS + .75, TS - 1.5, TS - 1.5);
     if (drag && !drag.pan){
-      const cost = toolCost(a, b), label = (tool === "road" || tool === "bull") ? `🪙${fmt(cost)}` : `${tiles.length} ช่อง`;
+      const cost = toolCost(a, b), label = isLineTool(tool) || tool === "bull" ? `🪙${fmt(cost)}` : `${tiles.length} ช่อง`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const sx = ((b.x + 1) * TS - cam.x) * zoom + 6, sy = (b.y * TS - cam.y) * zoom - 6;
       ctx.font = "600 13px Anuphan, sans-serif"; ctx.textAlign = "left";
