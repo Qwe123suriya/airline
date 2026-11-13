@@ -1023,7 +1023,7 @@ const isOpen=c=>S.unlocked.includes(regionOf(c).id);
 function regionCost(R){const hub=city(S.hub);const d=Math.min(...R.c.map(c=>dist(hub,city(c))));return Math.round((20e6+d*22e3)/5e6)*5e6}
 const NAMES=["สยามสกาย","ฟ้าคราม","นกยูงแอร์","จันทราเวย์","ทะเลฟ้า","ช้างเหิน","ไผ่ทองแอร์","ดาวเหนือ"];
 const RIVALS=["นภาคราม แอร์ไลน์","โกลเด้นวิง","สกายดราก้อน"];
-const CARGO_RATE=10, KEY="airline-owner-v1", START=new Date(2027,0,1), DAY_MS=30000, SPEEDS=[1,3,10,30];
+let CARGO_RATE=10;const KEY="airline-owner-v1", START=new Date(2027,0,1), DAY_MS=30000, SPEEDS=[1,3,10,30];
 
 const $=s=>document.querySelector(s);
 const $$=s=>document.querySelectorAll(s);
@@ -1035,7 +1035,9 @@ const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 function dist(a,b){const R=6371,r=Math.PI/180,dl=(b.lat-a.lat)*r,dn=(b.lon-a.lon)*r;
   const h=Math.sin(dl/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dn/2)**2;return Math.round(2*R*Math.asin(Math.sqrt(h)))}
 const rd=r=>dist(city(r.from),city(r.dest));
-const baseFare=d=>Math.round((700+6*Math.pow(d,.85))/10)*10;
+/* economy dial: scales every ticket fare and freight rate (tuned so a good route pays back its aircraft in about a year) */
+let FARE_X=1;
+const baseFare=d=>Math.round(FARE_X*(700+6*Math.pow(d,.85))/10)*10;
 const legsFor=(m,d)=>clamp(Math.floor(24/(d/m.speed+1.2)),1,12);
 // planes take longer in the air on screen; the time comes out of ground time, so the number of flights per day stays the same
 const AIR_SLOW=1.7,flyFrac=(m,d,L)=>Math.min(.94,(d/m.speed+.4)*AIR_SLOW/(24/L));
