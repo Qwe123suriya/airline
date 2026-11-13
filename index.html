@@ -1164,7 +1164,7 @@ function grounded(c){return S.events.some(e=>e.city===c&&e.until>S.day&&e.type==
    Your pull = service × reputation × (fare cheapness)^1.5; theirs = rival strength × their fare cheapness^1.5. */
 /* daily cost per aircraft (crew, lease, insurance) as a share of its price, and the airport slot rent each open route pays every day */
 const FIX_RATE=.0014,ROUTE_SLOT=45e3;
-const RV_STR=.62,RV_GRACE=20,RV_EXIT_SHARE=.7,RV_EXIT_DAYS=25;
+const RV_STR=.62,RV_GRACE=20,RV_EXIT_SHARE=.62,RV_EXIT_DAYS=20;
 const rivalByName=n=>S.rivals.find(x=>x.n===n);
 function compShare(r,price,svc){if(!r.cmp||rkind(r)==="cargo")return 1;
   const base=baseFare(dist(city(r.from),city(r.dest))),rv=rivalByName(r.cmp.rv),st=rv?rivalStars(rv):3.5;
@@ -1207,14 +1207,16 @@ function fleetValue(){return S.fleet.reduce((s,p)=>s+resale(p),0)+(S.ships||[]).
 function resale(p){const m=model(p.m);return m.price*.6*(.5+p.cond/200)*Math.max(.5,1-p.age/3650)}
 function valuation(){return S.cash+fleetValue()-S.loan}
 // Competition score: value, traffic, cargo, containers, rating and missions all count
-function myScoreParts(){return [["มูลค่ากิจการ",valuation()/2e6],["ผู้โดยสารสะสม",S.totPax/100],["สินค้าทางอากาศ",S.totCargo/2],["ตู้ทางเรือ",(S.totTeu||0)/10],["เรตติ้ง",(S.rating?S.rating.overall:0)*1000],["ภารกิจ",(S.mdone||0)*300]]}
+function myScoreParts(){return [["มูลค่ากิจการ",valuation()/2e6],["ผู้โดยสารสะสม",S.totPax/100],["สินค้าทางอากาศ",S.totCargo/2],["ตู้ทางเรือ",(S.totTeu||0)/10],["เรตติ้ง",(S.rating?S.rating.overall:0)*1000],["ภารกิจ",(S.mdone||0)*120]]}
 const myScore=()=>Math.max(0,Math.round(myScoreParts().reduce((a,x)=>a+x[1],0)));
 const rivalScore=rv=>Math.max(0,Math.round(rv.v/2e6+(rv.ops||0)+rivalStars(rv)*1000));
 function standings(){return [...S.rivals.map(rv=>({n:rv.n,sc:rivalScore(rv),st:rivalStars(rv),prev:rv.prank})),{n:S.name,sc:myScore(),st:S.rating?S.rating.overall:0,me:1,prev:S.prank}].sort((a,b)=>b.sc-a.sc)}
 function rank(){return standings().findIndex(x=>x.me)+1}
+// level XP: what you actually built (rating stars count for the league table, not for levels)
+const xpScore=()=>Math.max(0,Math.round(myScoreParts().filter(x=>x[0]!=="เรตติ้ง").reduce((a,x)=>a+x[1],0)));
 const lvlOf=sc=>Math.floor(Math.sqrt(Math.max(0,sc)/180))+1,lvlXP=l=>180*(l-1)*(l-1);
-function lvlCheck(){const sc=myScore(),l=lvlOf(sc);if(S.lvl==null){S.lvl=l;return}
-  if(l>S.lvl){const gained=l-S.lvl;S.lvl=l;const rw=Math.round((4e6*l+Math.max(0,avgDailyProfit())*1.5)*gained/1e5)*1e5;S.cash+=rw;save();
+function lvlCheck(){const sc=xpScore(),l=lvlOf(sc);if(S.lvl==null){S.lvl=l;return}
+  if(l>S.lvl){const gained=l-S.lvl;S.lvl=l;const rw=Math.round((S.startCap*.015*l+Math.max(0,avgDailyProfit()))*gained/1e5)*1e5;S.cash+=rw;save();
     celebrate("!🎉 เลเวลอัป!",`สายการบิน Lv ${l} · โบนัส ${money(rw,true)}`);addNews(`🎉 ${S.name} ขึ้นเป็น Lv ${l} รับโบนัส ${money(rw)}`)}}
 function addNews(t){S.news.unshift({d:S.day,t,id:(S.nid++)});S.news=S.news.slice(0,30)}
 function mxCost(p){const m=model(p.m);return m.price*.02*(100-p.cond)/100+m.price*.002}
@@ -1264,7 +1266,7 @@ function simDay(){
     if(p.route&&p.down<=S.day){
       if(Math.random()<(100-p.cond)/100*.012){p.down=S.day+3;const c=model(p.m).price*.004;S.cash-=c;S.rep=clamp(S.rep-2,0,100);addNews(`⚠️ ${p.reg} เครื่องขัดข้องกลางทาง จอดซ่อม 3 วัน เสีย ${money(c)} ชื่อเสียงลดลง`)}
       else if(S.autoMx&&p.cond<50)startMx(p,true)}}
-  const interest=S.loan*.0002,T=S.today,brc=totalUpkeep(),sfix=shipFixed();
+  const interest=S.loan*loanRate()/365,T=S.today,brc=totalUpkeep(),sfix=shipFixed();
   for(const l of S.lanes){const t=l.today||{},lc=laneCalc(l),rv=t.srev||0,cs=(t.sfuel||0)+(t.sport||0)+lc.fixed;
     {const B=l.bk=l.bk||{d:0,r:0,o:0};for(const [k,D,cp] of [["d",lc.D,lc.cap],["r",lc.Dr,lc.capr],["o",lc.Do,lc.capo]])B[k]=Math.min((B[k]||0)+Math.max(0,D-cp)*BK.sea.keep,D*BK.sea.cap)}
     l.last={...lc,rev:rv,cost:cs,profit:rv-cs,teuDone:t.teu||0,voy:t.voy||0};l.h=l.h||[];l.h.push(Math.round(rv-cs));if(l.h.length>30)l.h.shift();l.today={}}
@@ -1279,7 +1281,7 @@ function simDay(){
   S.rep=clamp(S.rep+(target-S.rep)*.03,0,100);
   {const prev=standings();prev.forEach((x,i)=>{if(x.me)S.prank=i+1;else{const rv=S.rivals.find(r=>r.n===x.n);if(rv)rv.prank=i+1}})}
   rivalTurn();
-  for(const rv of S.rivals){rv.ops=(rv.ops||0)+rv.v/2e6*.035*(.6+Math.random()*.8);rv.v*=1+.002+(Math.random()-.5)*.02;rv.st=clamp(rivalStars(rv)+(Math.random()-.5)*.06,2.5,4.8)}
+  for(const rv of S.rivals){rv.ops=(rv.ops||0)+rv.v/2e6*.07*(.6+Math.random()*.8);rv.v*=1+(rv.v>1.1*Math.max(1,valuation())?.0004:.002)+(Math.random()-.5)*.014;rv.st=clamp(rivalStars(rv)+(Math.random()-.5)*.06,2.5,4.8)}
   S.hist.push({d:S.day,c:S.cash,r:rev,x:cost});if(S.hist.length>365)S.hist.shift();
   {const had=suezShut();S.events=S.events.filter(e=>e.until>S.day);if(had&&!suezShut()){seaCache.clear();addNews("🚢 คลองสุเอซเปิดใช้ได้อีกครั้ง")}}
   if(S.mkt&&S.mkt.until<=S.day){addNews(`📣 แคมเปญ${S.mkt.n}จบแล้ว`);S.mkt=null}
@@ -1303,9 +1305,9 @@ function rivalTurn(){
   const contested=pax.filter(r=>r.cmp).length,lead=rank()===1;
   for(const r of pax){const base=baseFare(dist(city(r.from),city(r.dest)));
     if(!r.cmp){
-      if(S.day<RV_GRACE||contested>=Math.ceil(pax.length*.6))continue;
+      if(S.day<RV_GRACE||contested>=Math.ceil(pax.length*.5)||(r.cmpCool||0)>S.day)continue;
       const margin=clamp(r.last.profit/Math.max(1,r.last.rev),0,1);
-      if(Math.random()<(.004+.035*margin)*(lead?1.6:1)*(pax.length<2?.4:1)){
+      if(Math.random()<(.002+.016*margin)*(lead?1.6:1)*(pax.length<2?.4:1)){
         const tot=S.rivals.reduce((a,x)=>a+x.v,0);let k=Math.random()*tot,rv=S.rivals[0];for(const x of S.rivals){k-=x.v;if(k<=0){rv=x;break}}
         r.cmp={rv:rv.n,fare:.92,since:S.day,weak:0};
         addNews(`⚔️ ${rv.n} เปิดบิน ${r.from}→${r.dest} แข่งกับคุณ ตั้งราคาถูกกว่าราคากลาง 8%`);toast(`⚔️ ${rv.n} บุกเส้นทาง ${r.from}→${r.dest} ของคุณ`)}
@@ -1314,10 +1316,10 @@ function rivalTurn(){
     const my=priceOf(r)/base,tg=clamp(my*.96,.65,1.15);r.cmp.fare+=(tg-r.cmp.fare)*.15;
     const sh=compShare(r,priceOf(r));r.cmp.share=sh;
     r.cmp.weak=sh>RV_EXIT_SHARE?(r.cmp.weak||0)+1:Math.max(0,(r.cmp.weak||0)-1);
-    if(r.cmp.weak>=RV_EXIT_DAYS){addNews(`🏳️ ${r.cmp.rv} ถอนตัวจาก ${r.from}→${r.dest} คุณครองเส้นทางนี้แล้ว`);celebrate("!ชนะศึกเส้นทาง",`${r.from}→${r.dest}`);S.rep=clamp(S.rep+2,0,100);delete r.cmp}}
+    if(r.cmp.weak>=RV_EXIT_DAYS||(S.day-r.cmp.since>60&&sh>.5&&Math.random()<.01)){addNews(`🏳️ ${r.cmp.rv} ถอนตัวจาก ${r.from}→${r.dest} คุณครองเส้นทางนี้แล้ว`);celebrate("!ชนะศึกเส้นทาง",`${r.from}→${r.dest}`);S.rep=clamp(S.rep+2,0,100);delete r.cmp;r.cmpCool=S.day+90}}
   // rivals keep pace: they grow faster when you pull ahead and from every route they fight you on
   for(const rv of S.rivals){const fights=S.routes.filter(r=>r.cmp&&r.cmp.rv===rv.n).length;
-    rv.v*=1+.0012*fights+(myV>rv.v?.004*clamp((myV-rv.v)/myV,0,1):0);rv.ops=(rv.ops||0)+fights*3}
+    rv.v*=1+(rv.v<1.5*myV?.0004*Math.min(fights,5):0)+(myV>rv.v?.003*clamp((myV-rv.v)/myV,0,1):0);rv.ops=(rv.ops||0)+Math.min(fights,5)*3}
 }
 function randomEvent(){
   if(Math.random()>.07)return;
@@ -1412,7 +1414,7 @@ function renderApp(){
   renderView(true);updateTop();
   if(S.over)showOver();
 }
-function updateTop(){if(S&&S.livery){const k=S.livery.tail+S.livery.stripe;if(updateTop.lv!==k){updateTop.lv=k;const st=document.documentElement.style;st.setProperty("--brand",S.livery.tail);st.setProperty("--brand2",S.livery.stripe)}}const hs=$("#hstar");if(hs&&S){const sc=myScore(),l=lvlOf(sc),a=lvlXP(l),b=lvlXP(l+1),pc=Math.round(Math.min(1,(sc-a)/(b-a))*100);hs.innerHTML=`<span class="lvchip" title="อีก ${(b-sc).toLocaleString()} คะแนนถึง Lv ${l+1}"><b>Lv ${l}</b><i style="width:${pc}%"></i></span>${S.rating?`<span style="color:#E9A825">★</span>${S.rating.overall.toFixed(1)}`:""}`}
+function updateTop(){if(S&&S.livery){const k=S.livery.tail+S.livery.stripe;if(updateTop.lv!==k){updateTop.lv=k;const st=document.documentElement.style;st.setProperty("--brand",S.livery.tail);st.setProperty("--brand2",S.livery.stripe)}}const hs=$("#hstar");if(hs&&S){const sc=xpScore(),l=Math.max(S.lvl||1,lvlOf(sc)),a=lvlXP(l),b=lvlXP(l+1),pc=Math.round(clamp((sc-a)/(b-a),0,1)*100);hs.innerHTML=`<span class="lvchip" title="อีก ${(b-sc).toLocaleString()} คะแนนถึง Lv ${l+1}"><b>Lv ${l}</b><i style="width:${pc}%"></i></span>${S.rating?`<span style="color:#E9A825">★</span>${S.rating.overall.toFixed(1)}`:""}`}
   if(!S||!$("#cs"))return;
   const p=S.last?S.last.rev-S.last.cost:0;
   $("#cd").textContent=(p>=0?"+":"")+money(p,true)+"/วัน";$("#cd").className="d num "+(p>=0?"good":"bad");
@@ -2029,7 +2031,7 @@ function mUnit(m){const p=Math.max(0,mProg(m));switch(m.k){case"pax":return `${M
   case"teu":return `${Math.round(p).toLocaleString()} / ${m.target.toLocaleString()} TEU`;case"profit":return `เมื่อวาน ${money(mProg(m),true)}`;case"region":return p?"สำเร็จ":"ยังไม่มีเส้นทาง";case"lf":return `เมื่อวาน ${p}%`;default:return `${Math.round(p)} / ${m.target}`}}
 function mkMission(k,target,days,param){const base=k==="pax"?S.totPax:k==="cargo"?S.totCargo:k==="teu"?(S.totTeu||0):0;
   const V=Math.max(valuation(),S.startCap),f={fleet:.8,routes:.8,pax:1,cargo:1,teu:1.2,profit:1.3,rep:1,branch:1.1,region:1.2,ship:1,lane:1,pbr:1,lf:1}[k]||1;
-  return {id:S.nid++,k,target,param,base,until:days?S.day+days:1e9,reward:niceN(clamp(V*.035*f,6e6,3e9)),rep:2}}
+  return {id:S.nid++,k,target,param,base,until:days?S.day+days:1e9,reward:niceN(clamp(V*.009*f,3e6,8e8)),rep:2}}
 function genMission(){const have=new Set((S.missions||[]).map(m=>m.k)),L=S.last||{},pool=[];
   const dailyProfit=L.rev?L.rev-L.cost:0;
   if(S.fleet.length)pool.push(()=>mkMission("pax",niceN(Math.max(1000,(L.pax||0)*7)),10));
@@ -2525,7 +2527,9 @@ function todayHTML(){const T=S.today||blankT();
    <div class="muted small">เงินเข้าทุกครั้งที่เครื่องบินลงจอด ส่วนค่าดูแลเครื่อง ค่าลูกเรือ และดอกเบี้ย หักรวมตอนขึ้นวันใหม่</div>`}
 function svcProj(i){const sv=S.service,rp=S.rep;S.service=i;S.rep=SERVICE[i].rep;let pax=0,profit=0;
   for(const r of S.routes){const c=calc(r);pax+=c.pax;profit+=c.profit}S.service=sv;S.rep=rp;return {pax:Math.round(pax),profit}}
-function maxLoan(){return Math.max(0,Math.floor((fleetValue()*.8+50e6)/50e6)*50e6)}
+function maxLoan(){return Math.max(0,Math.floor((fleetValue()*.45+50e6)/50e6)*50e6)}
+// yearly loan rate: 6% when lightly borrowed, up to ~36% when debt is close to everything you own
+const loanRate=()=>{const own=Math.max(1,fleetValue()+Math.max(0,S.cash));return .06+.30*clamp(S.loan/own,0,1)};
 function moneyHTML(){
   const L=S.last||{tix:0,crev:0,fuelC:0,feeC:0,fixed:0,svc:0,interest:0,cost:0,rev:0};
   const ml=maxLoan(),hedgeFee=Math.max(5e6,(L.fuelC||0)*60*.03);
@@ -2560,7 +2564,7 @@ function moneyHTML(){
     ${MKT.map(m=>`<div class="row between"><span class="small">${m.n}<br><span class="muted">${m.days} วัน · คนเพิ่ม ${Math.round((m.mult-1)*100)}%${m.rep?` · ชื่อเสียง +${m.rep}`:""}</span></span><button class="btn sm" data-mkt="${m.id}" ${S.mkt||S.cash<m.cost?"disabled":""}>${money(m.cost,true)}</button></div>`).join("")}</div>
   <div class="panel stack"><div class="row between"><div><div class="eyebrow">ล็อกราคาน้ำมัน</div><div class="muted small">จ่ายค่าธรรมเนียมเพื่อใช้ราคาน้ำมันวันนี้ไปอีก 60 วัน ไม่ว่าตลาดจะขึ้นหรือลง</div></div><span class="num small">ตลาด ${S.fuel.toFixed(2)}</span></div>
     ${S.hedge?`<div class="small good">ล็อกไว้ที่ ${S.hedge.price.toFixed(2)} อีก ${S.hedge.until-S.day} วัน</div>`:`<button class="btn sm" id="hedge" ${S.cash<hedgeFee?"disabled":""}>ล็อกที่ ${(S.fuel*1.03).toFixed(2)} · ค่าธรรมเนียม ${money(hedgeFee,true)}</button>`}</div>
-  <div class="panel stack"><div class="row between"><div><div class="eyebrow">เงินกู้ธนาคาร</div><div class="muted small">ดอกเบี้ย 7.3% ต่อปี วงเงินตามมูลค่าฝูงบิน</div></div><div class="num" style="font-weight:600">${money(S.loan)}</div></div>
+  <div class="panel stack"><div class="row between"><div><div class="eyebrow">เงินกู้ธนาคาร</div><div class="muted small">ดอกเบี้ยตอนนี้ ${(loanRate()*100).toFixed(1)}% ต่อปี (6–36% ยิ่งกู้มากยิ่งแพง) · วงเงินตามมูลค่าฝูงบิน</div></div><div class="num" style="font-weight:600">${money(S.loan)}</div></div>
     <div class="row"><button class="btn sm" style="flex:1" data-loan="1" ${S.loan+50e6>ml?"disabled":""}>กู้เพิ่ม ฿50 ล้าน</button><button class="btn sm" style="flex:1" data-loan="-1" ${S.loan<=0||S.cash<Math.min(50e6,S.loan)?"disabled":""}>คืน ฿50 ล้าน</button></div>
     <div class="muted num" style="font-size:12px">วงเงินสูงสุด ${money(ml)}</div></div>
   <div class="panel row between"><span class="muted small">เริ่มด้วยทุน ${money(S.startCap)} · มูลค่าตอนนี้ ${money(valuation())}</span><button class="btn danger sm" id="reset">เริ่มใหม่</button></div>`;
@@ -2814,7 +2818,7 @@ function guideSheet(){return head("คู่มือระบบ","ทุกร
 <details class="g"><summary>ขนส่งทางเรือ</summary><div><p>แท็บ "สินค้า" → ทางเรือ เปิดเส้นทางเรือระหว่างท่าเรือ ${PORTS.length} แห่งทั่วโลก (ต้องปลดล็อกภูมิภาคก่อน) แล้วซื้อเรือใส่ เรือวิ่งตามเส้นทางทะเลจริง ผ่านช่องแคบมะละกา คลองสุเอซ คลองปานามา หรืออ้อมแหลม</p><p>เรือแล่นราว 35–41 กม./ชม. เที่ยวยุโรป–เอเชียใช้ราว 2–3 สัปดาห์ในเกม แล้วจอดขนตู้ที่ท่า 1–2 วัน ได้เงินเมื่อเรือถึงท่า ค่าระวางต่อตู้ = ฿2,000 + ฿0.8 ต่อกม. เรือห้องเย็นได้ 1.8 เท่าแต่ตลาดเล็กกว่า เรือ ULCV ต้องใช้ท่าเรือน้ำลึกทั้งสองฝั่ง</p><p>เหตุการณ์: คลองสุเอซปิด (เรืออ้อมแหลมกู๊ดโฮป) และท่าเรือนัดหยุดงาน</p></div></details>
 <details class="g"><summary>ขนส่งสินค้า</summary><div><p><b>ระยะทางกับความต้องการ:</b> สินค้าทางอากาศและทางเรือแทบไม่ลดลงตามระยะทาง เส้นทางไกลจึงคุ้มกับเครื่องบินขนสินค้าและเรือลำใหญ่ ส่วนผู้โดยสารจะค่อย ๆ น้อยลงเมื่อไกลมาก และเมืองเล็กมีความต้องการน้อยกว่าเมืองใหญ่เสมอ</p><p>เส้นทางแบ่งเป็น 2 แบบ ใช้สาขาเดียวกัน: <b>เส้นทางผู้โดยสาร</b> ใส่ได้เฉพาะเครื่องบินโดยสาร (ขนพัสดุใต้ท้องเครื่องได้ราวครึ่งหนึ่งของตลาด) และ <b>เส้นทางขนสินค้า</b> ใส่ได้เฉพาะเครื่องบินขนสินค้า เลขเที่ยวบินขึ้นต้น 8xx เส้นบนแผนที่เป็นสีม่วง เปิดทั้งสองแบบไปเมืองเดียวกันได้</p><p>มีเครื่องขนสินค้า 7 รุ่น ตั้งแต่ ATR 72F (8 ตัน) ถึง 747-8F (135 ตัน) แต่ละเส้นทางตั้งค่าระวางได้เองหรือให้ระบบตั้งอัตโนมัติ ช่วงฤดูผลไม้ไทย ช้อปปิ้ง 11.11 และปลายปี สินค้าจะเยอะขึ้น ดูปฏิทินได้ในแท็บ "สินค้า"</p><p>ทุกเที่ยวบินขนสินค้าใต้ท้องเครื่องได้ ส่วน Boeing 777F ขนสินค้าอย่างเดียว 100 ตันต่อเที่ยว รายได้สินค้าคิด ฿${CARGO_RATE} ต่อตันต่อกิโลเมตร ความต้องการสินค้าขึ้นกับขนาดเมืองและระยะทาง สินค้าไม่สนราคาตั๋วหรือชื่อเสียง</p></div></details>
 <details class="g"><summary>เงินเข้าออกตอนไหน</summary><div><p>ทุกครั้งที่เครื่องบินลงจอด คุณได้ค่าตั๋วและค่าขนสินค้าของเที่ยวนั้นทันที และจ่ายค่าน้ำมัน ค่าสนามบิน และค่าบริการบนเครื่องของเที่ยวนั้นไปพร้อมกัน ตัวเลขเขียวหรือแดงจะลอยขึ้นจากสนามบินที่ลงจอดบนแผนที่</p><p>ตอนเที่ยงคืนระบบหักค่าใช้จ่ายคงที่ ได้แก่ ค่าดูแลเครื่องบิน ค่าลูกเรือ และดอกเบี้ย แล้วสรุปเป็นงบเมื่อวานในแท็บการเงิน</p></div></details>
-<details class="g"><summary>ต้นทุน</summary><div><ul><li><b>ค่าน้ำมัน</b> = จำนวนเที่ยว × ระยะทาง × ค่าบินต่อกม.ของรุ่น × ดัชนีน้ำมัน</li><li><b>ค่าสนามบิน</b> แต่ละเมืองเก็บไม่เท่ากัน ลอนดอนและนิวยอร์กแพงสุด คิดตามขนาดเครื่อง</li><li><b>ค่าดูแลเครื่องและลูกเรือ</b> 0.12% ของราคาเครื่องต่อวัน ถ้าจอดว่างเหลือ 0.06%</li><li><b>ค่าบริการ</b> ต่อผู้โดยสาร ตามระดับบริการ</li><li><b>ดอกเบี้ย</b> เงินกู้ 0.02% ต่อวัน</li></ul></div></details>
+<details class="g"><summary>ต้นทุน</summary><div><ul><li><b>ค่าน้ำมัน</b> = จำนวนเที่ยว × ระยะทาง × ค่าบินต่อกม.ของรุ่น × ดัชนีน้ำมัน</li><li><b>ค่าสนามบิน</b> แต่ละเมืองเก็บไม่เท่ากัน ลอนดอนและนิวยอร์กแพงสุด คิดตามขนาดเครื่อง</li><li><b>ค่าดูแลเครื่องและลูกเรือ</b> 0.12% ของราคาเครื่องต่อวัน ถ้าจอดว่างเหลือ 0.06%</li><li><b>ค่าบริการ</b> ต่อผู้โดยสาร ตามระดับบริการ</li><li><b>ดอกเบี้ย</b> เงินกู้ 6–36% ต่อปี ยิ่งหนี้มากเทียบกับทรัพย์สิน ดอกเบี้ยยิ่งสูง</li></ul></div></details>
 <details class="g"><summary>สภาพเครื่องและการซ่อมบำรุง</summary><div><p>ทุกเที่ยวที่บิน สภาพเครื่องลดลง 0.035% เครื่องที่สภาพต่ำมีโอกาสขัดข้องกลางทาง ต้องจอด 3 วัน เสียเงินและชื่อเสียง ถ้าสภาพเฉลี่ยของฝูงบินต่ำกว่า 60% ชื่อเสียงจะค่อย ๆ ลด</p><p>ส่งซ่อมบำรุงได้เองหรือเปิดโหมดอัตโนมัติ ใช้เวลา 2 วันแล้วสภาพกลับเป็น 100% ราคาขายต่อลดลงตามอายุและสภาพเครื่อง</p></div></details>
 <details class="g"><summary>ชื่อเสียงและระดับบริการ</summary><div><p>ชื่อเสียงจะค่อย ๆ เคลื่อนเข้าหาค่าเป้าหมายของระดับบริการ ประหยัด 35 มาตรฐาน 60 พรีเมียม 85 คลิปไวรัลและแคมเปญใหญ่ช่วยดันขึ้น เครื่องเสียกลางทางทำให้ลดลง</p></div></details>
 <details class="g"><summary>การตลาดและล็อกราคาน้ำมัน</summary><div><p>แคมเปญการตลาดเพิ่มคนบินทุกเส้นทางชั่วคราว เปิดได้ทีละแคมเปญ</p><p>ดัชนีน้ำมันขึ้นลงทุกวันและพุ่งแรงได้จากเหตุการณ์ การล็อกราคาจะตรึงดัชนีไว้ 60 วัน ค่าธรรมเนียมประมาณ 3% ของค่าน้ำมันช่วงนั้น เหมาะตอนน้ำมันถูก</p></div></details>
