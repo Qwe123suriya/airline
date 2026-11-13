@@ -15,7 +15,7 @@
 /* Layout: one-column app shell — sticky status bar, tab panels, fixed bottom nav. Look: airline route-map / flight-strip ops board */
 :root{
   --sky:#E8EDF2; --paper:#F8FAFC; --ink:#132235; --muted:#5A6A7D; --line:#CBD5E0;
-  --accent:#D47A22; --accent-ink:#FFFFFF; --route:#2A5B9C; --good:#257A4B; --bad:#B93A33; --warn:#B8860B; --grid:#C9D6E3; --sea:#D3E0EC; --land:#F2F4F6; --border:#B9C5D2; --night:rgba(14,28,52,.17); --port:#0E7C86; --cargo:#7B4FD6; --fog:rgba(176,189,204,.86); --plane:#FFFFFF;
+  --accent:#D47A22; --accent-ink:#FFFFFF; --route:#2A5B9C; --good:#257A4B; --bad:#B93A33; --warn:#B8860B; --grid:#C9D6E3; --sea:#C7DFF3; --land:#F7F5EC; --border:#B9C5D2; --night:rgba(14,28,52,.17); --port:#0E7C86; --cargo:#7B4FD6; --fog:rgba(176,189,204,.86); --plane:#FFFFFF;
   --f-display:"Chakra Petch","Anuphan",system-ui,sans-serif;
   --f-body:"Anuphan","Noto Sans Thai",system-ui,sans-serif;
   --f-num:"IBM Plex Mono",ui-monospace,Menlo,monospace;
@@ -558,6 +558,42 @@ nav.tabs button:active svg{transform:scale(.88)}
 #livery{white-space:nowrap;flex:none}
 @media (max-width:400px){.fkseg button{font-size:12.5px;white-space:nowrap;padding-inline:2px}.top .row2 .bmode button{font-size:12px;padding:0 5px}.hero .hv{font-size:27px}}
 @media (prefers-reduced-motion:reduce){.hero .live i,.hero .hv.tk{animation:none}}
+
+/* ---- v52: R&D centre, confetti, start sky, passenger voice ---- */
+.perkp{display:flex;flex-direction:column;gap:10px;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.perkrow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.pkt{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;background:var(--sky);border:1px solid var(--line);border-radius:12px;padding:8px 4px;min-width:0}
+.pkt b{font-size:22px;line-height:1.2}.pkt .small{font-size:11px;line-height:1.25;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.pkd{display:inline-flex;gap:3px;vertical-align:middle}.pkd i{width:9px;height:5px;border-radius:3px;background:var(--grid)}.pkd i.on{background:var(--accent)}
+.perk{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--paper)}
+.perk .pe{font-size:26px;flex:none;width:44px;height:44px;display:grid;place-content:center;border-radius:12px;background:color-mix(in srgb,var(--accent) 14%,var(--sky))}
+.perk .btn{flex:none}
+.voice{display:flex;gap:8px;align-items:flex-start;font-size:13px;background:var(--sky);border-radius:10px;padding:8px 10px}
+.voice i{color:var(--muted);font-style:normal;font-size:12px;white-space:nowrap}
+.cft{position:fixed;z-index:61;width:8px;height:12px;margin:-6px 0 0 -4px;border-radius:2px;pointer-events:none;animation:cft 1.6s cubic-bezier(.15,.7,.3,1) both}
+@keyframes cft{0%{transform:translate(0,0) rotate(0);opacity:1}55%{transform:translate(var(--dx),var(--dy)) rotate(calc(var(--rot)*.6));opacity:1}100%{transform:translate(var(--dx),calc(var(--dy) + 150px)) rotate(var(--rot));opacity:0}}
+.unlock{border:2px solid transparent;border-radius:16px;background:linear-gradient(var(--paper),var(--paper)) padding-box,linear-gradient(135deg,#F2B33D,var(--accent) 50%,#B565D9) border-box;padding:16px 26px}
+.skyhero{position:relative;height:124px;border-radius:16px;overflow:hidden;background:linear-gradient(180deg,#86C0F2,#CFE8FA 72%,#F1F8FE);box-shadow:var(--shadow)}
+.skyhero .cl{position:absolute;left:0;height:20px;border-radius:999px;background:#fff;animation:drift linear infinite}
+.skyhero .cl::before,.skyhero .cl::after{content:"";position:absolute;background:#fff;border-radius:50%}
+.skyhero .cl::before{width:44%;height:170%;left:14%;top:-80%}.skyhero .cl::after{width:34%;height:130%;right:16%;top:-55%}
+.skyhero .c1{top:28px;width:92px;opacity:.9;animation-duration:30s}.skyhero .c2{top:78px;width:62px;opacity:.75;animation-duration:20s;animation-delay:-9s}.skyhero .c3{top:98px;width:124px;opacity:.6;animation-duration:42s;animation-delay:-24s}
+@keyframes drift{from{transform:translateX(-170px)}to{transform:translateX(620px)}}
+.skyhero .sp{position:absolute;left:50%;top:50%;width:240px;margin:-46px 0 0 -120px;animation:bob 4.5s ease-in-out infinite}
+.skyhero .sp .art{display:block;width:100%;height:auto;filter:drop-shadow(0 12px 10px rgba(20,50,90,.22))}
+@keyframes bob{50%{transform:translateY(-7px) rotate(-1.2deg)}}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .skyhero{background:linear-gradient(180deg,#0B1B3A,#1D3D6E 72%,#35588C)}:root:not([data-theme="light"]) .skyhero .cl,:root:not([data-theme="light"]) .skyhero .cl::before,:root:not([data-theme="light"]) .skyhero .cl::after{background:#9FB6D6}}
+:root[data-theme="dark"] .skyhero{background:linear-gradient(180deg,#0B1B3A,#1D3D6E 72%,#35588C)}:root[data-theme="dark"] .skyhero .cl,:root[data-theme="dark"] .skyhero .cl::before,:root[data-theme="dark"] .skyhero .cl::after{background:#9FB6D6}
+@media (prefers-reduced-motion:reduce){.skyhero .cl,.skyhero .sp{animation:none}.skyhero .c1{left:8%}.skyhero .c2{left:70%}.skyhero .c3{left:40%}}
+
+/* aircraft art: showroom backdrop (sky above, tarmac from 86% down) */
+.model svg.art.gnd,.pcard svg.art.gnd,.lvprev svg.art.gnd{border-radius:10px;background:linear-gradient(180deg,color-mix(in srgb,var(--route) 16%,var(--paper)) 0,color-mix(in srgb,var(--route) 4%,var(--paper)) 86%,color-mix(in srgb,var(--ink) 13%,var(--paper)) 86%,color-mix(in srgb,var(--ink) 6%,var(--paper)) 100%)}
+.model svg.art{max-width:none;margin:0 0 6px}
+.pcard svg.art{margin:0 0 4px}
+
+/* stockpile */
+.bkchip{font-family:var(--f-body);font-size:11.5px;font-weight:600;color:var(--warn);background:color-mix(in srgb,var(--warn) 15%,var(--paper));border-radius:999px;padding:0 8px;white-space:nowrap}
+.bkline{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.45;border:1px dashed color-mix(in srgb,var(--warn) 55%,var(--line));background:color-mix(in srgb,var(--warn) 8%,var(--paper));border-radius:10px;padding:8px 10px}
 </style>
 </head>
 <body>
@@ -793,7 +829,7 @@ const aptChip=c=>{const k=aptKind(c),[i,t]=APT_LABEL[k];return `<span class="apt
 // Branches (สาขา): every airport where you base aircraft. Routes start from a branch. Levels 1–3.
 const BR_MAX=3;
 const blv=c=>S.bases.includes(c)?(S.blv&&S.blv[c])||1:0;
-const feeOf=c=>c.fee*(1-.15*Math.max(0,blv(c.c)-1));
+const feeOf=c=>c.fee*(1-.15*Math.max(0,blv(c.c)-1))*pk("fee");
 const brBoost=c=>1+.08*Math.max(0,blv(c)-1);
 function branchCost(c){c=typeof c==="string"?city(c):c;return Math.round((30e6+c.w*8e6)*(1+.3*(S.bases.length-1))/5e6)*5e6}
 function branchUpCost(code){const c=city(code);return Math.round((20e6+c.w*6e6)*blv(code)/5e6)*5e6}
@@ -921,18 +957,18 @@ const portH=m=>18+Math.sqrt(m.teu)*.25;
 const sailDays=(m,km)=>km/m.speed/24;
 const legDaysS=(m,km)=>sailDays(m,km)+portH(m)/24;
 const TEU_RATE=km=>2000+.8*km;
-const portFee=(pt,m)=>pt.fee*1000*(m.teu/5000+.1)*(1-.15*Math.max(0,pbl(pt.c)-1));
+const portFee=(pt,m)=>pt.fee*1000*(m.teu/5000+.1)*(1-.15*Math.max(0,pbl(pt.c)-1))*pk("fee");
 const portOpen=c=>S.unlocked.includes(port(c).reg);
 const canDock=(m,l)=>!m.deep||(port(l.from).deep&&port(l.to).deep);
 function evShip(c){let m=1;for(const e of S.events)if(e.port===c&&e.until>S.day&&e.pmult!=null)m*=e.pmult;return m}
 function viaText(sp){const v=sp.via||[],o=[];if(v.includes("SUEZ"))o.push("คลองสุเอซ");if(v.includes("PANA"))o.push("คลองปานามา");if(v.includes("CGH"))o.push("แหลมกู๊ดโฮป");if(v.includes("HORN"))o.push("แหลมฮอร์น");if(v.includes("MLK"))o.push("ช่องแคบมะละกา");if(v.includes("LOMN"))o.push("ช่องแคบลอมบอก");return o}
 function laneCalc(l){const a=port(l.from),b=port(l.to),sp=seaPath(l.from,l.to),km=sp.km,ev=evShip(l.from)*evShip(l.to);
-  const D=80*Math.sqrt(a.w*b.w)/(1+(km/20000)**2)*ev*pBoost(l.from)*pBoost(l.to),Dr=D*.15,Do=D*.12;
+  const D=80*Math.sqrt(a.w*b.w)/(1+(km/32000)**2)*ev*pBoost(l.from)*pBoost(l.to),Dr=D*.15,Do=D*.12;
   let cap=0,capr=0,capo=0,fixed=0;
   for(const id of l.ships){const sh=shipById(id);if(!sh)continue;const m=shipM(sh.m);fixed+=m.price*.0004;if(sh.down>S.day)continue;const c=m.teu/legDaysS(m,km);if(m.reefer)capr+=c;else if(m.roro)capo+=c;else cap+=c}
   const load=cap?Math.min(1,D/cap):0,loadr=capr?Math.min(1,Dr/capr):0,loado=capo?Math.min(1,Do/capo):0;let rev=0,fuel=0,fee=0,teu=0;
   for(const id of l.ships){const sh=shipById(id);if(!sh||sh.down>S.day)continue;const m=shipM(sh.m),Ld=legDaysS(m,km),ld=m.reefer?loadr:m.roro?loado:load;
-    teu+=m.teu*ld/Ld;rev+=m.teu*ld*TEU_RATE(km)*shipRateX(m)/Ld;fuel+=km*m.cpk*fuelNow()/Ld;fee+=(portFee(a,m)+portFee(b,m))/2/Ld}
+    teu+=m.teu*ld/Ld;rev+=m.teu*ld*TEU_RATE(km)*shipRateX(m)*pk("cargo")/Ld;fuel+=km*m.cpk*fuelNow()*pk("fuel")/Ld;fee+=(portFee(a,m)+portFee(b,m))/2/Ld}
   return {sp,km,D,Dr,Do,cap,capr,capo,load,loadr,loado,teu,rev,fuel,fee,fixed,profit:rev-fuel-fee-fixed}}
 const shipRateX=m=>m.reefer?1.8:m.roro?1.5:1;
 const shipType=m=>m.reefer?"reefer":m.roro?"roro":"box";
@@ -945,8 +981,9 @@ function settleShips(T){
       if(sh.lk!==key){sh.lk=key;sh.ld=N;continue}
       if(N<=sh.ld)continue;const n0=sh.ld;sh.ld=N;if(sh.down>S.day)continue;
       for(let n=Math.max(n0+1,N-3);n<=N;n++)sailLeg(l,sh,m,lc,n)}}}
-function sailLeg(l,sh,m,lc,n){const ld=m.reefer?lc.loadr:m.roro?lc.loado:lc.load,teu=m.teu*ld*(.9+Math.random()*.2),arr=port(n%2===1?l.from:l.to);
-  const o={srev:teu*TEU_RATE(lc.km)*shipRateX(m),sfuel:lc.km*m.cpk*fuelNow(),sport:portFee(arr,m),teu,voy:1};
+function sailLeg(l,sh,m,lc,n){const ld=m.reefer?lc.loadr:m.roro?lc.loado:lc.load,arr=port(n%2===1?l.from:l.to),bkk=m.reefer?"r":m.roro?"o":"d";let teu=m.teu*ld*(.9+Math.random()*.2);
+  if(l.bk&&l.bk[bkk]>0&&teu<m.teu){const tk=Math.min(m.teu-teu,l.bk[bkk]);l.bk[bkk]-=tk;teu+=tk}
+  const o={srev:teu*TEU_RATE(lc.km)*shipRateX(m)*pk("cargo"),sfuel:lc.km*m.cpk*fuelNow()*pk("fuel"),sport:portFee(arr,m),teu,voy:1};
   const net=o.srev-o.sfuel-o.sport;S.cash+=net;addT(S.today,o);l.today=l.today||{};addT(l.today,o);S.totTeu=(S.totTeu||0)+teu;
   if((tab==="home"||tab==="map")&&floaters.length<14)floaters.push({p:arr.c,v:net,t0:performance.now()})}
 function shipResale(sh){return shipM(sh.m).price*.6*Math.max(.5,1-sh.age/7300)}
@@ -985,7 +1022,9 @@ const baseFare=d=>Math.round((700+6*Math.pow(d,.85))/10)*10;
 const legsFor=(m,d)=>clamp(Math.floor(24/(d/m.speed+1.2)),1,12);
 // planes take longer in the air on screen; the time comes out of ground time, so the number of flights per day stays the same
 const AIR_SLOW=1.7,flyFrac=(m,d,L)=>Math.min(.94,(d/m.speed+.4)*AIR_SLOW/(24/L));
-const distF=d=>d<300?.5+d/600:1/(1+(d/9000)**2);
+// distance factors: passengers thin out slowly on long hauls; air cargo barely does (flying freight pays off most on long routes)
+const distF=d=>d<300?.5+d/600:1/(1+(d/13000)**2);
+const cargoDistF=d=>d<300?.5+d/600:1/(1+(Math.max(0,d-3000)/20000)**2);
 function money(n,short){const s=n<0?"−":"",a=Math.abs(n);
   if(a>=1e9)return s+"฿"+(a/1e9).toFixed(a>=1e10?1:2)+(short?"B":" พันล้าน");
   if(a>=1e6)return s+"฿"+(a/1e6).toFixed(a>=1e8?0:1)+(short?"M":" ล้าน");
@@ -1037,6 +1076,7 @@ function flap(el,final,ms){
 function renderStart(){
   const h=city(fate.hub),d=difficulty(fate);
   $("#app").innerHTML=`<div class="start"><div class="wrap">
+   <div class="skyhero" aria-hidden="true"><i class="cl c1"></i><i class="cl c2"></i><i class="cl c3"></i><div class="sp">${planeArt(model("b789"),{tail:"#D47A22",stripe:"#2A5B9C",body:"white",logo:"bird",pat:"swoosh"},true)}</div></div>
    <div class="eyebrow">เกมบริหารสายการบิน · เล่นบนเว็บ</div>
    <h1>ชะตาสุ่มให้คุณเกิดเป็น<em>เจ้าของสายการบิน</em>ที่ไหนสักแห่งในโลก</h1>
    <p class="muted" style="margin:0">เมืองฐาน ทุนตั้งต้น และราคาน้ำมันถูกสุ่มมาให้ อ้างอิงสนามบินและระยะทางจริง ซื้อเครื่องบิน เปิดเส้นทาง ตั้งราคาตั๋ว ขนสินค้า แข่งกับสายการบินคู่แข่ง แล้วพาสายการบินของคุณให้รอดและโตให้ได้</p>
@@ -1077,6 +1117,13 @@ const plane=id=>S.fleet.find(p=>p.id===id);
 const rkind=r=>r.kind||"pax";
 const fitsKind=(m,r)=>rkind(r)==="cargo"?!m.seats:!!m.seats;
 const fno=r=>{const k=rkind(r),L=S.routes.filter(x=>rkind(x)===k),i=L.indexOf(r);return `${S.code} ${(k==="cargo"?800:100)+Math.max(0,i)*2+1}`};
+/* R&D centre: permanent company upgrades bought with cash. [id, icon, name, what it changes, step per level, base cost] */
+const PERKS=[["fuel","⛽","เครื่องยนต์ประหยัดน้ำมัน","ค่าน้ำมันเครื่องบินและเรือ",-.03,60e6,"น้ำมัน"],
+ ["pax","💺","โปรแกรมสะสมไมล์","จำนวนคนที่อยากบินกับเรา",.04,50e6,"ผู้โดยสาร"],
+ ["cargo","📦","ศูนย์กระจายสินค้า","รายได้ค่าขนสินค้าและค่าระวางเรือ",.04,45e6,"สินค้า"],
+ ["fee","🤝","ดีลสนามบินและท่าเรือ","ค่าธรรมเนียมสนามบินและท่าเรือ",-.04,40e6,"ค่าลงจอด"]];
+const PERK_MAX=5,pkDef=id=>PERKS.find(x=>x[0]===id),pkLv=id=>(S&&S.perk&&S.perk[id])||0,pk=id=>1+pkDef(id)[4]*pkLv(id),pkCost=id=>Math.round(pkDef(id)[5]*Math.pow(2.1,pkLv(id))/1e6)*1e6;
+const pkPips=id=>`<span class="pkd">${Array.from({length:PERK_MAX},(_,i)=>`<i class="${i<pkLv(id)?"on":""}"></i>`).join("")}</span>`;
 const fuelNow=()=>S.hedge&&S.hedge.until>S.day?S.hedge.price:S.fuel;
 const mktMult=()=>S.mkt&&S.mkt.until>S.day?S.mkt.mult:1;
 const CN_HUBS=["PEK","PVG","CAN","SZX","CTU","KMG","XMN","HKG","MFM"];
@@ -1089,7 +1136,7 @@ function cargoSeasons(code){const d=gameDate(),mo=d.getMonth(),dd=d.getDate(),ou
   return out}
 const seasonMult=code=>cargoSeasons(code).reduce((a,x)=>a*x[1],1);
 function evCargo(c){let m=1;for(const e of S.events)if(e.city===c&&e.until>S.day&&e.cmult)m*=e.cmult;return m}
-function cargoBase(r,a,b,d,ev){return 8*Math.sqrt(a.w*b.w)*distF(d)*ev*Math.max(seasonMult(r.from),seasonMult(r.dest))*evCargo(r.from)*evCargo(r.dest)}
+function cargoBase(r,a,b,d,ev){return 8*Math.sqrt(a.w*b.w)*cargoDistF(d)*ev*Math.max(seasonMult(r.from),seasonMult(r.dest))*evCargo(r.from)*evCargo(r.dest)}
 function autoCrate(r){const a=city(r.from),b=city(r.dest),d=dist(a,b),ev=evMult(r.dest)*evMult(r.from)*brBoost(r.from)*brBoost(r.dest),c0=cargoBase(r,a,b,d,ev)*(rkind(r)==="cargo"?1:.5);
   let cap=0;for(const id of r.planes){const p=plane(id);if(!p||p.down>S.day)continue;const m=model(p.m);cap+=legsFor(m,d)*m.cargo}
   if(!cap)return 1;return Math.round(clamp(Math.pow(c0/(.9*cap),1/1.3),.7,1.6)*20)/20}
@@ -1098,28 +1145,28 @@ function evMult(c){let m=1;for(const e of S.events)if(e.city===c&&e.until>S.day&
 function grounded(c){return S.events.some(e=>e.city===c&&e.until>S.day&&e.type==="storm")}
 // Automatic fare: aims for ~90% full on the full schedule — rises when more people want to fly than there are seats, falls when they don't
 function autoPrice(r){const a=city(r.from),b=city(r.dest),d=dist(a,b),base=baseFare(d);
-  const D0=60*Math.sqrt(a.w*b.w)*distF(d)*(.6+S.rep/125)*SERVICE[svcOf(r)].f*evMult(r.dest)*evMult(r.from)*mktMult()*brBoost(r.from)*brBoost(r.dest)*starMult();
+  const D0=60*Math.sqrt(a.w*b.w)*distF(d)*(.6+S.rep/125)*SERVICE[svcOf(r)].f*evMult(r.dest)*evMult(r.from)*mktMult()*brBoost(r.from)*brBoost(r.dest)*starMult()*pk("pax");
   let cap=0;for(const id of r.planes){const p=plane(id);if(!p||p.down>S.day)continue;const m=model(p.m);cap+=legsFor(m,d)*m.seats}
   if(!cap)return base;
   return Math.round(base*clamp(Math.pow(D0/(.9*cap),1/1.5),.7,1.6)/10)*10}
 const priceOf=r=>r.pmode==="auto"?autoPrice(r):r.price;
 const svcOf=r=>r.svc??S.service;
 function calc(r,price,crate,svc){
-  const a=city(r.from),b=city(r.dest),d=dist(a,b),base=baseFare(d),fuel=fuelNow();price=price??priceOf(r);
+  const a=city(r.from),b=city(r.dest),d=dist(a,b),base=baseFare(d),fuel=fuelNow()*pk("fuel");price=price??priceOf(r);
   const ps=r.planes.map(plane).filter(Boolean);
   const ground=grounded(r.dest)||grounded(r.from);
   const ev=evMult(r.dest)*evMult(r.from)*brBoost(r.from)*brBoost(r.dest);
-  svc=svc??svcOf(r);const demand=rkind(r)==="cargo"||!aptTakes(r.from,"pax")||!aptTakes(r.dest,"pax")?0:60*Math.sqrt(a.w*b.w)*distF(d)*Math.pow(base/price,1.5)*(.6+S.rep/125)*SERVICE[svc].f*ev*mktMult()*starMult();
+  svc=svc??svcOf(r);const demand=rkind(r)==="cargo"||!aptTakes(r.from,"pax")||!aptTakes(r.dest,"pax")?0:60*Math.sqrt(a.w*b.w)*distF(d)*Math.pow(base/price,1.5)*(.6+S.rep/125)*SERVICE[svc].f*ev*mktMult()*starMult()*pk("pax");
   crate=crate??crateOf(r);const cdem=(aptTakes(r.from,"cargo")&&aptTakes(r.dest,"cargo")?1:0)*cargoBase(r,a,b,d,ev)*(rkind(r)==="cargo"?1:.5)*Math.pow(1/crate,1.3);
-  const plan=legPlan(r,demand,cdem,d);
+  const plan=legPlan(r,demand+(r.bk||0),cdem+(r.cbk||0),d);
   let cap=0,ccap=0,fuelC=0,feeC=0,fixed=0,legs=0;
   for(const p of ps){const m=model(p.m);fixed+=m.price*.0012;
     if(ground||p.down>S.day)continue;
     const L=plan.get(p.id);legs+=L;cap+=L*m.seats;ccap+=L*m.cargo;
     fuelC+=L*d*m.cpk*fuel;feeC+=L*(feeOf(a)+feeOf(b))/2*1000*(m.seats||m.cargo*3)/100}
-  const pax=Math.floor(Math.min(demand,cap)),cargo=Math.min(cdem,ccap);
-  const tix=pax*price,crev=cargo*d*CARGO_RATE*crate,rev=tix+crev,svcC=pax*SERVICE[svc].cost,cost=fuelC+feeC+fixed+svcC;
-  return {price,crate,svcLv:svc,plan,d,base,cap,ccap,legs,demand:Math.round(demand),cdem,pax,cargo,tix,crev,rev,fuelC,feeC,fly:fuelC+feeC,fixed,svc:svcC,cost,profit:rev-cost,lf:cap?pax/cap:0,ground};
+  const pax0=Math.floor(Math.min(demand,cap)),cargo0=Math.min(cdem,ccap),bkp=Math.max(0,Math.floor(Math.min(r.bk||0,cap-pax0))),bkc=Math.max(0,Math.min(r.cbk||0,ccap-cargo0)),pax=pax0+bkp,cargo=cargo0+bkc;
+  const tix=pax0*price+bkp*Math.min(price,base),crev=(cargo0*crate+bkc*Math.min(crate,1))*d*CARGO_RATE*pk("cargo"),rev=tix+crev,svcC=pax*SERVICE[svc].cost,cost=fuelC+feeC+fixed+svcC;
+  return {price,crate,svcLv:svc,plan,bkp,bkc,d,base,cap,ccap,legs,demand:Math.round(demand),cdem,pax,cargo,tix,crev,rev,fuelC,feeC,fly:fuelC+feeC,fixed,svc:svcC,cost,profit:rev-cost,lf:cap?pax/cap:0,ground};
 }
 // How many legs each aircraft flies: full schedule, or trimmed so flights run about 85% full
 function legPlan(r,demand,cdem,d){const ps=r.planes.map(plane).filter(Boolean),mp=new Map();let cap=0,fcap=0;
@@ -1157,10 +1204,17 @@ function settleFlights(T){
       if(N<=p.ld)continue;const n0=p.ld;p.ld=N;
       if(ground||p.down>S.day)continue;
       for(let n=Math.max(n0+1,N-11);n<=N;n++)flyLeg(r,p,m,c,d,a,b,n)}}}
+/* Stockpile: on every open route, part of the demand nobody carried today waits (also when the route has no aircraft or ship at all).
+   Waiting passengers / freight ride later whenever a leg has room, paying at most the standard fare. Closing the route drops its stockpile. */
+const BK={pax:{keep:.35,cap:3},cargo:{keep:.6,cap:6},sea:{keep:.6,cap:8}};
+const bkPax=r=>Math.floor(r.bk||0),bkCargo=r=>Math.round(r.cbk||0),bkSea=l=>l.bk?Math.round(l.bk.d+l.bk.r+l.bk.o):0;
+const bkChip=(n,u)=>n>=1?`<span class="bkchip">📥 สะสม ${n.toLocaleString()} ${u}</span>`:"";
 function flyLeg(r,p,m,c,d,a,b,n){
-  const lf=c.cap?Math.min(1,c.demand/c.cap):0,pax=Math.min(m.seats,Math.round(m.seats*lf*(.88+Math.random()*.24)));
-  const cl=c.ccap?Math.min(1,c.cdem/c.ccap):0,cargo=m.cargo*cl*(.9+Math.random()*.2);
-  const o={tix:pax*c.price,crev:cargo*d*CARGO_RATE*c.crate,fuelC:d*m.cpk*fuelNow(),feeC:(feeOf(a)+feeOf(b))/2*1000*(m.seats||m.cargo*3)/100,svc:pax*SERVICE[svcOf(r)].cost,pax,cargo,seats:m.seats,legs:1};
+  const lf=c.cap?Math.min(1,c.demand/c.cap):0;let pax=Math.min(m.seats,Math.round(m.seats*lf*(.88+Math.random()*.24)));
+  const cl=c.ccap?Math.min(1,c.cdem/c.ccap):0;let cargo=m.cargo*cl*(.9+Math.random()*.2),bp=0,bc=0;
+  if(r.bk>=1&&pax<m.seats){bp=Math.min(m.seats-pax,Math.floor(r.bk));r.bk-=bp;pax+=bp}
+  if(r.cbk>0&&cargo<m.cargo){bc=Math.min(m.cargo-cargo,r.cbk);r.cbk-=bc;cargo+=bc}
+  const o={tix:(pax-bp)*c.price+bp*Math.min(c.price,c.base),crev:((cargo-bc)*c.crate+bc*Math.min(c.crate,1))*d*CARGO_RATE*pk("cargo"),fuelC:d*m.cpk*fuelNow()*pk("fuel"),feeC:(feeOf(a)+feeOf(b))/2*1000*(m.seats||m.cargo*3)/100,svc:pax*SERVICE[svcOf(r)].cost,pax,cargo,seats:m.seats,legs:1};
   const net=o.tix+o.crev-o.fuelC-o.feeC-o.svc;
   S.cash+=net;addT(S.today,o);r.today=r.today||blankT();addT(r.today,o);
   {const arr=(n%2===1?a:b).c,dep=(n%2===1?b:a).c;S.apT=S.apT||{};const A=S.apT[arr]=S.apT[arr]||{up:0,dn:0,cu:0,cd:0},D=S.apT[dep]=S.apT[dep]||{up:0,dn:0,cu:0,cd:0};D.up+=pax;A.dn+=pax;D.cu+=cargo;A.cd+=cargo}
@@ -1176,13 +1230,15 @@ function simDay(){
     const rf=r.planes.reduce((s,id)=>{const p=plane(id);return s+(p?model(p.m).price*.0012:0)},0);fixed+=rf;
     const rev=t.tix+t.crev,cost=t.fuelC+t.feeC+t.svc+rf;
     r.prevPax=r.last?r.last.pax:null;r.last={...c,pax:t.pax,cargo:t.cargo,tix:t.tix,crev:t.crev,rev,fuelC:t.fuelC,feeC:t.feeC,fly:t.fuelC+t.feeC,svc:t.svc,fixed:rf,cost,profit:rev-cost,lf:t.seats?t.pax/t.seats:0,flown:t.legs};
-    r.h.push(Math.round(rev-cost));if(r.h.length>30)r.h.shift();r.today=blankT()}
+    r.h.push(Math.round(rev-cost));if(r.h.length>30)r.h.shift();r.today=blankT();
+    r.bk=Math.min((r.bk||0)+Math.max(0,c.demand-t.pax)*BK.pax.keep,c.demand*BK.pax.cap);r.cbk=Math.min((r.cbk||0)+Math.max(0,c.cdem-t.cargo)*BK.cargo.keep,c.cdem*BK.cargo.cap)}
   for(const p of S.fleet){p.age++;if(!p.route)fixed+=model(p.m).price*.0006;
     if(p.route&&p.down<=S.day){
       if(Math.random()<(100-p.cond)/100*.012){p.down=S.day+3;const c=model(p.m).price*.004;S.cash-=c;S.rep=clamp(S.rep-2,0,100);addNews(`⚠️ ${p.reg} เครื่องขัดข้องกลางทาง จอดซ่อม 3 วัน เสีย ${money(c)} ชื่อเสียงลดลง`)}
       else if(S.autoMx&&p.cond<50)startMx(p,true)}}
   const interest=S.loan*.0002,T=S.today,brc=totalUpkeep(),sfix=shipFixed();
   for(const l of S.lanes){const t=l.today||{},lc=laneCalc(l),rv=t.srev||0,cs=(t.sfuel||0)+(t.sport||0)+lc.fixed;
+    {const B=l.bk=l.bk||{d:0,r:0,o:0};for(const [k,D,cp] of [["d",lc.D,lc.cap],["r",lc.Dr,lc.capr],["o",lc.Do,lc.capo]])B[k]=Math.min((B[k]||0)+Math.max(0,D-cp)*BK.sea.keep,D*BK.sea.cap)}
     l.last={...lc,rev:rv,cost:cs,profit:rv-cs,teuDone:t.teu||0,voy:t.voy||0};l.h=l.h||[];l.h.push(Math.round(rv-cs));if(l.h.length>30)l.h.shift();l.today={}}
   for(const sh of S.ships)sh.age++;
   S.cash-=fixed+interest+brc+sfix;
@@ -1237,7 +1293,7 @@ function floatCash(n){const host=$(".cash");if(!host||reduce)return;const now=pe
   const f=document.createElement("span");f.className="float "+(n>=0?"good":"bad");f.textContent=(n>=0?"+":"")+money(n,true);host.appendChild(f);setTimeout(()=>f.remove(),1150)}
 const cel=[];
 function celebrate(k,t){if(afk){afk.log.unshift(`🏅 ${k}: ${t}`);return}cel.push([k,t]);if(cel.length===1)nextCel()}
-function nextCel(){if(!cel.length)return;const [k,t]=cel[0];const d=document.createElement("div");d.className="unlock";d.innerHTML=`<div class="eyebrow">${k.startsWith("!")?esc(k.slice(1)):"ปลดล็อก"+esc(k)}</div><b>${esc(t)}</b>`;document.body.appendChild(d);
+function nextCel(){if(!cel.length)return;const [k,t]=cel[0];const d=document.createElement("div");d.className="unlock";d.innerHTML=`<div class="eyebrow">${k.startsWith("!")?esc(k.slice(1)):"ปลดล็อก"+esc(k)}</div><b>${esc(t)}</b>`;document.body.appendChild(d);confetti(innerWidth/2,innerHeight*.4);
   setTimeout(()=>{d.remove();cel.shift();nextCel()},reduce?1800:2800)}
 function flyover(){if(reduce)return;const d=document.createElement("div");d.className="flyover";if(S)d.style.color=S.livery.tail;
   d.innerHTML=`<svg viewBox="0 0 84 40"><defs><linearGradient id="tr" x1="0" x2="1"><stop offset="0" stop-color="currentColor" stop-opacity="0"/><stop offset="1" stop-color="currentColor" stop-opacity=".5"/></linearGradient></defs><rect x="0" y="19" width="44" height="2" rx="1" fill="url(#tr)"/><path fill="currentColor" d="M44 20l10-3 4-12h4l-2 11 14-3c3-.5 6 0 8 1.5v1c-2 1.5-5 2-8 1.5l-14-3 2 11h-4l-4-12-10-3z" transform="translate(0,4) scale(1,.8)"/></svg>`;
@@ -1435,6 +1491,24 @@ function liveHome(){if(tab!=="home"||!S||afk)return;const bd=$("#fboard");if(!bd
   boardMoney();liveBoard();
   if(!bd.onclick)bd.onclick=e=>{if(e.target.closest("[data-fbgo]")){tab="routes";renderView(true);return}const ln=e.target.closest("[data-fbl]");if(ln){if(S.lanes.some(l=>l.id===+ln.dataset.fbl))openSheet(laneSheet(+ln.dataset.fbl,{}));return}const b=e.target.closest("[data-fbr]");if(b&&S.routes.some(r=>r.id===+b.dataset.fbr))openSheet(routeSheet(+b.dataset.fbr,{}))}}
 const ACHI={plane1:"✈️",route1:"🛫",fleet10:"🛩️",routes8:"🗺️",long:"🌏",a380:"🐋",cargo:"📦",star5:"⭐",ship1:"🚢",teu:"🏗️",pax1m:"👥",base2:"🏢",world:"🧭",year:"🎂",top1:"🏆"};
+function perksHTML(){const cheap=PERKS.filter(p=>pkLv(p[0])<PERK_MAX).map(p=>pkCost(p[0])).sort((a,b)=>a-b)[0],can=cheap!=null&&S.cash>=cheap;
+  return `<button class="panel perkp" id="perkbtn"><span class="row between"><span class="eyebrow">🔬 ศูนย์พัฒนา${can?` · <span style="color:var(--accent)">อัปเกรดได้</span>`:""}</span><span class="muted small">อัปเกรดถาวร ›</span></span>
+   <span class="perkrow">${PERKS.map(p=>`<span class="pkt"><b>${p[1]}</b><span class="small">${p[6]}</span>${pkPips(p[0])}</span>`).join("")}</span></button>`}
+function perkSheet(){const pc=(st,v)=>`${st>0?"+":"−"}${Math.abs(Math.round(st*v*100))}%`;
+  const fn=()=>head("🔬 ศูนย์พัฒนา","อัปเกรดถาวรของบริษัท มีผลกับทุกเส้นทางทันที อยู่กับคุณตลอดเกม")+
+   `<div class="stack" style="gap:8px">${PERKS.map(([id,e,n,what,st])=>{const lv=pkLv(id),max=lv>=PERK_MAX,c=pkCost(id),ok=S.cash>=c;
+     return `<div class="perk"><div class="pe">${e}</div><div style="min-width:0;flex:1"><b>${n}</b><div style="line-height:1;margin:3px 0 4px">${pkPips(id)}</div><div class="small muted">${what} <b class="${lv?"good":""}">${lv?pc(st,lv):"ยังไม่อัปเกรด"}</b>${max?"":` → <b>${pc(st,lv+1)}</b>`}</div></div>
+       ${max?`<span class="chip got">เต็มแล้ว ✓</span>`:`<button class="btn ${ok?"primary":""} sm" data-perk="${id}" ${ok?"":"disabled"}>${money(c,true)}</button>`}</div>`}).join("")}</div>
+    <div class="muted small">แต่ละอย่างอัปเกรดได้ ${PERK_MAX} ระดับ ราคาเพิ่มขึ้นทุกระดับ · เงินสดตอนนี้ ${money(S.cash,true)}</div><button class="btn" data-x>ปิด</button>`;
+  fn.bind=()=>{$$("[data-perk]").forEach(b=>b.onclick=()=>{const id=b.dataset.perk,c=pkCost(id);if(S.cash<c||pkLv(id)>=PERK_MAX)return;S.cash-=c;S.perk=S.perk||{};S.perk[id]=pkLv(id)+1;save();
+    const d=pkDef(id);addNews(`🔬 อัปเกรด${d[2]}เป็นระดับ ${S.perk[id]}`);toast(`${d[1]} ${d[2]} ระดับ ${S.perk[id]}`);const r=b.getBoundingClientRect();confetti(r.left+r.width/2,r.top,18);
+    for(const rt of S.routes)rt.last=null;drawSheet();updateTop();if(tab==="home")refreshHome()})};
+  return fn}
+/* a line from a passenger that follows the airline rating; changes each game day */
+const VOICES=[["เครื่องดีเลย์อีกแล้ว คราวหน้าขอคิดดูก่อนนะ","ที่นั่งแคบไปหน่อย แต่ก็ถึงที่หมาย","ราคาโอเค แต่บริการยังต้องปรับอีกเยอะ"],
+ ["บินได้เรื่อย ๆ ไม่มีอะไรให้บ่น","ขึ้นเครื่องตรงเวลา พนักงานยิ้มแย้มดี","ราคาสมเหตุสมผล ไว้มาใช้บริการอีก"],
+ ["ประทับใจมาก จะบอกต่อเพื่อนแน่นอน","อาหารบนเครื่องอร่อยเกินคาด!","บินกับที่นี่ทีไรสบายใจทุกที","เครื่องใหม่ สะอาด ลูกเรือดูแลดีสุด ๆ"]];
+const voiceHTML=()=>{const R=S.rating;if(!R||!S.totPax)return "";const g=VOICES[R.overall<2.6?0:R.overall<3.8?1:2];return `<div class="voice"><span>💬</span><span>“${g[S.day%g.length]}” <i>ผู้โดยสารวันนี้</i></span></div>`};
 function homeRestHTML(){
   const v=valuation(),g=GOALS[Math.min(S.goal,GOALS.length-1)],prev=S.goal?GOALS[S.goal-1][0]:0;
   const pct=S.goal>=GOALS.length?100:clamp((v-prev)/(g[0]-prev)*100,0,100);
@@ -1442,7 +1516,7 @@ function homeRestHTML(){
   const board=standings();
   const fresh=S.news.length?S.news[0].id:0;const isFresh=n=>n.id>seenNews;
   const F=liveFlights();
-  const out=`${heroHTML(F)}${boardHTML(F)}${missionsHTML()}${ratingHTML()}<div class="panel stack" id="aplist">${airportListHTML()}</div>
+  const out=`${heroHTML(F)}${boardHTML(F)}${missionsHTML()}${perksHTML()}${ratingHTML()}<div class="panel stack" id="aplist">${airportListHTML()}</div>
   <div class="stats">
     <div><div class="k">มูลค่ากิจการ</div><div class="v">${money(v,true)}</div></div>
     <div><div class="k">ผู้โดยสาร/วัน</div><div class="v">${L.pax.toLocaleString()}</div></div>
@@ -1783,7 +1857,7 @@ function airCargoHTML(){const L=S.last||{},fr=S.fleet.filter(p=>!model(p.m).seat
   <div class="panel stack"><span class="eyebrow">ปฏิทินสินค้า</span>${cal.map(([n,w,e,on])=>`<div class="row between"><span><b>${n}</b> <span class="muted small">${w}</span><br><span class="small muted">${e}</span></span>${on?'<span class="chip got">กำลังเกิด</span>':'<span class="chip">รอ</span>'}</div>`).join("")}</div>
   <div class="row between"><h2>เส้นทางที่ขนสินค้า</h2><span class="muted small">แตะเพื่อตั้งค่าระวาง</span></div>
   ${rs.length?`<div class="strips">${rs.map(({r,c})=>{const ld=c.ccap?Math.min(1,(c.cargo||0)/c.ccap):0,frt=r.planes.length&&r.planes.every(id=>{const p=plane(id);return p&&!model(p.m).seats});
-    return `<button class="strip" data-route="${r.id}" style="${rkind(r)==="cargo"?"border-left-color:var(--cargo)":""}"><div class="fno">${fno(r)}<small>${rkind(r)==="cargo"?"เส้นทางสินค้า":"ใต้ท้องเครื่อง"}</small></div><div style="min-width:0"><div class="iata">${r.from} → ${r.dest}</div><div class="sub">${Math.round(c.cargo||0).toLocaleString()} / ${Math.round(c.ccap).toLocaleString()} ตัน · ${crateText(c)}</div><div class="lf"><i style="width:${Math.round(ld*100)}%"></i></div></div><div class="right"><div class="num good">${money(c.crev,true)}</div><div class="sub">ระวางเต็ม ${Math.round(ld*100)}%</div></div></button>`}).join("")}</div>`:`<div class="panel muted small">ยังไม่มีเส้นทางที่ขนสินค้า ทุกเที่ยวบินขนสินค้าใต้ท้องเครื่องได้ หรือซื้อเครื่องขนสินค้าด้านล่างไปใส่เส้นทาง</div>`}
+    return `<button class="strip" data-route="${r.id}" style="${rkind(r)==="cargo"?"border-left-color:var(--cargo)":""}"><div class="fno">${fno(r)}<small>${rkind(r)==="cargo"?"เส้นทางสินค้า":"ใต้ท้องเครื่อง"}</small>${bkChip(bkCargo(r),"ตัน")}</div><div style="min-width:0"><div class="iata">${r.from} → ${r.dest}</div><div class="sub">${Math.round(c.cargo||0).toLocaleString()} / ${Math.round(c.ccap).toLocaleString()} ตัน · ${crateText(c)}</div><div class="lf"><i style="width:${Math.round(ld*100)}%"></i></div></div><div class="right"><div class="num good">${money(c.crev,true)}</div><div class="sub">ระวางเต็ม ${Math.round(ld*100)}%</div></div></button>`}).join("")}</div>`:`<div class="panel muted small">ยังไม่มีเส้นทางที่ขนสินค้า ทุกเที่ยวบินขนสินค้าใต้ท้องเครื่องได้ หรือซื้อเครื่องขนสินค้าด้านล่างไปใส่เส้นทาง</div>`}
   <h2>เครื่องบินขนสินค้า <span class="muted num small">${MODELS.filter(m=>m.cat==="cargo").length} รุ่น</span></h2>
   <button class="btn pickbtn" data-pick="air">🧭 ไม่รู้จะใช้เครื่องรุ่นไหน? ให้เกมช่วยเลือกตามเส้นทาง</button>
   <div class="seg scrollx">${CCLS.map(([k,n])=>`<button data-ccls="${k}" class="${ccls===k?"on":""}">${n}</button>`).join("")}</div>
@@ -1796,7 +1870,7 @@ function seaHTML(){const lp=S.lanes.reduce((a,l)=>a+laneAvg(l),0),tpd=S.lanes.re
    <div><div class="k">ตู้/วัน (เฉลี่ย)</div><div class="v">${Math.round(tpd).toLocaleString()} TEU</div></div><div><div class="k">กำไรเรือ/วัน (เฉลี่ย)</div><div class="v ${lp<0?"bad":"good"}">${money(lp,true)}</div></div></div>
   ${suezShut()?`<div class="panel small bad">คลองสุเอซปิดอยู่ เรือที่วิ่งระหว่างเอเชียกับยุโรปต้องอ้อมแหลมกู๊ดโฮป ระยะทางไกลขึ้น</div>`:""}
   ${S.lanes.length?`<div class="strips">${S.lanes.map(l=>{const c={...laneCalc(l),profit:laneAvg(l)},a=port(l.from),b=port(l.to),ld=Math.max(c.load,c.loadr),
-     days=c.km/40/24;return `<button class="strip ${!l.ships.length?"idle":c.profit<0?"loss":""}" data-lane="${l.id}" style="border-left-color:${!l.ships.length?"var(--muted)":c.profit<0?"var(--bad)":"var(--port)"}"><div class="fno">${laneNo(l)}<small>${l.ships.length} ลำ</small></div>
+     days=c.km/40/24;return `<button class="strip ${!l.ships.length?"idle":c.profit<0?"loss":""}" data-lane="${l.id}" style="border-left-color:${!l.ships.length?"var(--muted)":c.profit<0?"var(--bad)":"var(--port)"}"><div class="fno">${laneNo(l)}<small>${l.ships.length} ลำ</small>${bkChip(bkSea(l),"ตู้")}</div>
       <div style="min-width:0"><div class="iata" style="font-size:15px">${a.n} → ${b.n}</div><div class="sub">${c.km.toLocaleString()} กม. ทางทะเล · ราว ${Math.round(days)} วัน${viaText(c.sp).length?" · ผ่าน"+viaText(c.sp)[0]:""}</div><div class="lf"><i style="width:${Math.round(ld*100)}%;background:var(--port)"></i></div></div>
       <div class="right"><div class="num ${c.profit<0?"bad":"good"}">${money(c.profit,true)}</div><div class="sub">เฉลี่ย/วัน · เต็ม ${Math.round(ld*100)}%</div></div></button>`}).join("")}</div>`:`<div class="panel muted small">ยังไม่มีเส้นทางเรือ เปิดเส้นทางระหว่างท่าเรือสองแห่งในภูมิภาคที่ปลดล็อกแล้ว แล้วซื้อเรือใส่ เรือช้ากว่าเครื่องบินมาก แต่ขนตู้สินค้าได้ครั้งละหลายพันตู้</div>`}
   ${S.ships.length?`<h2>กองเรือของคุณ</h2><div class="hangar">${S.ships.map(sh=>{const m=shipM(sh.m),l=S.lanes.find(x=>x.id===sh.lane);
@@ -1838,11 +1912,12 @@ function laneSheet(lid,st){
      `<div class="kv"><div><div class="k">ตู้ที่ต้องการ/วัน</div><div class="v">${Math.round(c.D).toLocaleString()} TEU</div></div><div><div class="k">ความจุเรือ/วัน</div><div class="v">${Math.round(c.cap+c.capr).toLocaleString()} TEU</div></div>
       <div><div class="k">ตู้เต็ม</div><div class="v">${Math.round(Math.max(c.load,c.loadr)*100)}%</div></div><div><div class="k">กำไร/วัน (เฉลี่ย)</div><div class="v ${laneAvg(l)<0?"bad":"good"}">${money(laneAvg(l),true)}</div></div></div>
      <div id="lbd">${breakdownS(c)}</div>
+     ${bkLaneHTML(l)}
      <div class="muted small">ค่าระวาง ${money(TEU_RATE(c.km),true)} ต่อตู้ต่อเที่ยว (เรือห้องเย็น 1.8 เท่า) · ท่าเรือ ${a.deep&&b.deep?"น้ำลึกทั้งสองฝั่ง เรือ ULCV เทียบได้":"ไม่ใช่น้ำลึกทั้งคู่ ใช้เรือ ULCV ไม่ได้"}</div>
      <div><div class="eyebrow" style="margin-bottom:6px">เรือในเส้นทาง ${l.ships.length} ลำ</div><div class="pick">${l.ships.map(shipById).filter(Boolean).map(sh=>row(sh,"srem")).join("")||'<div class="muted small">ยังไม่มีเรือ</div>'}
       ${idle.length?`<div class="eyebrow" style="margin-top:6px">เรือที่จอดว่าง</div>`:""}${idle.map(sh=>row(sh,"sadd")).join("")}</div></div>
      <details class="more buyhere" ${st.buy?"open":""} id="sbuy"><summary>+ ซื้อเรือใหม่ใส่เส้นทางนี้ ▾</summary><div class="pick">${SHIPS.map(m=>{const ok=canDock(m,l);return `<button data-sbuy="${m.id}" ${!ok||S.cash<m.price?"disabled":""} class="${ok?"":"noreach"}"><span class="mini">${shipArt(m)}</span><span>${m.name}<br><span class="muted" style="font-size:12.5px">${ok?`ไปกลับราว ${Math.round(legDaysS(m,c.km)*2)} วัน`:'<b class="bad">เทียบท่าไม่ได้</b> · ต้องเป็นท่าน้ำลึก'}</span></span><span class="num small" style="font-weight:600;color:${!ok?"var(--bad)":S.cash>=m.price?"var(--accent)":"var(--muted)"}">${ok?money(m.price,true):"ใช้ไม่ได้"}</span></button>`}).join("")}</div></details>
-     <button class="btn danger" id="lclose">${st.confirm?"ยืนยันปิดเส้นทางเรือ":"ปิดเส้นทางเรือ"}</button>`};
+     <button class="btn danger" id="lclose">${st.confirm?"ยืนยันปิดเส้นทางเรือ"+(bkSea(l)>=1?" (ของสะสมจะหาย)":""):"ปิดเส้นทางเรือ"}</button>`};
   fn.bind=()=>{const l=S.lanes.find(x=>x.id===lid);if(!l)return;
     $$("[data-srem]").forEach(b=>b.onclick=()=>{const id=+b.dataset.srem;l.ships=l.ships.filter(x=>x!==id);shipById(id).lane=null;save();drawSheet()});
     $$("[data-sadd]").forEach(b=>b.onclick=()=>{const id=+b.dataset.sadd;l.ships.push(id);shipById(id).lane=l.id;save();drawSheet()});
@@ -1921,6 +1996,10 @@ function missionsHTML(){if(!S.missions)return "";const ready=S.missions.filter(m
    ${S.missions.map(m=>{const pr=clamp(mProg(m)/m.target,0,1),left=m.until>1e8?"":` · เหลือ ${Math.max(0,m.until-S.day)} วัน`;
      return `<div class="mission ${m.done?"done":""}"><div class="row between" style="align-items:center;gap:10px"><div style="min-width:0"><b>${mTitle(m)}</b><div class="small muted">${m.done?"สำเร็จแล้ว!":mUnit(m)}${m.done?"":left}</div></div>
        ${m.done?`<button class="btn primary sm glow" data-claim="${m.id}">รับ ${money(m.reward,true)}</button>`:`<span class="chip" title="รางวัล">🎁 ${money(m.reward,true)}</span>`}</div><div class="bar"><i style="width:${(m.done?1:pr)*100}%"></i></div></div>`}).join("")}</div>`}
+function confetti(cx,cy,n=30){if(reduce)return;const C=["#F2B33D","#E4572E","#2A9D8F","#3D7DD8","#B565D9","#F27DA6"];
+  for(let i=0;i<n;i++){const d=document.createElement("span");d.className="cft";const a=-Math.PI/2+(Math.random()-.5)*2.6,r=70+Math.random()*140;
+    d.style.cssText=`left:${cx}px;top:${cy}px;background:${C[i%C.length]};--dx:${Math.round(Math.cos(a)*r)}px;--dy:${Math.round(Math.sin(a)*r)}px;--rot:${(Math.random()*720-360)|0}deg;animation-delay:${i*7}ms;${i%3?"":"border-radius:50%;height:8px"}`;
+    document.body.appendChild(d);setTimeout(()=>d.remove(),1800)}}
 function coinBurst(cx,cy){if(reduce)return;for(let i=0;i<14;i++){const d=document.createElement("span");d.className="coin";const a=Math.random()*Math.PI*2,r=40+Math.random()*60;
   d.style.left=cx+"px";d.style.top=cy+"px";d.style.setProperty("--dx",Math.cos(a)*r+"px");d.style.setProperty("--dy",(Math.sin(a)*r-50)+"px");d.style.animationDelay=(i*18)+"ms";document.body.appendChild(d);setTimeout(()=>d.remove(),1200)}}
 /* ---------- decisions: a choice pops up every week or two ---------- */
@@ -2161,7 +2240,7 @@ function ratingHTML(){const R=S.rating;if(!R)return "";const cats=RCATS.map(([k,
   const weakest=Object.entries(R.cats).sort((a,b)=>a[1].v-b[1].v)[0];
   return `<div class="panel stack"><div class="row between"><span class="eyebrow">⭐ เรตติ้งสายการบิน</span><span class="muted small">ผู้โดยสาร ${R.overall>=2.5?"+":""}${Math.round((starMult()-1)*100)}% จากเรตติ้ง</span></div>
    <div class="rating"><div class="rbig"><div class="n">${R.overall.toFixed(1)}</div>${starsHTML(R.overall,17)}<div class="muted small">โดยรวม</div></div><div class="rsub">${cats}</div></div>
-   ${weakest?`<div class="rtip">💡 ด้านที่ควรพัฒนา: <b>${RCATS.find(x=>x[0]===weakest[0])[1]}</b> · ${weakest[1].tip}</div>`:`<div class="rtip">เริ่มบินหรือเดินเรือเพื่อรับเรตติ้งแรก</div>`}</div>`}
+   ${weakest?`<div class="rtip">💡 ด้านที่ควรพัฒนา: <b>${RCATS.find(x=>x[0]===weakest[0])[1]}</b> · ${weakest[1].tip}</div>`:`<div class="rtip">เริ่มบินหรือเดินเรือเพื่อรับเรตติ้งแรก</div>`}${voiceHTML()}</div>`}
 let brReg=null,brSeg="air";
 function branchHTML(){const seg=`<div class="seg"><button data-brseg="air" class="${brSeg==="air"?"on":""}">✈ สาขาสนามบิน <span class="num muted small">${S.bases.length}</span></button><button data-brseg="sea" class="${brSeg==="sea"?"on":""}">⚓ สาขาท่าเรือ <span class="num muted small">${pbList().length}</span></button></div>`;
   return seg+(brSeg==="sea"?portBranchHTML():airBranchHTML())}
@@ -2224,7 +2303,7 @@ function routesHTML(){rseg=bm();const RL=S.routes.filter(r=>rkind(r)===rseg),np=
   ${RL.length?`<div class="strips">${RL.map(r=>{const c=r.last||calc(r),dc=city(r.dest);
     const cls=!r.planes.length?"idle":c.profit<0?"loss":"";
     return `<button class="strip ${cls}" data-route="${r.id}">
-      <div class="fno">${fno(r)}<small>${r.planes.length} ลำ · ${c.legs} เที่ยว/วัน</small></div>
+      <div class="fno">${fno(r)}<small>${r.planes.length} ลำ · ${c.legs} เที่ยว/วัน</small>${rkind(r)==="cargo"?bkChip(bkCargo(r),"ตัน"):bkChip(bkPax(r),"คน")}</div>
       <div style="min-width:0"><div class="iata">${r.from} → ${r.dest}</div><div class="sub">${dc.n} · ${c.d.toLocaleString()} กม. · ${rkind(r)==="cargo"?(c.crate?crateText(c):""):money(c.price??r.price,true)}${r.pmode==="auto"&&rkind(r)!=="cargo"?' <span class="tagauto">อัตโนมัติ</span>':""}${c.ground?' · <span class="bad">งดบินพายุ</span>':""}${evMult(r.dest)>1?' · <span class="warn">เทศกาล</span>':""}</div><div class="lf"><i style="width:${Math.round((rkind(r)==="cargo"?(c.ccap?(c.cargo||0)/c.ccap:0):c.lf)*100)}%;${rkind(r)==="cargo"?"background:var(--cargo)":""}"></i></div></div>
       <div class="right"><div class="num ${c.profit<0?"bad":"good"}">${c.profit>=0?"+":""}${money(c.profit,true)}</div><div class="sub">${rkind(r)==="cargo"?`${Math.round(c.cargo||0).toLocaleString()} ตัน`:`${(c.pax||0).toLocaleString()} คน ${trend(r)}`}</div></div>
     </button>`}).join("")}</div>`:`<div class="panel muted">${rseg==="cargo"?"ยังไม่มีเส้นทางขนสินค้า เปิดเส้นทางสินค้าจากสาขาไหนก็ได้ แล้วใส่เครื่องบินขนสินค้า":`ยังไม่มีเส้นทางผู้โดยสาร เส้นทางทุกเส้นออกจากสาขา เช่น ${city(S.hub).n} (${S.hub})`}</div>`}
@@ -2232,29 +2311,42 @@ function routesHTML(){rseg=bm();const RL=S.routes.filter(r=>rkind(r)===rseg),np=
 }
 let artSeq=0;
 // Side-view illustration, proportions scaled from each type's length and fuselage height
-function planeArt(m,lv){lv=lv||S.livery;const A=m.a,id="pa"+(artSeq++);
-  const H=A.fh,Lx=Math.min(188,56+m.len*1.75),x0=(200-Lx)/2+(A.eng==="nose"?4:0),x1=x0+Lx,cy=H>=24?46:48,top=cy-H/2,bot=cy+H/2;
-  const body=lv.body==="tail"?lv.tail:BODY[lv.body][1],tail=lv.tail,stripe=lv.stripe,ink="#22303F",edge="rgba(20,34,52,.38)";
-  const dark=lum(body)<.45,win=dark?"rgba(255,255,255,.85)":"#2E4762",wing=dark?"#56657A":"#B4BFCB",steel="#7D8A98";
-  const nose=Math.min(H*1.35,Lx*.11),up=Lx*(A.prop?.2:.21),hump=A.deck==="hump";
+function planeArt(m,lv,fly){lv=lv||S.livery;const A=m.a,id="pa"+(artSeq++);
+  // side profile, nose to the left, standing on its gear (or gear up when fly is set); everything is sized from fuselage height H and length Lx
+  const H=A.fh*(A.prop?.95:.9),Lx=Math.min(188,56+m.len*1.75),x0=(200-Lx)/2+(A.eng==="nose"?4:0),x1=x0+Lx;
+  const G=72,gh=H*(A.hw?.36:.46)+1.5,bot=G-gh,cy=bot-H/2,top=cy-H/2,nt=cy+H*.14;
+  const body=lv.body==="tail"?lv.tail:BODY[lv.body][1],tail=lv.tail,stripe=lv.stripe,ink="#22303F",edge="rgba(20,34,52,.4)";
+  const dark=lum(body)<.45,win=dark?"rgba(255,255,255,.85)":"#2E4762",wing=dark?"#5C6B80":"#BCC6D1",wingD=dark?"#465468":"#96A3B2",steel="#7D8A98",belly=dark?"#4A5768":"#DDE3EA";
+  const nose=Math.min(H*(A.prop?1.3:1.6),Lx*.13),up=Math.min(H*(A.prop?2.4:2.8),Lx*.25),hump=A.deck==="hump";
   const topPath=hump
-    ?`C${x0} ${top+H*.02} ${x0+H*.45} ${top-H*.34} ${x0+H*1.8} ${top-H*.38}L${x0+Lx*.28} ${top-H*.38}C${x0+Lx*.33} ${top-H*.38} ${x0+Lx*.36} ${top} ${x0+Lx*.41} ${top}`
-    :`C${x0} ${top+H*.2} ${x0+nose*.42} ${top} ${x0+nose} ${top}`;
-  const fus=`M${x0} ${cy+H*.12}${topPath}L${x1-H*.4} ${top-H*.02}Q${x1} ${top-H*.02} ${x1} ${top+H*.2}L${x1-H*.22} ${top+H*.36}Q${x1-up*.5} ${bot-H*.08} ${x1-up} ${bot}L${x0+nose*.75} ${bot}C${x0+nose*.22} ${bot} ${x0} ${cy+H*.42} ${x0} ${cy+H*.12}Z`;
+    ?`C${x0} ${cy-H*.25} ${x0+H*.5} ${top-H*.36} ${x0+H*1.8} ${top-H*.38}L${x0+Lx*.28} ${top-H*.38}C${x0+Lx*.33} ${top-H*.38} ${x0+Lx*.36} ${top} ${x0+Lx*.41} ${top}`
+    :`C${x0} ${cy-H*.2} ${x0+nose*.5} ${top} ${x0+nose} ${top}`;
+  const fus=`M${x0} ${nt}${topPath}L${x1-H*1.1} ${top}Q${x1-H*.25} ${top+H*.02} ${x1} ${top+H*.2}L${x1} ${top+H*.36}C${x1-up*.3} ${top+H*.6} ${x1-up*.62} ${bot} ${x1-up} ${bot}L${x0+nose*.85} ${bot}C${x0+nose*.3} ${bot} ${x0} ${cy+H*.44} ${x0} ${nt}Z`;
+  const FH=Math.min(H*(A.prop?1.9:1.7),top-3),fb0=x1-Lx*(A.prop?.2:.18),fb1=x1-Lx*.03,ft0=x1-Lx*.075,ft1=x1+H*.02;
+  const EL=H*(A.big?1.2:1.12),EH=H*(A.big?.58:.54);
+  const cTop=top-FH-(A.tt?H*.1:0)-2,cBot=fly?bot+(A.hw?H*.1:EH)+2:G+4;
+  // frame: zoom in on small aircraft (they still stay smaller than the big ones); on the ground the tarmac line always sits at 86% of the height
+  const vh=Math.max(Math.min(200,Math.max(124,Lx+22))*.4,fly?cBot-cTop+2:(G-cTop+1)/.86),vw=vh/.4,vx=(x0+x1)/2+H*.1-vw/2,vy=fly?(cTop+cBot)/2-vh/2:G-vh*.86;
   let g=`<defs><clipPath id="${id}"><path d="${fus}"/></clipPath></defs>`;
-  g+=`<ellipse cx="${(x0+x1)/2}" cy="74" rx="${Lx*.36}" ry="1.8" fill="#000" opacity=".1"/>`;
+  if(!fly)g+=`<ellipse cx="${(x0+x1)/2}" cy="${G+1.2}" rx="${Lx*.42}" ry="1.9" fill="#000" opacity=".1"/>`;
   // vertical fin with logo
-  const FH=Math.min(H*(A.prop?2:1.8),top-3),fb0=x1-Lx*(A.prop?.2:.18),fb1=x1-Lx*.03,ft0=x1-Lx*.075,ft1=x1+H*.02;
-  g+=`<path d="M${fb0} ${top+H*.2}L${ft0} ${top-FH}Q${(ft0+ft1)/2} ${top-FH-1.2} ${ft1} ${top-FH}L${fb1} ${top+H*.25}Z" fill="${tail}"/>`;
+  g+=`<path d="M${fb0-H*.5} ${top+H*.12}Q${fb0} ${top+H*.02} ${fb0+(ft0-fb0)*.12} ${top-FH*.12}L${ft0} ${top-FH}Q${(ft0+ft1)/2} ${top-FH-1.2} ${ft1} ${top-FH}L${fb1} ${top+H*.25}Z" fill="${tail}"/>`;
   g+=`<path d="M${fb0+(ft0-fb0)*.08} ${top+H*.2-(top+H*.2-(top-FH))*.08}L${fb1-(fb1-ft1)*.06} ${top+H*.25-(top+H*.25-(top-FH))*.06}" stroke="${stripe}" stroke-width="${Math.max(.8,H*.12)}" opacity=".9"/>`;
-  const ls=Math.min(FH*.56,(ft1-ft0+fb1-fb0)/2*.62),lx=(fb0+ft0+ft1+fb1)/4+ls*.08,ly=top-FH*.46;
+  g+=`<path d="M${fb1-(fb1-ft1)*.9-FH*.16} ${top-FH*.9}L${fb1-FH*.2} ${top+H*.12}" stroke="#000" stroke-opacity=".16" stroke-width=".6" fill="none"/>`;
+  const ls=Math.min(FH*.56,(ft1-ft0+fb1-fb0)/2*.62),lx=(fb0+ft0+ft1+fb1)/4+ls*.02,ly=top-FH*.46;
   g+=`<g transform="translate(${lx-ls/2} ${ly-ls/2})">${logoSVG(lv,ls,onCol(tail))}</g>`;
   if(A.tt)g+=`<path d="M${ft0-Lx*.05} ${top-FH+H*.1}L${ft1+H*.1} ${top-FH-H*.04}L${ft1+H*.12} ${top-FH+H*.12}L${ft0-Lx*.035} ${top-FH+H*.26}Z" fill="${tail}"/>`;
-  // high wing sits behind nothing; draw prop wing first so the body overlaps its root
+  // landing gear (behind the fuselage, wing and engines)
+  if(!fly){const wheel=(gx,r)=>`<circle cx="${gx}" cy="${G-r}" r="${r}" fill="#28313D" stroke="rgba(255,255,255,.4)" stroke-width=".35"/><circle cx="${gx}" cy="${G-r}" r="${r*.42}" fill="#B3BDC9"/>`;
+    const leg=(gx,r,n)=>`<path d="M${gx} ${bot-H*.15}L${gx} ${G-r}" stroke="${steel}" stroke-width="${Math.max(.9,r*.5)}" stroke-linecap="round"/>`+Array.from({length:n},(_,i)=>wheel(gx+(i-(n-1)/2)*r*2.15,r)).join("");
+    const r=Math.max(1.5,H*.135);
+    g+=leg(x0+nose*1.08,r*.82,1)+leg(x0+Lx*(A.hw?.5:.53),r,A.big?2:1)}
+  // wing-to-body fairing under the cabin
+  if(!A.hw){const a=x0+Lx*.33,b=x0+Lx*.66;g+=`<path d="M${a} ${bot-H*.12}C${a+Lx*.06} ${bot+H*.17} ${b-Lx*.08} ${bot+H*.17} ${b} ${bot-H*.12}Z" fill="${belly}" stroke="${edge}" stroke-width=".6"/>`}
   // fuselage, livery bands, outline
   g+=`<path d="${fus}" fill="${body}"/>`;
   {const sx=x0+Lx*(A.prop?.46:.4),ex=x1+2,PT=livPat(lv),band=(o,col,op)=>`<path d="M${sx+o*Lx*.06} ${bot+3}C${sx+Lx*.2+o*Lx*.05} ${bot-H*.08} ${x1-Lx*.3+o*Lx*.03} ${cy+H*.02-o*H*.16} ${ex} ${top-H*.1-o*H*.22}L${ex+4} ${bot+6}Z" fill="${col}"${op?` opacity="${op}"`:""}/>`;
-    g+=`<defs><linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset=".78" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".16"/></linearGradient></defs><g clip-path="url(#${id})">`;
+    g+=`<defs><linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".25"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/><stop offset=".7" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".2"/></linearGradient></defs><g clip-path="url(#${id})">`;
     const sw=Math.max(.8,H*.07);
     if(PT==="swoosh")g+=band(0,stripe)+band(.55,tail)+band(1.05,stripe,.9)+band(1.35,tail)+
        `<path d="M${x0-2} ${cy+H*.3}C${x0+Lx*.2} ${cy+H*.26} ${sx} ${bot-H*.18} ${sx+Lx*.12} ${bot+2}L${x0-2} ${bot+2}Z" fill="${tail}" opacity=".9"/>`+
@@ -2267,47 +2359,50 @@ function planeArt(m,lv){lv=lv||S.livery;const A=m.a,id="pa"+(artSeq++);
     else if(PT==="nose")g+=`<path d="M${x0-2} ${top-2}L${x0+nose*1.15} ${top-2}C${x0+nose*.95} ${cy} ${x0+nose*1.05} ${bot-H*.2} ${x0+nose*1.25} ${bot+2}L${x0-2} ${bot+2}Z" fill="${tail}"/>`+
        `<rect x="${x0+nose*1.2}" y="${cy+H*.2}" width="${Lx}" height="${sw*1.2}" fill="${stripe}"/>`;
     else g+=`<rect x="${x0+nose}" y="${cy+H*.22}" width="${Lx}" height="${Math.max(.5,H*.035)}" fill="${tail}"/>`;
-    g+=`<rect x="${x0-2}" y="${top-H*.5}" width="${Lx+6}" height="${H*1.6}" fill="url(#${id}s)"/></g>`}
+    g+=`<rect x="${x0-2}" y="${top-H*.5}" width="${Lx+6}" height="${H*1.6}" fill="url(#${id}s)"/>`;
+    // cockpit glazing (clipped to the nose)
+    g+=hump?`<path d="M${x0+H*.62} ${top-H*.08}L${x0+H*1.05} ${top-H*.24}L${x0+H*1.45} ${top-H*.27}L${x0+H*1.42} ${top-H*.1}Z" fill="${ink}" opacity=".88"/>`
+           :`<path d="M${x0+nose*.3} ${cy-H*.03}L${x0+nose*.52} ${top+H*.23}L${x0+nose*.7} ${top+H*.22}L${x0+nose*.68} ${cy-H*.03}Z" fill="${ink}" opacity=".9"/>`+
+            `<path d="M${x0+nose*.74} ${top+H*.22}L${x0+nose*1.02} ${top+H*.24}L${x0+nose*.96} ${cy-H*.03}L${x0+nose*.72} ${cy-H*.03}Z" fill="${ink}" opacity=".9"/>`;
+    g+=`</g>`}
   g+=`<path d="${fus}" fill="none" stroke="${edge}" stroke-width=".8"/>`;
-  // cockpit
-  const cx0=x0+H*.4,cyk=hump?top-H*.12:top+H*.34;
-  g+=hump?`<path d="M${x0+H*.62} ${top-H*.08}L${x0+H*1.05} ${top-H*.24}L${x0+H*1.45} ${top-H*.27}L${x0+H*1.42} ${top-H*.1}Z" fill="${ink}" opacity=".85"/>`
-         :`<path d="M${cx0} ${cyk}L${x0+nose*.62} ${top+H*.17}L${x0+nose*.95} ${top+H*.15}L${x0+nose*.92} ${top+H*.36}Z" fill="${ink}" opacity=".85"/>`;
   // windows and doors
-  const wEnd=x1-up*1.02,wStart=x0+nose+H*.35;
-  if(!A.cargo){const r=Math.max(.75,H*.06),step=Math.max(2.5,H*.27),rows=A.deck==="double"?[cy-H*.1,cy+H*.07]:[cy-H*.06];
+  const wEnd=x1-up*.95,wStart=x0+nose+H*.5;
+  if(!A.cargo){const r=Math.max(.75,H*.06),step=Math.max(2.5,H*.27),rows=A.deck==="double"?[cy-H*.14,cy+H*.08]:[cy-H*.1];
     for(const wy of rows){let n=0;for(let wx=wStart;wx<wEnd;wx+=step){n++;if(n%12===0)continue;g+=`<rect x="${wx}" y="${wy-r}" width="${r*1.45}" height="${r*2}" rx="${r*.7}" fill="${win}"/>`}}
     if(hump)for(let wx=x0+H*1.9;wx<x0+Lx*.27;wx+=step)g+=`<rect x="${wx}" y="${top-H*.2}" width="${H*.09}" height="${H*.12}" rx="${H*.04}" fill="${win}"/>`;
-    for(const dx of [x0+nose+H*.02,x1-up*1.12])g+=`<rect x="${dx}" y="${cy-H*.3}" width="${H*.18}" height="${H*.52}" rx="1" fill="none" stroke="${edge}" stroke-width=".7"/>`}
+    for(const dx of [x0+nose+H*.12,x1-up*1.06])g+=`<rect x="${dx}" y="${cy-H*.34}" width="${H*.18}" height="${H*.56}" rx="1" fill="none" stroke="${edge}" stroke-width=".7"/>`}
   else g+=`<rect x="${x0+nose+H*.4}" y="${top+H*.16}" width="${H*1.6}" height="${H*.56}" rx="1.5" fill="none" stroke="${edge}" stroke-width=".9"/>`;
   // near horizontal stabilizer
-  if(!A.tt)g+=`<path d="M${x1-Lx*.14} ${cy+H*.02}L${x1-Lx*.035} ${cy-H*.3}L${x1-Lx*.012} ${cy-H*.27}L${x1-Lx*.085} ${cy+H*.14}Z" fill="${wing}" stroke="${edge}" stroke-width=".6"/>`;
+  if(!A.tt)g+=`<path d="M${x1-H*2.05} ${cy-H*.12}L${x1-H*.45} ${cy-H*.33}L${x1-H*.1} ${cy-H*.31}L${x1-H*.95} ${cy-H*.06}Z" fill="${wing}" stroke="${edge}" stroke-width=".6"/>`;
   if(A.hw){
     // high wing, nacelles under the wing, propeller discs
     const wx=x0+Lx*.36,ww=Lx*.17;
     g+=`<path d="M${wx} ${top+H*.06}L${wx+ww} ${top+H*.06}L${wx+ww+H*.15} ${top-H*.12}L${wx+H*.1} ${top-H*.14}Z" fill="${wing}" stroke="${edge}" stroke-width=".6"/>`;
-    if(A.eng==="prop"){const ex=wx-H*.55,EL=ww*.75+H*.55;
-      g+=`<path d="M${ex} ${top+H*.12}Q${ex} ${top-H*.12} ${ex+H*.4} ${top-H*.14}L${ex+EL} ${top-H*.1}L${ex+EL} ${top+H*.3}L${ex+H*.4} ${top+H*.34}Q${ex} ${top+H*.34} ${ex} ${top+H*.12}Z" fill="${body}" stroke="${edge}" stroke-width=".7"/>`;
+    if(A.eng==="prop"){const ex=wx-H*.55,EL2=ww*.75+H*.55;
+      g+=`<path d="M${ex} ${top+H*.12}Q${ex} ${top-H*.12} ${ex+H*.4} ${top-H*.14}L${ex+EL2} ${top-H*.1}L${ex+EL2} ${top+H*.3}L${ex+H*.4} ${top+H*.34}Q${ex} ${top+H*.34} ${ex} ${top+H*.12}Z" fill="${body}" stroke="${edge}" stroke-width=".7"/>`;
       g+=`<rect x="${ex+H*.25}" y="${top-H*.1}" width="${H*.14}" height="${H*.42}" fill="${tail}"/>`;
       g+=`<ellipse cx="${ex-H*.06}" cy="${top+H*.1}" rx="${H*.09}" ry="${H*.95}" fill="${steel}" opacity=".35"/><circle cx="${ex-H*.04}" cy="${top+H*.1}" r="${H*.11}" fill="${ink}"/>`}
-    else{g+=`<ellipse cx="${x0-H*.06}" cy="${cy+H*.12}" rx="${H*.09}" ry="${H*.95}" fill="${steel}" opacity=".35"/><circle cx="${x0}" cy="${cy+H*.12}" r="${H*.12}" fill="${ink}"/>`;
+    else{g+=`<ellipse cx="${x0-H*.06}" cy="${nt}" rx="${H*.09}" ry="${H*.95}" fill="${steel}" opacity=".35"/><circle cx="${x0}" cy="${nt}" r="${H*.12}" fill="${ink}"/>`;
       g+=`<path d="M${wx+ww*.6} ${top-H*.02}L${wx+ww*.35} ${cy+H*.2}" stroke="${steel}" stroke-width=".9"/>`}}
   else{
-    // low swept wing seen edge-on, turbofans under it
-    const wx=x0+Lx*.35,EL=H*(A.big?1.55:1.3),EH=H*(A.big?.62:.56);
-    const eng=(ex,ey,sc)=>{const L2=EL*sc,H2=EH*sc;
-      return `<path d="M${ex+L2*.35} ${ey+1}L${ex+L2*.55} ${bot-H*.2}L${ex+L2*.9} ${bot-H*.2}L${ex+L2*.85} ${ey+1}Z" fill="${wing}"/>`+
-        `<path d="M${ex+L2} ${ey+H2*.2}L${ex+L2+H2*.45} ${ey+H2*.5}L${ex+L2} ${ey+H2*.8}Z" fill="${steel}"/>`+
-        `<path d="M${ex} ${ey+H2*.06}Q${ex+L2*.5} ${ey-H2*.04} ${ex+L2} ${ey+H2*.18}L${ex+L2} ${ey+H2*.82}Q${ex+L2*.5} ${ey+H2*1.04} ${ex} ${ey+H2*.94}Z" fill="${body}" stroke="${edge}" stroke-width=".8"/>`+
-        `<path d="M${ex} ${ey+H2*.06}L${ex+L2*.12} ${ey+H2*.03}L${ex+L2*.12} ${ey+H2*.97}L${ex} ${ey+H2*.94}Z" fill="${tail}"/>`+
-        `<ellipse cx="${ex+H2*.05}" cy="${ey+H2*.5}" rx="${H2*.14}" ry="${H2*.4}" fill="${ink}" opacity=".88"/>`+
-        `<path d="M${ex+L2*.2} ${ey+H2*.86}Q${ex+L2*.55} ${ey+H2*.98} ${ex+L2*.95} ${ey+H2*.8}" fill="none" stroke="#000" stroke-opacity=".12" stroke-width="${H2*.12}"/>`+
-        (H2>5?`<g transform="translate(${ex+L2*.42-H2*.28} ${ey+H2*.5-H2*.28})">${logoSVG(lv,H2*.56,tail)}</g>`:"")};
-    g+=`<path d="M${wx} ${bot-H*.2}L${wx+Lx*.15} ${bot-H*.2}L${wx+Lx*.29} ${bot+H*.42}L${wx+Lx*.255} ${bot+H*.44}Z" fill="${wing}" stroke="${edge}" stroke-width=".6"/>`+
-       `<path d="M${wx+Lx*.255} ${bot+H*.44}L${wx+Lx*.29} ${bot+H*.42}L${wx+Lx*.305} ${bot+H*.05}L${wx+Lx*.296} ${bot+H*.05}Z" fill="${tail}"/>`;
-    if(A.eng==="quad")g+=eng(wx+Lx*.07,bot+H*.0,.82);
-    g+=eng(wx-EL*.45,bot-H*.02,1)}
-  return `<svg class="art" viewBox="0 0 200 80" role="img" aria-label="${m.name}">${g}</svg>`}
+    // turbofans on pylons, then the near wing sweeping back over the cabin with its winglet
+    const wx=x0+Lx*.37,wr=bot-H*.27,tx=wx+Lx*.3,ty=wr-H*.2;
+    const eng=(ex,ey,sc)=>{const L2=EL*sc,H2=EH*sc,my=ey+H2/2;
+      return `<path d="M${ex+L2*.4} ${ey+H2*.08}L${ex+L2*.62} ${ey-H2*.34}L${ex+L2*1.3} ${ey-H2*.34}L${ex+L2*.98} ${ey+H2*.2}Z" fill="${wingD}"/>`+
+        `<path d="M${ex+L2*.98} ${ey+H2*.3}L${ex+L2*1.26} ${my}L${ex+L2*.98} ${ey+H2*.7}Z" fill="${ink}" opacity=".7"/>`+
+        `<path d="M${ex+L2*.8} ${ey+H2*.1}L${ex+L2*1.03} ${ey+H2*.25}L${ex+L2*1.03} ${ey+H2*.75}L${ex+L2*.8} ${ey+H2*.9}Z" fill="${steel}"/>`+
+        `<path d="M${ex+L2*.07} ${ey+H2*.03}Q${ex+L2*.45} ${ey-H2*.05} ${ex+L2*.85} ${ey+H2*.08}L${ex+L2*.85} ${ey+H2*.92}Q${ex+L2*.45} ${ey+H2*1.05} ${ex+L2*.07} ${ey+H2*.97}Z" fill="${body}" stroke="${edge}" stroke-width=".7"/>`+
+        `<path d="M${ex+L2*.09} ${ey+H2*.03}Q${ex-L2*.03} ${my} ${ex+L2*.09} ${ey+H2*.97}L${ex+L2*.17} ${ey+H2*.985}L${ex+L2*.17} ${ey+H2*.015}Z" fill="#C7CED7" stroke="${edge}" stroke-width=".5"/>`+
+        `<path d="M${ex+L2*.21} ${ey+H2*.01}L${ex+L2*.29} ${ey}L${ex+L2*.29} ${ey+H2}L${ex+L2*.21} ${ey+H2*.99}Z" fill="${tail}"/>`+
+        `<path d="M${ex+L2*.12} ${ey+H2*.86}Q${ex+L2*.5} ${ey+H2*.99} ${ex+L2*.85} ${ey+H2*.82}" fill="none" stroke="#000" stroke-opacity=".13" stroke-width="${H2*.14}"/>`+
+        (H2>5?`<g transform="translate(${ex+L2*.57-H2*.27} ${my-H2*.27})">${logoSVG(lv,H2*.54,tail)}</g>`:"")};
+    if(A.eng==="quad")g+=eng(wx+Lx*.115-EL*.5,bot-H*.2,.84);
+    g+=eng(wx-EL*.58,bot-H*.1,1);
+    g+=`<path d="M${wx} ${wr}L${tx} ${ty}L${tx+Lx*.03} ${ty+H*.03}L${wx+Lx*.215} ${wr+H*.12}L${wx+Lx*.03} ${wr+H*.15}Q${wx-Lx*.01} ${wr+H*.1} ${wx} ${wr}Z" fill="${wing}" stroke="${edge}" stroke-width=".6"/>`+
+       `<path d="M${wx+Lx*.03} ${wr+H*.15}L${wx+Lx*.215} ${wr+H*.12}L${tx+Lx*.03} ${ty+H*.03}" fill="none" stroke="${wingD}" stroke-width="${Math.max(.7,H*.06)}"/>`+
+       `<path d="M${tx-Lx*.012} ${ty+H*.02}L${tx+H*.16} ${ty-H*.5}L${tx+H*.36} ${ty-H*.5}L${tx+Lx*.03} ${ty+H*.03}Z" fill="${tail}" stroke="${edge}" stroke-width=".4"/>`}
+  return `<svg class="art${fly?"":" gnd"}" viewBox="${vx.toFixed(2)} ${vy.toFixed(2)} ${vw.toFixed(2)} ${vh.toFixed(2)}" role="img" aria-label="${m.name}">${g}</svg>`}
 let mktCat="all";
 function fleetHTML(){
   const FK=bm(),KC=FK==="cargo";if(KC)mktCat="cargo";else if(mktCat==="cargo")mktCat="all";
@@ -2406,6 +2501,7 @@ function bindView(rest){
   if(tab==="branch")bindBranch();
   if(tab==="cargo")bindCargo();
   $$("[data-claim]").forEach(b=>b.onclick=()=>claimMission(+b.dataset.claim,b));
+  {const pb=$("#perkbtn");if(pb)pb.onclick=()=>openSheet(perkSheet())}
   $$("[data-go]").forEach(b=>b.onclick=()=>{tab=b.dataset.go;renderView(true)});
   const nr=$("#newr");if(nr)nr.onclick=()=>openSheet(newRouteSheet({from:S.hub,kind:rseg}));
   $$("[data-rseg]").forEach(b=>b.onclick=()=>setBM(b.dataset.rseg));
@@ -2510,7 +2606,7 @@ function routeSheet(rid,st){
       <div class="pick">${MODELS.filter(m=>fitsKind(m,r)).sort((a,b)=>(b.range>=c.d)-(a.range>=c.d)||a.price-b.price).map(m=>{const ok=m.range>=c.d;return `<button data-buyto="${m.id}" ${!ok||S.cash<m.price?"disabled":""} class="${ok?"":"noreach"}"><span class="mini">${planeArt(m)}</span><span>${m.name}<br><span class="muted" style="font-size:12.5px">${ok?`${m.seats?m.seats+" ที่นั่ง":m.cargo+" ตัน"} · ${legsFor(m,c.d)} เที่ยว/วัน`:`<b class="bad">ไม่สามารถบินได้</b> · ขาดอีก ${(c.d-m.range).toLocaleString()} กม.`}</span><br>${rangeBar(m.range,c.d)}</span><span class="num small" style="color:${!ok?"var(--bad)":S.cash>=m.price?"var(--accent)":"var(--muted)"};font-weight:600">${ok?money(m.price,true):"บินไม่ถึง"}</span></button>`}).join("")}</div>
       <div class="muted small" style="margin-top:6px">เส้นทางนี้ยาว ${c.d.toLocaleString()} กม. · เงินสด ${money(S.cash,true)}</div></details>
      <div class="row">${cg?"":`<button class="btn primary" style="flex:1" id="savep" ${st.price==null?"disabled":""}>ใช้ราคานี้</button>`}
-     <button class="btn danger" id="close">${st.confirm?"ยืนยันปิด":"ปิดเส้นทาง"}</button></div>`;
+     <button class="btn danger" id="close">${st.confirm?"ยืนยันปิด"+(bkPax(r)+bkCargo(r)>=1?" (ของสะสมจะหาย)":""):"ปิดเส้นทาง"}</button></div>`;
     return out};
   fn.bind=()=>{const r=S.routes.find(x=>x.id===rid);if(!r)return;
     const preview=v=>{st.price=v;const c=calc(r,v);$("#pr").value=v;$("#pv").textContent=money(v);$("#kv").innerHTML=kvHTML(c);$("#bd").innerHTML=breakdownHTML(c);$("#fc").innerHTML=forecastHTML(r,c);$("#savep").disabled=false;demandChart($("#dchart"),r,v)};
@@ -2555,12 +2651,18 @@ function cargoKV(c){const ld=c.ccap?Math.min(c.cdem,c.ccap)/c.ccap:0;return `<di
  <div><div class="k">รายได้สินค้า/วัน</div><div class="v good">${money(c.crev,true)}</div></div>`}
 function bestPrice(r){const base=baseFare(rd(r));let best=base,bp=-Infinity;for(let i=0;i<=60;i++){const pr=base*(.5+1.5*i/60),pf=calc(r,pr).profit;if(pf>bp){bp=pf;best=pr}}return best}
 // Plain-language daily forecast for one route
-function forecastHTML(r,c){if(rkind(r)==="cargo"){const pf=c.profit,good=pf>=0,ld=c.ccap?Math.round(Math.min(c.cdem,c.ccap)/c.ccap*100):0;
-  const why=!r.planes.length?"ยังไม่มีเครื่องบินขนสินค้า ใส่เครื่องก่อนจึงจะมีรายได้":ld<50?"ระวางว่างเยอะ ลองลดค่าระวางหรือใช้เครื่องเล็กลง":c.cdem>c.ccap*1.15?"สินค้ารอส่งเยอะ เพิ่มเครื่องหรือขึ้นค่าระวางได้":pf<0?"ต้นทุนสูงกว่ารายได้ ลองเครื่องที่ประหยัดกว่า":"เส้นทางสินค้านี้ทำเงินได้ดี";
+function bkLineHTML(r){const K=rkind(r)==="cargo",np=bkPax(r),nc=bkCargo(r),parts=[];if(!K&&np>=1)parts.push(`<b class="num">${np.toLocaleString()}</b> คน`);if(nc>=1)parts.push(`<b class="num">${nc.toLocaleString()}</b> ตัน`);
+  const full=!K?np>=Math.floor(calc(r).demand*BK.pax.cap)-1&&np>0:nc>=Math.round(calc(r).cdem*BK.cargo.cap)-1&&nc>0;
+  return `<div class="bkline">📥 <span>${parts.length?`สะสมรออยู่ ${parts.join(" · ")}${full?" (เต็มแล้ว)":""} · ขึ้นเครื่องเมื่อมีที่ว่าง จ่ายไม่เกินราคากลาง`:`ยังไม่มีของสะสม · ถ้า${K?"สินค้า":"คน"}มากกว่าที่ขนได้ ส่วนที่เหลือบางส่วนจะรอไว้ให้`}</span></div>`}
+function bkLaneHTML(l){const B=l.bk||{d:0,r:0,o:0},n=bkSea(l),seg=[["d","ตู้ทั่วไป"],["r","ห้องเย็น"],["o","รถ/สินค้าล้อ"]].filter(x=>B[x[0]]>=1).map(x=>`${x[1]} <b class="num">${Math.round(B[x[0]]).toLocaleString()}</b>`);
+  return `<div class="bkline">📥 <span>${n>=1?`สะสมรอเรืออยู่ ${seg.join(" · ")} ตู้ · เรือที่มีที่ว่างจะขนไปเอง`:"ยังไม่มีตู้สะสม · ถ้าตู้มากกว่าที่เรือขนได้ ส่วนที่เหลือบางส่วนจะรอไว้ให้"}</span></div>`}
+const forecastHTML=(r,c)=>forecastHTML0(r,c)+bkLineHTML(r);
+function forecastHTML0(r,c){if(rkind(r)==="cargo"){const pf=c.profit,good=pf>=0,ld=c.ccap?Math.round(Math.min(c.cdem,c.ccap)/c.ccap*100):0;
+  const why=!r.planes.length?"ยังไม่มีเครื่องบินขนสินค้า ใส่เครื่องก่อนจึงจะมีรายได้ ระหว่างนี้สินค้าจะสะสมรอไว้":ld<50?"ระวางว่างเยอะ ลองลดค่าระวางหรือใช้เครื่องเล็กลง":c.cdem>c.ccap*1.15?"สินค้ารอส่งเยอะ เพิ่มเครื่องหรือขึ้นค่าระวางได้":pf<0?"ต้นทุนสูงกว่ารายได้ ลองเครื่องที่ประหยัดกว่า":"เส้นทางสินค้านี้ทำเงินได้ดี";
   return `<div class="fcard ${good?"up":"down"}"><div class="row between" style="align-items:flex-start;gap:10px"><div><div class="eyebrow">📦 คาดการณ์ต่อวัน</div><div class="fbig num">${good?"+":""}${money(pf,true)}</div><div class="small">${good?"ได้กำไร":"ขาดทุน"} · รายได้ ${money(c.rev,true)} − ต้นทุน ${money(c.cost,true)}</div></div>
     <div class="fgauge" style="--p:${clamp(ld,0,100)}"><b class="num">${ld}%</b><span>ระวางเต็ม</span></div></div><div class="small muted">💡 ${why} · สินค้า ${Math.round(Math.min(c.cdem,c.ccap)).toLocaleString()} จาก ${Math.round(c.cdem).toLocaleString()} ตันที่รอส่ง</div></div>`}const now=calc(r),diff=c.profit-now.profit,edit=Math.abs(c.price-now.price)>1,pf=c.profit,good=pf>=0;
   const cost=c.cost,rev=c.rev,ld=c.cap?Math.round(c.pax/c.cap*100):0;
-  const why=!r.planes.length?"ยังไม่มีเครื่องบิน ใส่เครื่องก่อนจึงจะมีรายได้":c.lf<.5?"ที่นั่งว่างเยอะ ลองลดราคา ลดเครื่อง หรือใช้ตารางปรับตามคน":c.demand>c.cap*1.15?"คนอยากบินมากกว่าที่นั่ง ขึ้นราคาได้อีกหรือเพิ่มเครื่อง":pf<0?"ต้นทุนสูงกว่ารายได้ ลองเปลี่ยนเป็นเครื่องที่ประหยัดกว่าหรือปรับราคา":"เส้นทางนี้ทำเงินได้ดี";
+  const why=!r.planes.length?"ยังไม่มีเครื่องบิน ใส่เครื่องก่อนจึงจะมีรายได้ ระหว่างนี้ผู้โดยสารจะสะสมรอไว้":c.lf<.5?"ที่นั่งว่างเยอะ ลองลดราคา ลดเครื่อง หรือใช้ตารางปรับตามคน":c.demand>c.cap*1.15?"คนอยากบินมากกว่าที่นั่ง ขึ้นราคาได้อีกหรือเพิ่มเครื่อง":pf<0?"ต้นทุนสูงกว่ารายได้ ลองเปลี่ยนเป็นเครื่องที่ประหยัดกว่าหรือปรับราคา":"เส้นทางนี้ทำเงินได้ดี";
   return `<div class="fcard ${good?"up":"down"}"><div class="row between" style="align-items:flex-start;gap:10px"><div><div class="eyebrow">คาดการณ์ต่อวัน${edit?" · ราคาใหม่":""}</div>
      <div class="fbig num">${good?"+":""}${money(pf,true)}</div><div class="small">${good?"ได้กำไร":"ขาดทุน"} · รายได้ ${money(rev,true)} − ต้นทุน ${money(cost,true)}</div></div>
      <div class="fgauge" style="--p:${clamp(ld,0,100)}"><b class="num">${ld}%</b><span>ที่นั่งเต็ม</span></div></div>
@@ -2632,14 +2734,15 @@ function guideSheet(){return head("คู่มือระบบ","ทุกร
 <details class="g"><summary>เที่ยวบินต่อวันและที่นั่ง</summary><div><p>เครื่องบินแต่ละลำบินได้วันละหลายเที่ยว ขึ้นกับระยะทางและความเร็ว โดยคิดเวลาบิน + 1.2 ชม. ต่อเที่ยวสำหรับขึ้นลงและเตรียมเครื่อง สูงสุดวันละ 12 เที่ยว</p><p><code>เที่ยว/วัน = 24 ÷ (ระยะทาง ÷ ความเร็ว + 1.2)</code></p><p>ตารางบินแบบ "ปรับตามผู้โดยสาร" (ค่าเริ่มต้น) จะลดเที่ยวบินลงเมื่อคนน้อย ให้แต่ละเที่ยวเต็มราว 85% ส่วน "บินเต็มตาราง" บินทุกเที่ยวเสมอ เหมาะตอนมีเทศกาลหรือแคมเปญ</p><p>เส้นทางสั้นใช้เครื่องลำเล็กคุ้มเพราะบินได้หลายรอบ เส้นทางไกลต้องใช้เครื่องที่พิสัยถึงและจุคนเยอะ ใส่เครื่องหลายลำในเส้นทางเดียวได้</p></div></details>
 <details class="g"><summary>ราคาตั๋ว</summary><div><p>หน้าเส้นทางมีกล่องคาดการณ์บอกกำไรหรือขาดทุนต่อวันแบบดูง่าย ปรับราคาด้วยแถบเลื่อนหรือปุ่มลัด (−10%, ราคากลาง, +10%, กำไรสูงสุด) และเลือกบริการแยกเฉพาะเส้นทางได้ ใต้ปุ่มบริการบอกกำไรที่คาดว่าจะได้</p><p>เส้นทางใหม่ใช้ "ราคาอัตโนมัติตามคน" ระบบขึ้นราคาเมื่อคนอยากบินมากกว่าที่นั่ง (เช่น ช่วงเทศกาลหรือแคมเปญ) และลดราคาเมื่อคนน้อย ให้เครื่องเต็มราว 90% กราฟในหน้าเส้นทางแสดงว่าราคาแต่ละระดับมีคนบินกี่คนและได้กำไรเท่าไร จุดสีส้มคือราคาที่กำไรสูงสุด</p><p>ราคากลางคำนวณจากระยะทาง ตั้งได้ตั้งแต่ครึ่งหนึ่งถึงสองเท่าของราคากลาง ถ้าที่นั่งเต็มเกือบ 100% แปลว่าขึ้นราคาได้อีก ถ้าเต็มแค่ครึ่งเดียว ลองลดราคาหรือเปลี่ยนเป็นเครื่องลำเล็กลง หน้าต่างเส้นทางจะคำนวณกำไรให้ดูทันทีที่เลื่อนราคา</p></div></details>
 <details class="g"><summary>ขนส่งทางเรือ</summary><div><p>แท็บ "สินค้า" → ทางเรือ เปิดเส้นทางเรือระหว่างท่าเรือ ${PORTS.length} แห่งทั่วโลก (ต้องปลดล็อกภูมิภาคก่อน) แล้วซื้อเรือใส่ เรือวิ่งตามเส้นทางทะเลจริง ผ่านช่องแคบมะละกา คลองสุเอซ คลองปานามา หรืออ้อมแหลม</p><p>เรือแล่นราว 35–41 กม./ชม. เที่ยวยุโรป–เอเชียใช้ราว 2–3 สัปดาห์ในเกม แล้วจอดขนตู้ที่ท่า 1–2 วัน ได้เงินเมื่อเรือถึงท่า ค่าระวางต่อตู้ = ฿2,000 + ฿0.8 ต่อกม. เรือห้องเย็นได้ 1.8 เท่าแต่ตลาดเล็กกว่า เรือ ULCV ต้องใช้ท่าเรือน้ำลึกทั้งสองฝั่ง</p><p>เหตุการณ์: คลองสุเอซปิด (เรืออ้อมแหลมกู๊ดโฮป) และท่าเรือนัดหยุดงาน</p></div></details>
-<details class="g"><summary>ขนส่งสินค้า</summary><div><p>เส้นทางแบ่งเป็น 2 แบบ ใช้สาขาเดียวกัน: <b>เส้นทางผู้โดยสาร</b> ใส่ได้เฉพาะเครื่องบินโดยสาร (ขนพัสดุใต้ท้องเครื่องได้ราวครึ่งหนึ่งของตลาด) และ <b>เส้นทางขนสินค้า</b> ใส่ได้เฉพาะเครื่องบินขนสินค้า เลขเที่ยวบินขึ้นต้น 8xx เส้นบนแผนที่เป็นสีม่วง เปิดทั้งสองแบบไปเมืองเดียวกันได้</p><p>มีเครื่องขนสินค้า 7 รุ่น ตั้งแต่ ATR 72F (8 ตัน) ถึง 747-8F (135 ตัน) แต่ละเส้นทางตั้งค่าระวางได้เองหรือให้ระบบตั้งอัตโนมัติ ช่วงฤดูผลไม้ไทย ช้อปปิ้ง 11.11 และปลายปี สินค้าจะเยอะขึ้น ดูปฏิทินได้ในแท็บ "สินค้า"</p><p>ทุกเที่ยวบินขนสินค้าใต้ท้องเครื่องได้ ส่วน Boeing 777F ขนสินค้าอย่างเดียว 100 ตันต่อเที่ยว รายได้สินค้าคิด ฿${CARGO_RATE} ต่อตันต่อกิโลเมตร ความต้องการสินค้าขึ้นกับขนาดเมืองและระยะทาง สินค้าไม่สนราคาตั๋วหรือชื่อเสียง</p></div></details>
+<details class="g"><summary>ขนส่งสินค้า</summary><div><p><b>ระยะทางกับความต้องการ:</b> สินค้าทางอากาศและทางเรือแทบไม่ลดลงตามระยะทาง เส้นทางไกลจึงคุ้มกับเครื่องบินขนสินค้าและเรือลำใหญ่ ส่วนผู้โดยสารจะค่อย ๆ น้อยลงเมื่อไกลมาก และเมืองเล็กมีความต้องการน้อยกว่าเมืองใหญ่เสมอ</p><p>เส้นทางแบ่งเป็น 2 แบบ ใช้สาขาเดียวกัน: <b>เส้นทางผู้โดยสาร</b> ใส่ได้เฉพาะเครื่องบินโดยสาร (ขนพัสดุใต้ท้องเครื่องได้ราวครึ่งหนึ่งของตลาด) และ <b>เส้นทางขนสินค้า</b> ใส่ได้เฉพาะเครื่องบินขนสินค้า เลขเที่ยวบินขึ้นต้น 8xx เส้นบนแผนที่เป็นสีม่วง เปิดทั้งสองแบบไปเมืองเดียวกันได้</p><p>มีเครื่องขนสินค้า 7 รุ่น ตั้งแต่ ATR 72F (8 ตัน) ถึง 747-8F (135 ตัน) แต่ละเส้นทางตั้งค่าระวางได้เองหรือให้ระบบตั้งอัตโนมัติ ช่วงฤดูผลไม้ไทย ช้อปปิ้ง 11.11 และปลายปี สินค้าจะเยอะขึ้น ดูปฏิทินได้ในแท็บ "สินค้า"</p><p>ทุกเที่ยวบินขนสินค้าใต้ท้องเครื่องได้ ส่วน Boeing 777F ขนสินค้าอย่างเดียว 100 ตันต่อเที่ยว รายได้สินค้าคิด ฿${CARGO_RATE} ต่อตันต่อกิโลเมตร ความต้องการสินค้าขึ้นกับขนาดเมืองและระยะทาง สินค้าไม่สนราคาตั๋วหรือชื่อเสียง</p></div></details>
 <details class="g"><summary>เงินเข้าออกตอนไหน</summary><div><p>ทุกครั้งที่เครื่องบินลงจอด คุณได้ค่าตั๋วและค่าขนสินค้าของเที่ยวนั้นทันที และจ่ายค่าน้ำมัน ค่าสนามบิน และค่าบริการบนเครื่องของเที่ยวนั้นไปพร้อมกัน ตัวเลขเขียวหรือแดงจะลอยขึ้นจากสนามบินที่ลงจอดบนแผนที่</p><p>ตอนเที่ยงคืนระบบหักค่าใช้จ่ายคงที่ ได้แก่ ค่าดูแลเครื่องบิน ค่าลูกเรือ และดอกเบี้ย แล้วสรุปเป็นงบเมื่อวานในแท็บการเงิน</p></div></details>
 <details class="g"><summary>ต้นทุน</summary><div><ul><li><b>ค่าน้ำมัน</b> = จำนวนเที่ยว × ระยะทาง × ค่าบินต่อกม.ของรุ่น × ดัชนีน้ำมัน</li><li><b>ค่าสนามบิน</b> แต่ละเมืองเก็บไม่เท่ากัน ลอนดอนและนิวยอร์กแพงสุด คิดตามขนาดเครื่อง</li><li><b>ค่าดูแลเครื่องและลูกเรือ</b> 0.12% ของราคาเครื่องต่อวัน ถ้าจอดว่างเหลือ 0.06%</li><li><b>ค่าบริการ</b> ต่อผู้โดยสาร ตามระดับบริการ</li><li><b>ดอกเบี้ย</b> เงินกู้ 0.02% ต่อวัน</li></ul></div></details>
 <details class="g"><summary>สภาพเครื่องและการซ่อมบำรุง</summary><div><p>ทุกเที่ยวที่บิน สภาพเครื่องลดลง 0.035% เครื่องที่สภาพต่ำมีโอกาสขัดข้องกลางทาง ต้องจอด 3 วัน เสียเงินและชื่อเสียง ถ้าสภาพเฉลี่ยของฝูงบินต่ำกว่า 60% ชื่อเสียงจะค่อย ๆ ลด</p><p>ส่งซ่อมบำรุงได้เองหรือเปิดโหมดอัตโนมัติ ใช้เวลา 2 วันแล้วสภาพกลับเป็น 100% ราคาขายต่อลดลงตามอายุและสภาพเครื่อง</p></div></details>
 <details class="g"><summary>ชื่อเสียงและระดับบริการ</summary><div><p>ชื่อเสียงจะค่อย ๆ เคลื่อนเข้าหาค่าเป้าหมายของระดับบริการ ประหยัด 35 มาตรฐาน 60 พรีเมียม 85 คลิปไวรัลและแคมเปญใหญ่ช่วยดันขึ้น เครื่องเสียกลางทางทำให้ลดลง</p></div></details>
 <details class="g"><summary>การตลาดและล็อกราคาน้ำมัน</summary><div><p>แคมเปญการตลาดเพิ่มคนบินทุกเส้นทางชั่วคราว เปิดได้ทีละแคมเปญ</p><p>ดัชนีน้ำมันขึ้นลงทุกวันและพุ่งแรงได้จากเหตุการณ์ การล็อกราคาจะตรึงดัชนีไว้ 60 วัน ค่าธรรมเนียมประมาณ 3% ของค่าน้ำมันช่วงนั้น เหมาะตอนน้ำมันถูก</p></div></details>
 <details class="g"><summary>เงินกู้และการล้มละลาย</summary><div><p>กู้ได้ทีละ ฿50 ล้าน วงเงินขึ้นกับมูลค่าฝูงบิน ถ้าเงินสดติดลบต่อเนื่อง 30 วัน สายการบินล้มละลายและต้องเริ่มชะตาใหม่</p></div></details>
-<details class="g"><summary>✨ โบนัส: ฉลองยอดสะสม รางวัลรายวัน และเลเวล</summary><div><ul><li>🎉 เมื่อผู้โดยสารสะสม (หรือสินค้าทางอากาศสะสม) ถึงหลักสำคัญ เช่น 1,000 · 5,000 · 20,000 ไปจนถึงหลักล้าน จะได้โบนัสฉลองทันที ดูความคืบหน้าได้ในการ์ดบนสุดของหน้าภาพรวม</li><li>🛫 เที่ยวบินสดในหน้าภาพรวม เห็นเครื่องบินวิ่งไปกลับบนแต่ละเส้นทาง พร้อมเงินที่เส้นทางนั้นทำได้วันนี้ แตะแถวเพื่อเปิดเส้นทางนั้น</li><li>🎁 เข้าเกมทุกวัน (วันจริง) รับรางวัลรายวัน ต่อเนื่องครบ 7 วันได้ก้อนใหญ่</li><li>Lv ข้างชื่อสายการบินคือเลเวล คิดจากคะแนนการแข่งขัน ขึ้นเลเวลแต่ละครั้งได้โบนัส แถบเล็กใต้ Lv บอกว่าใกล้เลเวลถัดไปแค่ไหน</li></ul></div></details>
+<details class="g"><summary>📥 ระบบสะสม (คนและสินค้าที่รอ)</summary><div><ul><li>ทันทีที่<b>เปิดเส้นทาง</b> ระบบสะสมของเส้นนั้นจะเริ่มทำงาน แม้ยังไม่มีเครื่องบินหรือเรือวิ่งเลยก็ตาม</li><li>ทุกสิ้นวัน คนหรือสินค้าที่ไม่มีใครขนไป ส่วนหนึ่งจะรอไว้: ผู้โดยสาร 35% (สะสมได้สูงสุดเท่ากับความต้องการ 3 วัน) · สินค้าทางอากาศ 60% (สูงสุด 6 วัน) · ตู้สินค้าทางเรือ 60% (สูงสุด 8 วัน)</li><li>เมื่อมีเครื่องบินหรือเรือที่มีที่ว่าง ของที่สะสมจะถูกขนไปเองและได้เงินเพิ่ม โดยจ่ายไม่เกินราคากลาง ตารางบินแบบปรับตามคนจะเพิ่มเที่ยวให้เองระหว่างที่ยังมีของสะสม</li><li>ดูยอดสะสมได้จากป้าย 📥 บนการ์ดเส้นทาง และในหน้ารายละเอียดเส้นทาง</li><li><b>ปิดเส้นทางเมื่อไร ของที่สะสมไว้จะหายไปทั้งหมด</b></li></ul></div></details>
+<details class="g"><summary>✨ โบนัส: ฉลองยอดสะสม รางวัลรายวัน และเลเวล</summary><div><ul><li>🎉 เมื่อผู้โดยสารสะสม (หรือสินค้าทางอากาศสะสม) ถึงหลักสำคัญ เช่น 1,000 · 5,000 · 20,000 ไปจนถึงหลักล้าน จะได้โบนัสฉลองทันที ดูความคืบหน้าได้ในการ์ดบนสุดของหน้าภาพรวม</li><li>🔬 ศูนย์พัฒนาในหน้าภาพรวม: จ่ายเงินอัปเกรดถาวร 4 อย่าง (ประหยัดน้ำมัน · คนอยากบินเพิ่ม · รายได้สินค้าเพิ่ม · ค่าธรรมเนียมถูกลง) อย่างละ 5 ระดับ</li><li>🛫 เที่ยวบินสดในหน้าภาพรวม เห็นเครื่องบินวิ่งไปกลับบนแต่ละเส้นทาง พร้อมเงินที่เส้นทางนั้นทำได้วันนี้ แตะแถวเพื่อเปิดเส้นทางนั้น</li><li>🎁 เข้าเกมทุกวัน (วันจริง) รับรางวัลรายวัน ต่อเนื่องครบ 7 วันได้ก้อนใหญ่</li><li>Lv ข้างชื่อสายการบินคือเลเวล คิดจากคะแนนการแข่งขัน ขึ้นเลเวลแต่ละครั้งได้โบนัส แถบเล็กใต้ Lv บอกว่าใกล้เลเวลถัดไปแค่ไหน</li></ul></div></details>
 <details class="g"><summary>🧭 ช่วยเลือกเครื่องบินและเรือ</summary><div><p>ไม่รู้จะซื้อรุ่นไหน ให้กดปุ่ม 🧭 ในแท็บฝูงบินหรือแท็บสินค้า หรือกด "ดูทุกรุ่น" ในกล่องเพิ่มเครื่องบิน/เรือบนแผนที่ เลือกเส้นทาง แล้วเกมจะเรียงทุกรุ่นตามกำไรต่อวันที่จะเพิ่มขึ้น</p><ul><li>⭐ คุ้มที่สุด: ทำกำไรเพิ่มได้มากที่สุด</li><li>⚡ คืนทุนเร็วสุด: ราคาซื้อคืนกลับมาเร็วที่สุด</li><li>รุ่นที่บินไม่ถึง หรือเทียบท่าไม่ได้ จะแยกไว้ด้านล่างพร้อมบอกเหตุผล</li></ul><p>ชนิดเรือ: 📦 ตู้คอนเทนเนอร์ ขนสินค้าทั่วไป · ❄ ห้องเย็น ขนผลไม้และอาหาร ค่าระวาง 1.8 เท่า · 🚗 ขนรถ ค่าระวาง 1.5 เท่า แต่ละชนิดมีสินค้าของตัวเอง เรือต่างชนิดเลยไม่แย่งสินค้ากันบนเส้นทางเดียวกัน</p><p>บนแผนที่ กดปุ่มลูกศรที่มุมแถบด้านบนเพื่อย่อแถบให้เหลือแค่ชื่อกับเงิน</p></div></details>
 <details class="g"><summary>โหมดคน และ โหมดสินค้า</summary><div><p>ปุ่มใต้แถบด้านบนสลับทั้งเกมระหว่าง 2 โหมด</p><ul><li>👥 โหมดคน: แผนที่ เส้นทาง ฝูงบิน และกล่องข้อมูลสนามบิน แสดงเฉพาะเครื่องบินโดยสารและเส้นทางผู้โดยสาร ป้ายบนแผนที่บอกจำนวนคนขึ้นเครื่อง</li><li>📦 โหมดสินค้า: แสดงเฉพาะเครื่องบินขนสินค้า เส้นทางสินค้า และเรือ ป้ายบนแผนที่บอกสินค้าเป็นตัน กดสนามบินแล้ว + เพิ่มเครื่องบิน จะขึ้นเฉพาะเครื่องขนสินค้า</li></ul><p>เงิน สาขา และเวลาใช้ร่วมกันทั้ง 2 โหมด เครื่องบินทุกลำยังบินและทำเงินตลอด ไม่ว่าจะเปิดโหมดไหน</p></div></details>
 <details class="g"><summary>ประเภทสนามบิน</summary><div><ul><li>✈📦 สนามบินส่วนใหญ่รับทั้งผู้โดยสารและสินค้า</li><li>✈ สนามบินเล็กเมืองท่องเที่ยว เช่น สมุย ฟูก๊วก ควีนส์ทาวน์ รับเฉพาะผู้โดยสาร</li><li>📦 ฮับสินค้า เช่น เมมฟิส หลุยส์วิลล์ ลีแยฌ ไลพ์ซิก เออโจว ดูไบเวิลด์เซ็นทรัล รับเฉพาะสินค้า (จุดสี่เหลี่ยมสีม่วงบนแผนที่)</li></ul><p>ป้าย 👥 บนแผนที่ข้างสนามบินของคุณคือจำนวนคนที่ขึ้นเครื่องที่นั่นวันนี้ แตะสนามบินเพื่อดูคนขึ้น คนลง และสินค้าเข้าออก เทียบกับเมื่อวาน</p></div></details>
@@ -2828,7 +2931,7 @@ function drawMap(){
     else{x.strokeStyle=g?bad:routeCol;x.lineWidth=1.3*zf;x.setLineDash([5,5]);x.globalAlpha=.5;x.stroke()}
     x.setLineDash([]);x.globalAlpha=1}}
   const ph=animDay*6%1;
-  for(const e of S.events){const c=city(e.city),[px,py]=PX(ulon(c.lon),c.lat);
+  for(const e of S.events){const c=city(e.city);if(!c)continue;const [px,py]=PX(ulon(c.lon),c.lat);
     x.strokeStyle=e.type==="storm"?bad:e.type==="fest"?warn:mut;x.lineWidth=2;
     if(e.type==="storm"){x.setLineDash([3,4]);x.lineDashOffset=-animDay*200;x.beginPath();x.arc(px,py,12,0,7);x.stroke();x.setLineDash([])}
     else{for(let i=0;i<2;i++){const t=(ph+i/2)%1;x.globalAlpha=1-t;x.beginPath();x.arc(px,py,6+t*16,0,7);x.stroke()}x.globalAlpha=1}}
