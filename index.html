@@ -604,6 +604,9 @@ nav.tabs button:active svg{transform:scale(.88)}
   .model .spec span:nth-child(3),.model .spec span:nth-child(4),.model .spec span:nth-child(7),.model .spec span:nth-child(8){display:none}
   .model .btn{padding-inline:6px;font-size:12.5px}
 }
+/* logo colour swatches: 'automatic' chip */
+.sw.auto{width:auto;padding:0 10px;border-radius:999px;font-size:12px;background:var(--sky);color:var(--ink)}
+
 /* livery colour sets */
 .presets{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
 .presets button{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--paper);font-size:12px;min-width:76px}
@@ -811,9 +814,11 @@ const CATS=[["all","ทั้งหมด"],["prop","ใบพัด"],["narrow"
 /* ready-made colour sets: [name, tail, stripe, body, suggested logo] */
 const PRESETS=[["ม่วงทอง","#5B2C83","#C9A227","white","prajam"],["แดงทองราชสำนัก","#9E1B32","#D4AF37","white","chofa"],["เขียวมรกต","#0B6E4F","#D4AF37","white","kanok"],
  ["น้ำเงินคราม","#1B2A6B","#E8B04A","white","naga"],["ชมพูบานเย็น","#B0175E","#F2C230","white","jasmine"],["ฟ้าอันดามัน","#0E7C86","#F2C230","white","chula"],["ดำทอง","#1E2833","#C9A227","silver","prang"]];
+const LOGO_SWATCH=["#FFFFFF","#F2C230","#D4AF37","#C9D1DA","#E86A92","#E04B3C","#45C6CF","#7BC67E","#222B36"];
 const SWATCH=["#D47A22","#C8102E","#E86A92","#7A1F5C","#5B2C83","#1F4FA3","#0E7C86","#1E8E3E","#C9A227","#222B36"];
 // Livery patterns: change the paint scheme on every aircraft (side art in fleet/shop and top view on the map)
-const PATS=[["swoosh","โค้งพาด"],["ribbon","ริบบิ้นเฉียง"],["belly","ท้องสี"],["classic","แถบตรง"],["nose","จมูกสี"],["clean","เรียบหรู"]];
+const PATS=[["swoosh","โค้งพาด"],["ribbon","ริบบิ้นเฉียง"],["belly","ท้องสี"],["classic","แถบตรง"],["nose","จมูกสี"],["clean","เรียบหรู"],
+ ["kanokfull","ลายกนกเต็มลำ",1],["lotusfull","ทุ่งบัว",1],["wavefull","คลื่นอันดามัน",1],["elephants","ขบวนช้าง",1],["night","ฟ้ายามค่ำ",1]];  // third item = special full-body art
 const livPat=lv=>PATS.some(x=>x[0]===(lv&&lv.pat))?lv.pat:"swoosh";
 const BODY={white:["ขาว","#FFFFFF"],silver:["เงิน","#C9D1DA"],dark:["ดำ","#1E2833"],tail:["สีหลัก",null]};
 const LOGOS={
@@ -848,8 +853,9 @@ const LOGOS={
 const lum=h=>{const n=parseInt(h.slice(1),16),r=(n>>16&255)/255,g=(n>>8&255)/255,b=(n&255)/255;return .2126*r+.7152*g+.0722*b};
 const onCol=h=>lum(h)>.6?"#132235":"#FFFFFF";
 // accent colour for two-tone emblems: the livery stripe when it stands out from the tail, else a softer version of the main colour
-function logoAccent(lv,col){const st=lv.stripe||col;return st.toLowerCase()!==String(col).toLowerCase()&&Math.abs(lum(st)-lum(lv.tail))>.15?st:null}
-function logoSVG(lv,size,col){const L=LOGOS[lv.logo]||LOGOS.bird;
+function logoAccent(lv,col){if(lv.logoAcc)return lv.logoAcc;const st=lv.stripe||col;return st.toLowerCase()!==String(col).toLowerCase()&&Math.abs(lum(st)-lum(lv.tail))>.15?st:null}
+// own logo colours (logoCol on the tail colour, logoAcc for the second tone) override the automatic ones
+function logoSVG(lv,size,col){const L=LOGOS[lv.logo]||LOGOS.bird;if(lv.logoCol&&col===onCol(lv.tail))col=lv.logoCol;
   if(Array.isArray(L[1])){const acc=logoAccent(lv,col);
     return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">${L[1].map(([d,r,tf])=>`<path d="${d}"${tf?` transform="${tf}"`:""} style="fill:${r==="b"?(acc||col):col}"${r==="b"&&!acc?' opacity=".6"':""}/>`).join("")}</svg>`}
   if(L[1]==="mono"){const acc=logoAccent(lv,col)||col;
@@ -2440,12 +2446,13 @@ function routesHTML(){rseg=bm();const RL=S.routes.filter(r=>rkind(r)===rseg),np=
   <div class="panel row between"><div><div class="eyebrow">สาขา</div><div class="small muted">${S.bases.join(" · ")}</div></div><button class="btn sm" id="gobranch">จัดการสาขา</button></div>`;
 }
 let artSeq=0;
+const motif=(d,x,y,z,col,op)=>`<path d="${d}" transform="translate(${(x-z/2).toFixed(2)} ${(y-z/2).toFixed(2)}) scale(${(z/24).toFixed(4)})" fill="${col}"${op!=null?` opacity="${op}"`:""}/>`;
 // Side-view illustration, proportions scaled from each type's length and fuselage height
 function planeArt(m,lv,fly){lv=lv||S.livery;const A=m.a,id="pa"+(artSeq++);
   // side profile, nose to the left, standing on its gear (or gear up when fly is set); everything is sized from fuselage height H and length Lx
   const H=A.fh*(A.prop?.95:.9),Lx=Math.min(188,56+m.len*1.75),x0=(200-Lx)/2+(A.eng==="nose"?4:0),x1=x0+Lx;
   const G=72,gh=H*(A.hw?.36:.46)+1.5,bot=G-gh,cy=bot-H/2,top=cy-H/2,nt=cy+H*.14;
-  const body=lv.body==="tail"?lv.tail:BODY[lv.body][1],tail=lv.tail,stripe=lv.stripe,ink="#22303F",edge="rgba(20,34,52,.4)";
+  const body=lv.body==="tail"||livPat(lv)==="night"?lv.tail:BODY[lv.body][1],tail=lv.tail,stripe=lv.stripe,ink="#22303F",edge="rgba(20,34,52,.4)";
   const dark=lum(body)<.45,win=dark?"rgba(255,255,255,.85)":"#2E4762",wing=dark?"#5C6B80":"#BCC6D1",wingD=dark?"#465468":"#96A3B2",steel="#7D8A98",belly=dark?"#4A5768":"#DDE3EA";
   const nose=Math.min(H*(A.prop?1.3:1.6),Lx*.13),up=Math.min(H*(A.prop?2.4:2.8),Lx*.25),hump=A.deck==="hump";
   const topPath=hump
@@ -2488,6 +2495,24 @@ function planeArt(m,lv,fly){lv=lv||S.livery;const A=m.a,id="pa"+(artSeq++);
     else if(PT==="classic")g+=`<rect x="${x0-2}" y="${cy+H*.14}" width="${Lx+4}" height="${H*.13}" fill="${stripe}"/><rect x="${x0-2}" y="${cy+H*.3}" width="${Lx+4}" height="${H*.05}" fill="${tail}"/>`;
     else if(PT==="nose")g+=`<path d="M${x0-2} ${top-2}L${x0+nose*1.15} ${top-2}C${x0+nose*.95} ${cy} ${x0+nose*1.05} ${bot-H*.2} ${x0+nose*1.25} ${bot+2}L${x0-2} ${bot+2}Z" fill="${tail}"/>`+
        `<rect x="${x0+nose*1.2}" y="${cy+H*.2}" width="${Lx}" height="${sw*1.2}" fill="${stripe}"/>`;
+    else if(PT==="kanokfull"){   // belly in the main colour, a row of kanok flames rising out of it, gold line on top
+      g+=`<path d="M${x0-2} ${cy+H*.1}C${x0+Lx*.3} ${cy+H*.08} ${x1-Lx*.35} ${cy+H*.12} ${ex} ${top+H*.04}L${ex+4} ${bot+4}L${x0-2} ${bot+4}Z" fill="${tail}"/>`;
+      const st=H*.46;for(let k=0,x=x0+nose*1.1;x<x1-H*.6;k++,x+=st){const z=H*(k%2?.32:.4);g+=motif(LOGOS.kanok[1][0][0],x,cy+H*.33,z,stripe,.95)+motif(LOGOS.kanok[1][1][0],x,cy+H*.33,z,tail)}
+      g+=`<path d="M${x0-2} ${cy+H*.06}C${x0+Lx*.3} ${cy+H*.04} ${x1-Lx*.35} ${cy+H*.08} ${ex} ${top}" fill="none" stroke="${stripe}" stroke-width="${sw*.8}"/>`}
+    else if(PT==="lotusfull"){   // lotus pond along the lower body
+      g+=`<path d="M${x0-2} ${cy+H*.1}C${x0+Lx*.4} ${cy+H*.06} ${x1-Lx*.3} ${cy+H*.14} ${ex} ${top+H*.06}L${ex+4} ${bot+4}L${x0-2} ${bot+4}Z" fill="${tail}"/>`;
+      for(let k=0,x=x0+nose*1.3;x<x1-H*.8;k++,x+=H*(.55+.2*(k%3))){const z=H*(.3+.08*((k*7)%3));g+=motif(LOGOS.lotus[1][0][0],x,cy+H*.3,z,stripe,.95)+motif(LOGOS.lotus[1][1][0],x,cy+H*.3,z,stripe,.55)}}
+    else if(PT==="wavefull"){    // flowing sea waves over the whole body
+      const wv=(y0,amp,col,op)=>{let d=`M${x0-4} ${bot+4}L${x0-4} ${y0}`;const L=H*1.6;for(let x=x0-4;x<ex+4;x+=L)d+=`Q${x+L/4} ${y0-amp} ${x+L/2} ${y0}T${x+L} ${y0}`;return `<path d="${d}L${ex+6} ${bot+4}Z" fill="${col}" opacity="${op}"/>`};
+      g+=wv(cy-H*.18,H*.12,stripe,.35)+wv(cy+H*.02,H*.14,tail,.55)+wv(cy+H*.2,H*.12,stripe,.85)+wv(cy+H*.32,H*.1,tail,1)}
+    else if(PT==="elephants"){   // a parade of elephants walking on a coloured band
+      g+=`<rect x="${x0-2}" y="${cy+H*.27}" width="${Lx+6}" height="${H*.4}" fill="${tail}"/><rect x="${x0-2}" y="${cy+H*.21}" width="${Lx+6}" height="${H*.04}" fill="${stripe}"/>`;
+      for(let x=x0+nose*1.4;x<x1-up*.9;x+=H*.6)g+=motif(LOGOS.elephant[1][0][0],x,cy+H*.11,H*.27,tail,.9)}
+    else if(PT==="night"){       // night sky: whole body in the main colour, stars and a shooting-star swoosh
+      let sd=7;const rnd=()=>(sd=(sd*9301+49297)%233280)/233280;
+      for(let i=0;i<Lx/2.2;i++){const x=x0+nose+rnd()*(Lx-nose),y=top+rnd()*H*.75,r=.18+rnd()*.38;g+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(2)}" fill="#FFFFFF" opacity="${(.45+rnd()*.5).toFixed(2)}"/>`}
+      g+=`<path d="M${x0+nose} ${bot-H*.12}C${x0+Lx*.35} ${bot-H*.2} ${x1-Lx*.3} ${cy-H*.05} ${ex} ${top-H*.1}" fill="none" stroke="${stripe}" stroke-width="${sw*1.4}"/>`+
+         `<path d="M${x0+nose} ${bot-H*.02}C${x0+Lx*.35} ${bot-H*.08} ${x1-Lx*.3} ${cy+H*.1} ${ex} ${top+H*.04}" fill="none" stroke="${stripe}" stroke-width="${sw*.5}" opacity=".6"/>`}
     else g+=`<rect x="${x0+nose}" y="${cy+H*.22}" width="${Lx}" height="${Math.max(.5,H*.035)}" fill="${tail}"/>`;
     g+=`<rect x="${x0-2}" y="${top-H*.5}" width="${Lx+6}" height="${H*1.6}" fill="url(#${id}s)"/>`;
     // cockpit glazing (clipped to the nose)
@@ -2561,16 +2586,19 @@ function fleetHTML(){
     <button class="btn ${S.cash>=priceFor(m)?"primary":""} sm" data-buy="${m.id}" ${S.cash>=priceFor(m)?"":"disabled"}>${priceFor(m)<m.price?`🏷️ ดีล ซื้อ ${money(priceFor(m))}`:`ซื้อ ${money(m.price)}`}</button></div>`).join("")}</div>`;
 }
 function liverySheet(st){st.lv=st.lv||{...S.livery};st.m=st.m||(S.fleet.length?S.fleet[S.fleet.length-1].m:"a320");
-  const fn=()=>{const lv=st.lv,sw=(key)=>`<div class="swatches">${SWATCH.map(c=>`<button class="sw ${lv[key].toLowerCase()===c.toLowerCase()?"on":""}" data-sw="${key}" data-c="${c}" style="background:${c}" aria-label="${c}"></button>`).join("")}<label class="sw custom" aria-label="เลือกสีเอง"><input type="color" id="cc-${key}" value="${lv[key]}"><span>+</span></label></div>`;
+  const fn=()=>{const lv=st.lv,lsw=(key)=>`<div class="swatches"><button class="sw auto ${lv[key]?"":"on"}" data-lsw="${key}" data-c="" aria-label="อัตโนมัติ">อัตโนมัติ</button>${LOGO_SWATCH.map(c=>`<button class="sw ${(lv[key]||"").toLowerCase()===c.toLowerCase()?"on":""}" data-lsw="${key}" data-c="${c}" style="background:${c}" aria-label="${c}"></button>`).join("")}</div>`,sw=(key)=>`<div class="swatches">${SWATCH.map(c=>`<button class="sw ${lv[key].toLowerCase()===c.toLowerCase()?"on":""}" data-sw="${key}" data-c="${c}" style="background:${c}" aria-label="${c}"></button>`).join("")}<label class="sw custom" aria-label="เลือกสีเอง"><input type="color" id="cc-${key}" value="${lv[key]}"><span>+</span></label></div>`;
     return head("ลายเครื่องบินและโลโก้","เปลี่ยนแล้วมีผลกับเครื่องบินทุกลำ ทั้งในฝูงบินและบนแผนที่")+
     `<div class="preview">${planeArt(model(st.m),lv)}</div>
      <div class="seg scrollx">${["atr","a320","b789","a388","b77f"].map(id=>`<button data-pm="${id}" class="${st.m===id?"on":""}">${model(id).name.replace(/^(Airbus|Boeing|Cessna) /,"")}</button>`).join("")}</div>
-     <div class="stack" style="gap:6px"><span class="eyebrow">รูปแบบลาย</span><div class="pats">${PATS.map(([k,n])=>`<button data-pat="${k}" class="${livPat(lv)===k?"on":""}" aria-pressed="${livPat(lv)===k}">${planeArt(model("a320"),{...lv,pat:k})}<span>${n}</span></button>`).join("")}</div></div>
+     <div class="stack" style="gap:6px"><span class="eyebrow">รูปแบบลาย</span><div class="pats">${PATS.filter(q=>!q[2]).map(([k,n])=>`<button data-pat="${k}" class="${livPat(lv)===k?"on":""}" aria-pressed="${livPat(lv)===k}">${planeArt(model("a320"),{...lv,pat:k})}<span>${n}</span></button>`).join("")}</div></div>
+     <div class="stack" style="gap:6px"><span class="eyebrow">✨ ลายพิเศษเต็มลำ</span><div class="pats">${PATS.filter(q=>q[2]).map(([k,n])=>`<button data-pat="${k}" class="${livPat(lv)===k?"on":""}" aria-pressed="${livPat(lv)===k}">${planeArt(model("a320"),{...lv,pat:k})}<span>${n}</span></button>`).join("")}</div></div>
      <div class="stack" style="gap:6px"><span class="eyebrow">ชุดสีสำเร็จรูป</span><div class="presets">${PRESETS.map(([n,t,st,bd,lg],i)=>`<button data-preset="${i}" class="${lv.tail===t&&lv.stripe===st?"on":""}"><span class="lg" style="background:${t}">${logoSVG({...lv,tail:t,stripe:st,logo:lg},20,onCol(t))}</span><span>${n}</span></button>`).join("")}</div></div>
      <div class="stack" style="gap:6px"><span class="eyebrow">สีหลัก (หางเครื่อง)</span>${sw("tail")}</div>
      <div class="stack" style="gap:6px"><span class="eyebrow">สีแถบข้างลำ</span>${sw("stripe")}</div>
      <div class="stack" style="gap:6px"><span class="eyebrow">สีลำตัว</span><div class="seg">${Object.entries(BODY).map(([k,[n]])=>`<button data-body="${k}" class="${lv.body===k?"on":""}">${n}</button>`).join("")}</div></div>
      <div class="stack" style="gap:6px"><span class="eyebrow">โลโก้</span><div class="logos">${Object.entries(LOGOS).map(([k,[n]])=>`<button data-logo="${k}" class="${lv.logo===k?"on":""}"><span class="lg" style="background:${lv.tail}">${logoSVG({...lv,logo:k},22,onCol(lv.tail))}</span><span>${n}</span></button>`).join("")}</div></div>
+     <div class="stack" style="gap:6px"><span class="eyebrow">สีโลโก้</span>${lsw("logoCol")}</div>
+     <div class="stack" style="gap:6px"><span class="eyebrow">สีรองของโลโก้ (โลโก้แบบ 2 สี)</span>${lsw("logoAcc")}</div>
      <div class="stack" style="gap:6px"><span class="eyebrow">ชื่อสายการบินบนลำตัว</span><div class="seg"><button data-titles="1" class="${lv.titles!==false?"on":""}">แสดงชื่อ</button><button data-titles="0" class="${lv.titles===false?"on":""}">ไม่แสดง</button></div></div>
      <div class="row"><button class="btn" style="flex:1" data-x>ยกเลิก</button><button class="btn primary" style="flex:1.4" id="lvsave">ใช้ลายนี้</button></div>`};
   fn.bind=()=>{const lv=st.lv;
@@ -2579,7 +2607,8 @@ function liverySheet(st){st.lv=st.lv||{...S.livery};st.m=st.m||(S.fleet.length?S
     $$("[data-body]").forEach(b=>b.onclick=()=>{lv.body=b.dataset.body;drawSheet()});
     $$("[data-logo]").forEach(b=>b.onclick=()=>{lv.logo=b.dataset.logo;drawSheet()});
     $$("[data-titles]").forEach(b=>b.onclick=()=>{lv.titles=b.dataset.titles==="1";drawSheet()});
-    $$("[data-preset]").forEach(b=>b.onclick=()=>{const [,t,st,bd,lg]=PRESETS[+b.dataset.preset];Object.assign(lv,{tail:t,stripe:st,body:bd,logo:lg});drawSheet()});
+    $$("[data-lsw]").forEach(b=>b.onclick=()=>{lv[b.dataset.lsw]=b.dataset.c||null;drawSheet()});
+    $$("[data-preset]").forEach(b=>b.onclick=()=>{const [,t,st,bd,lg]=PRESETS[+b.dataset.preset];Object.assign(lv,{tail:t,stripe:st,body:bd,logo:lg,logoCol:null,logoAcc:null});drawSheet()});
     $$("[data-pat]").forEach(b=>b.onclick=()=>{lv.pat=b.dataset.pat;drawSheet()});
     $$("[data-pm]").forEach(b=>b.onclick=()=>{st.m=b.dataset.pm;drawSheet()});
     $("#lvsave").onclick=()=>{S.livery={...lv};baseKey="";addNews(`🎨 ${S.name} เปลี่ยนลายเครื่องบินใหม่ทั้งฝูง`);save();sheetFn=null;$("#sheet").innerHTML="";renderApp();toast("ใช้ลายใหม่แล้ว");flyover()}};
@@ -2964,6 +2993,8 @@ function drawAircraft(x,pos,ang,m,scale,col,edge,alt){const sz=(.55+m.len/80)*sc
   else if(PT==="belly"){x.globalAlpha=.55;x.fill(P.shade);x.globalAlpha=1;x.fill(P.thin)}
   else if(PT==="classic")x.fill(P.spine);
   else if(PT==="nose"){x.fill(P.noseCap);x.fill(P.thin)}
+  else if(PT==="night")x.fill(fus);
+  else if(PATS.some(q=>q[0]===PT&&q[2])){x.globalAlpha=.55;x.fill(P.shade);x.globalAlpha=1;x.fill(P.spine)}
   x.restore();
   x.fillStyle=col;for(const q of P.acc)x.fill(q);
   if(sz*20>12){x.fillStyle="#22364E";x.fill(P.win)}
