@@ -2555,7 +2555,7 @@ function todayHTML(){const T=S.today||blankT();
    <div class="muted small">เงินเข้าทุกครั้งที่เครื่องบินลงจอด ส่วนค่าดูแลเครื่อง ค่าลูกเรือ และดอกเบี้ย หักรวมตอนขึ้นวันใหม่</div>`}
 function svcProj(i){const sv=S.service,rp=S.rep;S.service=i;S.rep=SERVICE[i].rep;let pax=0,profit=0;
   for(const r of S.routes){const c=calc(r);pax+=c.pax;profit+=c.profit}S.service=sv;S.rep=rp;return {pax:Math.round(pax),profit}}
-function maxLoan(){return Math.max(0,Math.floor((fleetValue()*.45+50e6)/50e6)*50e6)}
+function maxLoan(){return Math.max(0,Math.floor((fleetValue()*.35+50e6)/50e6)*50e6)}
 // yearly loan rate: 6% when lightly borrowed, up to ~36% when debt is close to everything you own
 const loanRate=()=>{const own=Math.max(1,fleetValue()+Math.max(0,S.cash));return .06+.30*clamp(S.loan/own,0,1)};
 function moneyHTML(){
