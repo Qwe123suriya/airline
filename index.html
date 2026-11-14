@@ -609,6 +609,7 @@ nav.tabs button:active svg{transform:scale(.88)}
 .sw.auto{width:auto;padding:0 10px;border-radius:999px;font-size:12px;background:var(--sky);color:var(--ink)}
 
 /* cargo kinds */
+.advice{display:flex;align-items:center;gap:10px;justify-content:space-between;font-size:13.5px;line-height:1.5;background:var(--paper);border:1.5px solid color-mix(in srgb,var(--accent) 50%,var(--line));border-radius:12px;padding:8px 10px}.advice .btn{flex:none}
 .kbox{display:flex;flex-direction:column;gap:8px;background:var(--sky);border-radius:14px;padding:12px}
 .ktab{display:grid;grid-template-columns:minmax(0,1.6fr) repeat(4,minmax(0,1fr));gap:6px 8px;align-items:center;font-size:12.5px}
 .ktab>span{color:var(--muted);font-size:11.5px}.ktab b{text-align:right;font-size:14px}.ktab b.warn{color:var(--warn)}.ktab>span:nth-child(-n+5){text-align:right}.ktab>span:first-child{text-align:left}
@@ -1304,6 +1305,8 @@ function evCargo(c){let m=1;for(const e of S.events)if(e.city===c&&e.until>S.day
    different share of an aircraft's payload. Sea uses the same three kinds as its box / reefer / ro-ro trades (d / r / o). */
 const CK=["pcl","fd","pt"],CK_E={pcl:"📦",fd:"🍎",pt:"🚗"},CK_N={pcl:"พัสดุ",fd:"อาหาร",pt:"ชิ้นส่วน/รถ"},CK_LONG={pcl:"พัสดุและของทั่วไป",fd:"อาหาร ข้าว เนื้อ ผลไม้",pt:"ชิ้นส่วนและรถยนต์"};
 const CK_RATE={pcl:1,fd:1.35,pt:1.2},CK_LOAD={pcl:1,fd:.9,pt:.75};
+// freight-only routes: more freight per kind, since each freighter now carries a single kind (keeps a lone freighter as viable as before)
+let CARGO_KIND_X=1.8;
 const SPEC_AIR={a124:"pt"};   // specialised freighters carry one kind only (An-124: outsize parts and vehicles)
 const SEA_K={pcl:"d",fd:"r",pt:"o"},K_SEA={d:"pcl",r:"fd",o:"pt"},SEA_LOAD={d:1,r:.6,o:.5},SEA_RATE={d:1,r:1.8,o:1.5};
 // share of each kind in a city pair's air freight: food-heavy in SE Asia, Oceania and South America, parts in East Asia, Europe, North America
@@ -1334,9 +1337,39 @@ const AIR_OPTS=[["auto","🤖 อัตโนมัติ"],["pcl","📦 พั�
 const SEA_OPTS=[["auto","🤖 อัตโนมัติ"],["d","📦 พัสดุ · เต็มลำ"],["r","🍎 อาหาร · 60%"],["o","🚗 ชิ้นส่วน/รถ · 50%"]];
 const ckSel=(attr,id,val,opts)=>`<select class="cksel" data-${attr}="${id}">${opts.map(([v,n])=>`<option value="${v}" ${(val||"auto")===v?"selected":""}>${n}</option>`).join("")}</select>`;
 const kindChip=t=>`<span class="kchip k-${t}">${CK_E[t]} ${CK_N[t]}</span>`;
+/* Advice for a route's freight mix: switch an aircraft from a kind that has spare room to one that is short,
+   or buy one more freighter for the most valuable shortfall. Returns {html, act} where act is applied by the button. */
+function airAdvice(r,c){const d=c.d,B=cbkObj(r),short={},over={};
+  for(const t of CK){const k=c.cK[t];short[t]=k.dem+(B[t]||0)*.2-k.cap;over[t]=k.cap-k.dem}
+  const need=CK.filter(t=>short[t]>Math.max(3,c.cK[t].dem*.08)).sort((a,b)=>short[b]*CK_RATE[b]-short[a]*CK_RATE[a]);
+  if(!need.length)return {html:`✅ ขนครบทุกประเภทแล้ว ไม่มีสินค้าตกค้าง`};
+  let best=null;
+  for(const id of r.planes){const p=plane(id);if(!p)continue;const m=model(p.m);if(m.seats||isSpecAir(m)||!p.ck||p.ck==="auto")continue;
+    const L=legsFor(m,d),k=p.ck,mine=(c.plan.get(p.id)||L)*m.cargo*CK_LOAD[k];if(over[k]<mine*.5)continue;   // legs actually flown today (trimmed when its kind is oversupplied)
+    for(const t of need){if(t===k)continue;const v=Math.min(short[t],L*m.cargo*CK_LOAD[t])*CK_RATE[t]-Math.max(0,mine-over[k])*CK_RATE[k];if(v>0&&(!best||v>best.v))best={v,p,t,from:k}}}
+  if(best)return {html:`💡 ${CK_E[best.t]} ${CK_N[best.t]}ยังขาด ~${Math.round(short[best.t])} ตัน/วัน แต่ ${CK_E[best.from]} ${CK_N[best.from]}เหลือที่ว่าง · แนะนำเปลี่ยน <b>${best.p.reg}</b> ไปขน${CK_N[best.t]}`,act:{plane:best.p.id,ck:best.t},btn:"ใช้คำแนะนำ"};
+  const autoN=r.planes.map(plane).filter(p=>p&&!model(p.m).seats&&!isSpecAir(model(p.m))&&(!p.ck||p.ck==="auto")).length;
+  const t=need[0],opts=MODELS.filter(m=>!m.seats&&m.range>=d&&(!isSpecAir(m)||SPEC_AIR[m.id]===t)).map(m=>({m,v:planeGain(r,m.id)})).filter(o=>o.v&&o.v.gain>0).sort((a,b)=>a.v.pay-b.v.pay);
+  const o=opts[0];
+  return {html:`💡 ${CK_E[t]} ${CK_N[t]}ยังขาด ~${Math.round(short[t])} ตัน/วัน${autoN?" ทั้งที่เครื่องอัตโนมัติขนเต็มแล้ว":" และเครื่องทุกลำขนเต็มแล้ว"}${o?` · แนะนำซื้อ <b>${o.m.name}</b> เพิ่ม 1 ลำ ตั้งให้ขน${CK_N[t]} (กำไรเพิ่ม ~${money(o.v.gain,true)}/วัน คืนทุน ${o.v.pay} วัน)`:" · ยังไม่มีเครื่องรุ่นไหนเพิ่มแล้วคุ้ม"}`,act:o?{buy:1}:null,btn:o?"ไปที่ซื้อเครื่อง":null}}
+function seaAdvice(l,c){const B=l.bk||{},short={},over={};
+  for(const k of ["d","r","o"]){short[k]=c.DK[k]+(B[k]||0)*.2-c.capK[k];over[k]=c.capK[k]-c.DK[k]}
+  const need=["d","r","o"].filter(k=>short[k]>Math.max(3,c.DK[k]*.08)).sort((a,b)=>short[b]*SEA_RATE[b]-short[a]*SEA_RATE[a]);
+  if(!need.length)return {html:`✅ ขนครบทุกประเภทแล้ว ไม่มีตู้ตกค้าง`};
+  let best=null;
+  for(const id of l.ships){const sh=shipById(id);if(!sh)continue;const m=shipM(sh.m);if(shipSpec(m)||!sh.ck||sh.ck==="auto")continue;
+    const Ld=legDaysS(m,c.km),k=sh.ck,mine=m.teu*SEA_LOAD[k]/Ld;if(over[k]<mine*.5)continue;
+    for(const t of need){if(t===k)continue;const v=Math.min(short[t],m.teu*SEA_LOAD[t]/Ld)*SEA_RATE[t]-Math.max(0,mine-over[k])*SEA_RATE[k];if(v>0&&(!best||v>best.v))best={v,sh,t,from:k}}}
+  const N=k=>CK_N[SEA_KN[k]],E=k=>CK_E[SEA_KN[k]];
+  if(best)return {html:`💡 ${E(best.t)} ${N(best.t)}ยังขาด ~${Math.round(short[best.t])} ตู้/วัน แต่ ${E(best.from)} ${N(best.from)}เหลือที่ว่าง · แนะนำเปลี่ยน <b>${best.sh.reg}</b> ไปขน${N(best.t)}`,act:{ship:best.sh.id,ck:best.t},btn:"ใช้คำแนะนำ"};
+  const t=need[0],opts=SHIPS.filter(m=>shipSpec(m)?(m.reefer?"r":"o")===t:true).map(m=>({m,v:shipGain(l,m.id)})).filter(o=>o.v&&o.v.gain>0).sort((a,b)=>a.v.pay-b.v.pay),o=opts[0];
+  return {html:`💡 ${E(t)} ${N(t)}ยังขาด ~${Math.round(short[t])} ตู้/วัน และเรือทุกลำขนเต็มแล้ว${o?` · แนะนำซื้อ <b>${o.m.name}</b> เพิ่ม 1 ลำ${shipSpec(o.m)?"":" ตั้งให้ขน"+N(t)} (กำไรเพิ่ม ~${money(o.v.gain,true)}/วัน คืนทุน ${o.v.pay} วัน)`:" · ยังไม่มีเรือลำไหนเพิ่มแล้วคุ้ม"}`,act:o?{buy:1}:null,btn:o?"ไปที่ซื้อเรือ":null}}
+const adviceBox=a=>`<div class="advice"><span>${a.html}</span>${a.btn?`<button class="btn sm primary" id="advgo">${a.btn}</button>`:""}</div>`;
 // air: per-kind table and what each aircraft carries
 function airKindsHTML(r,c){const fr=r.planes.map(plane).filter(p=>p&&!model(p.m).seats);
   return `<div class="kbox"><div class="row between"><b>สินค้าแยกประเภท</b><span class="muted small">ตัน/วัน</span></div>
+    <div class="muted small">เส้นทางเดียวขนได้หลายอย่างพร้อมกัน โดยแต่ละลำขนคนละอย่าง</div>
+    ${adviceBox(airAdvice(r,c))}
     <div class="ktab"><span></span><span>ต้องการ</span><span>รองรับ</span><span>ขนได้</span><span>สะสม</span>${CK.map(t=>{const k=c.cK[t];return `<span>${kindChip(t)}</span><b class="num">${Math.round(k.dem)}</b><b class="num">${Math.round(k.cap)}</b><b class="num ${k.cap&&k.carry<k.dem*.9?"warn":""}">${Math.round(k.carry)}</b><b class="num muted">${Math.round(cbkObj(r)[t]||0)}</b>`}).join("")}</div>
     <div class="muted small">ค่าระวาง: อาหาร ×1.35 · ชิ้นส่วน/รถ ×1.2 · บรรทุกได้ อาหาร 90% · ชิ้นส่วน/รถ 75% ของน้ำหนักเครื่อง · ของสะสมเก็บเฉพาะประเภทที่เส้นทางนี้ขนอยู่${r.planes.length?"":" (ยังไม่มีเครื่อง จึงสะสมแค่พัสดุ)"}</div>
     ${fr.length?`<div class="klist">${fr.map(p=>{const m=model(p.m);return `<div class="krow"><span><b>${p.reg}</b> <span class="muted small">${m.name}</span></span>${isSpecAir(m)?`<span class="small">${kindChip(SPEC_AIR[m.id])} <span class="muted">เครื่องเฉพาะ</span></span>`:`<span class="row" style="gap:6px">${(!p.ck||p.ck==="auto")?`<span class="small muted">ตอนนี้ ${CK_E[planeK(p)]}</span>`:""}${ckSel("pck",p.id,p.ck,AIR_OPTS)}</span>`}</div>`}).join("")}</div>`:""}
@@ -1344,6 +1377,8 @@ function airKindsHTML(r,c){const fr=r.planes.map(plane).filter(p=>p&&!model(p.m)
 const SEA_KN={d:"pcl",r:"fd",o:"pt"};
 function seaKindsHTML(l,c){const B=l.bk||{};
   return `<div class="kbox"><div class="row between"><b>สินค้าแยกประเภท</b><span class="muted small">ตู้/วัน</span></div>
+    <div class="muted small">เส้นทางเดียวขนได้หลายอย่างพร้อมกัน โดยแต่ละลำขนคนละอย่าง</div>
+    ${adviceBox(seaAdvice(l,c))}
     <div class="ktab"><span></span><span>ต้องการ</span><span>รองรับ</span><span>เต็ม</span><span>สะสม</span>${["d","r","o"].map(k=>`<span>${kindChip(SEA_KN[k])}</span><b class="num">${Math.round(c.DK[k])}</b><b class="num">${Math.round(c.capK[k])}</b><b class="num">${c.capK[k]?Math.round(c.loadK[k]*100)+"%":"—"}</b><b class="num muted">${Math.round(B[k]||0)}</b>`).join("")}</div>
     <div class="muted small">เรือเฉพาะ (ห้องเย็น, ขนรถ) ขนได้เต็มลำ · เรือรวมขนได้ทุกอย่างแต่ทีละประเภท: พัสดุเต็มลำ อาหาร 60% ชิ้นส่วน/รถ 50% ของความจุ · ค่าระวาง อาหาร ×1.8 ชิ้นส่วน/รถ ×1.5</div>
     ${l.ships.length?`<div class="klist">${l.ships.map(shipById).filter(Boolean).map(sh=>{const m=shipM(sh.m);return `<div class="krow"><span><b>${sh.reg}</b> <span class="muted small">${m.name}</span></span>${shipSpec(m)?`<span class="small">${kindChip(SEA_KN[shipK(sh,m)])} <span class="muted">เรือเฉพาะ</span></span>`:`<span class="row" style="gap:6px">${(!sh.ck||sh.ck==="auto")?`<span class="small muted">ตอนนี้ ${CK_E[SEA_KN[shipK(sh,m)]]}</span>`:""}${ckSel("sck",sh.id,sh.ck,SEA_OPTS)}</span>`}</div>`}).join("")}</div>`:""}</div>`}
@@ -1386,7 +1421,7 @@ function calc(r,price,crate,svc){
   const ev=evMult(r.dest)*evMult(r.from)*brBoost(r.from)*brBoost(r.dest);
   svc=svc??svcOf(r);const demand=rkind(r)==="cargo"||!aptTakes(r.from,"pax")||!aptTakes(r.dest,"pax")?0:60*Math.sqrt(a.w*b.w)*distF(d)*Math.pow(base/price,1.5)*(.6+S.rep/125)*SERVICE[svc].f*ev*mktMult()*starMult()*pk("pax")*compShare(r,price,svc);
   crate=crate??crateOf(r);const cdem=(aptTakes(r.from,"cargo")&&aptTakes(r.dest,"cargo")?1:0)*cargoBase(r,a,b,d,ev)*(rkind(r)==="cargo"?1:.5)*Math.pow(1/crate,1.3);
-  const sh=ckShare(r),dk={pcl:cdem*sh.pcl,fd:cdem*sh.fd,pt:cdem*sh.pt};autoAssign(r,dk,d);const B=cbkObj(r);
+  const kx=rkind(r)==="cargo"?CARGO_KIND_X:1,sh=ckShare(r),dk={pcl:cdem*sh.pcl*kx,fd:cdem*sh.fd*kx,pt:cdem*sh.pt*kx};autoAssign(r,dk,d);const B=cbkObj(r);
   const kinds=new Set(ps.flatMap(p=>planeK(p)==="mix"?CK:[planeK(p)])),cdemC=[...kinds].reduce((a,t)=>a+dk[t]+(B[t]||0),0);
   const plan=legPlan(r,demand+(r.bk||0),cdemC,d);const capK={pcl:0,fd:0,pt:0};
   let cap=0,ccap=0,fuelC=0,feeC=0,fixed=0,legs=0;
@@ -2271,6 +2306,9 @@ function laneSheet(lid,st){
        <div class="pick buylist">${opts.map(({id,m,price,v})=>{const ok=!!v;return `<button data-sbuy="${m.id}" ${!ok||S.cash<price?"disabled":""} class="${ok?"":"noreach"} ${bd.fast===id?"best":""}"><span class="mini">${shipArt(m)}</span><span>${bd.fast===id?'<span class="topchip">⭐ คุ้มสุด</span> ':""}${bd.most===id&&bd.most!==bd.fast?'<span class="topchip">💰 กำไรเพิ่มสูงสุด</span> ':""}<b>${m.name}</b> <span class="num muted small">${money(price,true)}</span><br><span class="muted" style="font-size:12.5px">${ok?`ไปกลับราว ${Math.round(legDaysS(m,c.km)*2)} วัน · ตู้เต็ม ~${Math.round(v.lf*100)}%`:'<b class="bad">เทียบท่าไม่ได้</b> · ต้องเป็นท่าน้ำลึก'}</span></span>${ok?valueHTML(v,price):`<span class="num small bad" style="font-weight:600">ใช้ไม่ได้</span>`}</button>`}).join("")}</div></details>`})()}
      <button class="btn danger" id="lclose">${st.confirm?"ยืนยันปิดเส้นทางเรือ"+(bkSea(l)>=1?" (ของสะสมจะหาย)":""):"ปิดเส้นทางเรือ"}</button>`};
   fn.bind=()=>{const l=S.lanes.find(x=>x.id===lid);if(!l)return;
+    {const ab=$("#advgo");if(ab)ab.onclick=()=>{const a=seaAdvice(l,laneCalc(l));if(!a.act)return;
+      if(a.act.ship){const sh=shipById(a.act.ship);sh.ck=a.act.ck;save();toast(`${sh.reg} เปลี่ยนไปขน ${CK_E[SEA_KN[a.act.ck]]} ${CK_N[SEA_KN[a.act.ck]]}`);drawSheet()}
+      else if(a.act.buy){st.buy=1;drawSheet();const bh=$("#sbuy");if(bh){bh.open=true;bh.scrollIntoView({block:"start"})}}}}
     $$("[data-sck]").forEach(sl=>sl.onchange=()=>{const sh=shipById(+sl.dataset.sck);if(!sh)return;sh.ck=sl.value;save();toast(`${sh.reg} ขน ${sl.options[sl.selectedIndex].text}`);drawSheet()});
     $$("[data-lspread]").forEach(b=>b.onclick=()=>{l.spread=b.dataset.lspread==="1";syncLaneSpread(l);save();toast(l.spread?"เว้นระยะการออกเรือแล้ว":"ให้เรือออกตามสะดวกแล้ว");drawSheet()});
     $$("[data-srem]").forEach(b=>b.onclick=()=>{const id=+b.dataset.srem;l.ships=l.ships.filter(x=>x!==id);shipById(id).lane=null;save();drawSheet()});
@@ -3158,6 +3196,9 @@ function routeSheet(rid,st){
     $$("[data-pmode]").forEach(b=>b.onclick=()=>{if(b.dataset.pmode==="auto"){r.pmode="auto"}else{r.price=priceOf(r);r.pmode="manual"}st.price=undefined;r.last=null;save();drawSheet()});
     demandChart($("#dchart"),r,st.price??priceOf(r));
     $$("[data-freq]").forEach(b=>b.onclick=()=>{r.freq=b.dataset.freq;r.last=null;save();drawSheet()});
+    {const ab=$("#advgo");if(ab)ab.onclick=()=>{const a=airAdvice(r,calc(r));if(!a.act)return;
+      if(a.act.plane){const p=plane(a.act.plane);p.ck=a.act.ck;r.last=null;save();toast(`${p.reg} เปลี่ยนไปขน ${CK_E[a.act.ck]} ${CK_N[a.act.ck]}`);drawSheet()}
+      else if(a.act.buy){st.buy=1;drawSheet();const bh=$("#buyhere");if(bh){bh.open=true;bh.scrollIntoView({block:"start"})}}}}
     $$("[data-pck]").forEach(sl=>sl.onchange=()=>{const p=plane(+sl.dataset.pck);if(!p)return;p.ck=sl.value;r.last=null;save();toast(`${p.reg} ขน ${sl.options[sl.selectedIndex].text}`);drawSheet()});
     $$("[data-spread]").forEach(b=>b.onclick=()=>{r.spread=b.dataset.spread==="1";syncSpread(r);save();toast(r.spread?"เว้นระยะการออกเดินทางแล้ว":"ให้ออกตามสะดวกแล้ว");drawSheet()});
     $$("[data-cmode]").forEach(b=>b.onclick=()=>{if(b.dataset.cmode==="manual"){r.crate=crateOf(r);r.cmode="manual"}else r.cmode="auto";r.last=null;save();drawSheet()});
