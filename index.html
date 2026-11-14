@@ -1964,29 +1964,66 @@ function trend(r){if(r.prevPax==null||!r.last)return "";const ch=(r.last.pax-r.p
   if(Math.abs(ch)<.02)return '<span class="muted">●</span>';return ch>0?`<span class="good">▲${Math.round(ch*100)}%</span>`:`<span class="bad">▼${Math.round(-ch*100)}%</span>`}
 
 let cargoSeg="sea";
-function shipArt(m,lv){lv=lv||S.livery;const L=Math.min(190,70+m.len*.3),x0=(200-L)/2,x1=x0+L,wl=54,hh=6+Math.sqrt(m.teu)/32,deck=wl-hh,keel=wl+4;
-  const rows=clamp(Math.round(Math.sqrt(m.teu)/32),1,5),ch=4.2,bw=6.2,edge="rgba(20,34,52,.4)",hullC="#26313F",cols=m.reefer?["#F4F7FA","#E3EAF1"]:[lv.tail,lv.stripe,"#C2CBD5",lv.tail,"#8C99A9","#5D6B7C"];
+function shipArt(m,lv){lv=lv||S.livery;const id="sa"+(artSeq++);
+  const L=Math.min(190,70+m.len*.3),x0=(200-L)/2,x1=x0+L,wl=54,hh=6+Math.sqrt(m.teu)/32,deck=wl-hh,keel=wl+4.2;
+  const rows=clamp(Math.round(Math.sqrt(m.teu)/32),1,5),ch=4.2,bw=6.2,edge="rgba(20,34,52,.45)";
+  const light=m.reefer||m.roro,hullC=light?"#F1F4F7":"#1F2B3B",hullTxt=light?lv.tail:"#FFFFFF",geared=["cst","fdr","rfr","rfl","rfx"].includes(m.id);
+  const cols=m.reefer?["#F4F7FA","#E6ECF2"]:[lv.tail,lv.stripe,"#C2CBD5",lv.tail,"#8C99A9","#5D6B7C","#B5473A"];
   const brX=m.deep?x0+L*.28:x0+L*.05,brW=Math.max(9,L*.07);let g="";
-  g+=`<ellipse cx="100" cy="${keel+3}" rx="${L*.48}" ry="2" style="fill:#000" opacity=".1"/>`;
-  // containers
-  let k=0;if(m.roro){const top=deck-16-rows*3;g+=`<path d="M${x0+L*.04} ${deck}L${x0+L*.07} ${top}L${x1-L*.12} ${top}Q${x1-L*.03} ${top} ${x1-L*.04} ${deck}Z" style="fill:#EEF2F6;stroke:${edge}" stroke-width=".7"/>`;
-    for(let i=0;i<rows+1;i++)g+=`<rect x="${x0+L*.08}" y="${top+3+i*4.2}" width="${L*.78}" height=".8" style="fill:#C4CDD8"/>`;g+=`<rect x="${x0+L*.1}" y="${top+2}" width="${L*.74}" height="2.2" style="fill:${lv.tail}"/>`}
-  else for(let r=0;r<rows;r++){const y=deck-(r+1)*ch;for(let x=x0+L*.06;x+bw<x1-L*.12+(r?0:6);x+=bw){if(x+bw>brX-1&&x<brX+brW+1)continue;if(r===rows-1&&(k*7)%5===0){k++;continue}
-      const c=cols[(k*5+r*3)%cols.length];k++;g+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw-.7).toFixed(1)}" height="${(ch-.6).toFixed(1)}" rx=".4" style="fill:${c}"/>`;
-      if(m.reefer)g+=`<rect x="${(x+1).toFixed(1)}" y="${(y+1).toFixed(1)}" width="1.2" height="${(ch-2.4).toFixed(1)}" style="fill:#5B8FD0"/>`}}
-  // superstructure + funnel
-  const bh=rows*ch+10;g+=`<rect x="${brX}" y="${deck-bh}" width="${brW}" height="${bh}" rx="1" style="fill:#F4F6F8;stroke:${edge}" stroke-width=".7"/>`;
-  for(let i=0;i<3;i++)g+=`<rect x="${brX+1.2}" y="${deck-bh+2.5+i*3.6}" width="${brW-2.4}" height="1.4" style="fill:#2E4762"/>`;
-  g+=`<rect x="${brX-L*.035}" y="${deck-bh-1}" width="${brW+L*.07}" height="1.6" style="fill:#F4F6F8;stroke:${edge}" stroke-width=".5"/>`;
-  const fx=m.deep?brX+brW+L*.08:brX-L*.0+brW*.15;
-  if(!m.deep){g+=`<rect x="${brX+brW*.2}" y="${deck-bh-9}" width="${brW*.6}" height="8" rx="1" style="fill:${lv.tail}"/><g transform="translate(${brX+brW*.5-3.2} ${deck-bh-8.2})">${logoSVG(lv,6.4,onCol(lv.tail))}</g>`}
-  else{g+=`<rect x="${x0+L*.07}" y="${deck-rows*ch-9}" width="${brW*.7}" height="8" rx="1" style="fill:${lv.tail}"/><g transform="translate(${x0+L*.07+brW*.35-3.2} ${deck-rows*ch-8.2})">${logoSVG(lv,6.4,onCol(lv.tail))}</g>`}
-  // hull
-  const hull=`M${x0} ${deck}L${x1-6} ${deck-1.5}Q${x1+1} ${deck-1.5} ${x1} ${deck+2}L${x1-hh*.9} ${keel}L${x0+3} ${keel}Q${x0-1} ${keel} ${x0} ${deck+hh*.6}Z`;
-  g+=`<path d="${hull}" style="fill:${hullC}"/><path d="M${x0} ${wl+.5}L${x1-hh*.55} ${wl+.5}L${x1-hh*.9} ${keel}L${x0+3} ${keel}Q${x0-1} ${keel} ${x0} ${wl+.5}Z" style="fill:#A8322C"/>`;
-  if(m.eco)g+=`<rect x="${x0+2}" y="${wl-2.6}" width="${L-hh-4}" height="1.6" style="fill:#3FA66B"/>`;
-  g+=`<rect x="${x0+2}" y="${deck+1.2}" width="${L-10}" height="1.3" style="fill:${lv.stripe}"/>`;
-  g+=`<path d="M${x0-4} ${wl+1.2}q3 -1.6 6 0t6 0t6 0" style="fill:none;stroke:var(--route)" stroke-width=".8" opacity=".5"/>`;
+  g+=`<defs><linearGradient id="${id}h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></linearGradient>
+    <linearGradient id="${id}c" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".25" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".18"/></linearGradient></defs>`;
+  g+=`<ellipse cx="100" cy="${keel+3.5}" rx="${L*.5}" ry="2.2" style="fill:#000" opacity=".1"/>`;
+  // hull: flared bow with a bulb under water, raked stem, transom stern, sheer line rising to the bow
+  const hull=`M${x0} ${deck+.5}L${x1-9} ${deck-1.6}Q${x1+2.5} ${deck-2.4} ${x1+1} ${deck+1.2}L${x1-hh*.62} ${wl+.6}Q${x1-hh*.2} ${wl+1.2} ${x1-hh*.3} ${wl+2.6}Q${x1-hh*.45} ${keel} ${x1-hh*1.1} ${keel}L${x0+4} ${keel}Q${x0+1.2} ${keel} ${x0+1} ${wl}L${x0} ${deck+.5}Z`;
+  g+=`<clipPath id="${id}k"><path d="${hull}"/></clipPath>`;
+  // cargo above the deck (drawn first so the hull edge sits on top)
+  let k=0;
+  if(m.roro){const top=deck-16-rows*3,bx1=x1-L*.05;
+    g+=`<path d="M${x0+L*.03} ${deck}L${x0+L*.05} ${top}L${bx1-L*.08} ${top}Q${bx1} ${top} ${bx1} ${top+6}L${bx1} ${deck}Z" style="fill:#F1F4F7;stroke:${edge}" stroke-width=".7"/>`;
+    g+=`<path d="M${x0+L*.03} ${deck}L${x0+L*.05} ${top}L${bx1-L*.08} ${top}Q${bx1} ${top} ${bx1} ${top+6}L${bx1} ${deck}Z" fill="url(#${id}c)"/>`;
+    for(let i=1;i<=rows+1;i++)g+=`<rect x="${x0+L*.06}" y="${top+i*((deck-top)/(rows+2))}" width="${L*.86}" height=".6" style="fill:#C4CDD8"/>`;
+    g+=`<rect x="${x0+L*.07}" y="${top+2.5}" width="${L*.6}" height="3" style="fill:${lv.tail}"/><rect x="${x0+L*.07}" y="${top+6}" width="${L*.6}" height="1" style="fill:${lv.stripe}"/>`;
+    for(let x=bx1-L*.075;x<bx1-1;x+=2.2)g+=`<rect x="${x.toFixed(1)}" y="${top+2}" width="1.5" height="1.3" rx=".3" style="fill:#2E4762"/>`;   // bridge windows at the front
+    g+=`<path d="M${x0+L*.03} ${deck-1}L${x0-L*.045} ${wl-1}L${x0-L*.03} ${wl}L${x0+L*.05} ${deck}Z" style="fill:#8C99A9;stroke:${edge}" stroke-width=".5"/>`;   // stern ramp
+    g+=`<rect x="${x0+L*.14}" y="${top-6}" width="${L*.04}" height="6" rx=".8" style="fill:${lv.tail}"/><rect x="${x0+L*.14}" y="${top-6}" width="${L*.04}" height="1.4" style="fill:#1F2B3B"/>`}
+  else{
+    g+=`<rect x="${x0+L*.06}" y="${deck-1.3}" width="${L*.84}" height="1.4" style="fill:#8C99A9"/>`;   // hatch covers
+    let bay=0;
+    for(let x=x0+L*.06;x+bw<x1-L*.12;x+=bw,bay++){if(x+bw>brX-1&&x<brX+brW+1)continue;
+      const sx=x+(bay%2?.4:0);
+      for(let r=0;r<rows;r++){const y=deck-1.3-(r+1)*ch;if(r===rows-1&&(k*7)%5===0){k++;continue}
+        const c=cols[(k*5+r*3)%cols.length];k++;
+        g+=`<rect x="${sx.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw-.7).toFixed(1)}" height="${(ch-.5).toFixed(1)}" rx=".3" style="fill:${c}"/>`+
+           `<rect x="${sx.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw-.7).toFixed(1)}" height="${(ch-.5).toFixed(1)}" fill="url(#${id}c)"/>`+
+           `<path d="M${(sx+1.8).toFixed(1)} ${(y+.6).toFixed(1)}v${(ch-1.7).toFixed(1)}M${(sx+3.6).toFixed(1)} ${(y+.6).toFixed(1)}v${(ch-1.7).toFixed(1)}" stroke="#000" stroke-opacity=".12" stroke-width=".35"/>`;
+        if(m.reefer)g+=`<rect x="${(sx+.6).toFixed(1)}" y="${(y+1).toFixed(1)}" width="1" height="${(ch-2.4).toFixed(1)}" style="fill:#5B8FD0"/>`}
+      if(bay%2&&rows>1)g+=`<rect x="${(x+bw-.35).toFixed(1)}" y="${(deck-1.3-rows*ch*.55).toFixed(1)}" width=".7" height="${(rows*ch*.55).toFixed(1)}" style="fill:#9AA6B4"/>`}   // lashing bridge
+    // forecastle with breakwater at the bow
+    g+=`<path d="M${x1-L*.11} ${deck-1.5}L${x1-L*.11} ${deck-4.2}L${x1-6} ${deck-5}Q${x1+1.5} ${deck-5} ${x1} ${deck-1.2}Z" style="fill:${hullC};stroke:${edge}" stroke-width=".5"/>`+
+       `<path d="M${x1-L*.115} ${deck-1.5}L${x1-L*.105} ${deck-6.2}L${x1-L*.095} ${deck-1.5}Z" style="fill:#C9D1DA"/>`;
+    // ship's own cranes (geared feeders and reefers)
+    if(geared)for(const t of [.42,.68]){const cx=x0+L*t,top=deck-rows*ch-6;g+=`<rect x="${cx-1}" y="${top}" width="2" height="${deck-top}" style="fill:${m.reefer?"#E9EDF2":"#E2B83A"};stroke:${edge}" stroke-width=".3"/><path d="M${cx} ${top+1}L${cx+L*.12} ${top-5}" stroke="${m.reefer?"#C9D1DA":"#E2B83A"}" stroke-width="1.2" stroke-linecap="round"/><path d="M${cx+L*.12} ${top-5}V${top+3}" stroke="#333" stroke-width=".3"/>`}
+    // LNG fuel tank behind the bridge on eco ships
+    if(m.eco){const tx=brX+brW+1.5;g+=`<rect x="${tx}" y="${deck-rows*ch*.6-1.3}" width="${L*.06}" height="${rows*ch*.6}" rx="${rows*ch*.3}" style="fill:#F4F7FA;stroke:${edge}" stroke-width=".5"/><rect x="${tx}" y="${deck-rows*ch*.35-1.3}" width="${L*.06}" height="1" style="fill:#3FA66B"/>`}}
+  // accommodation block: decks of windows, bridge wings, radar mast, funnel with the logo
+  if(!m.roro){const bh=rows*ch+11,bt=deck-bh;
+    g+=`<rect x="${brX}" y="${bt}" width="${brW}" height="${bh}" rx="1" style="fill:#F4F6F8;stroke:${edge}" stroke-width=".7"/><rect x="${brX}" y="${bt}" width="${brW}" height="${bh}" rx="1" fill="url(#${id}c)"/>`;
+    for(let i=0;i<Math.min(5,rows+2);i++)g+=`<rect x="${brX+1.1}" y="${bt+2.6+i*3.2}" width="${brW-2.2}" height="1.1" style="fill:#2E4762"/>`;
+    g+=`<rect x="${brX-L*.035}" y="${bt-1.2}" width="${brW+L*.07}" height="2" rx=".5" style="fill:#F4F6F8;stroke:${edge}" stroke-width=".5"/><rect x="${brX-L*.03}" y="${bt-.6}" width="${brW+L*.06}" height=".8" style="fill:#2E4762"/>`;
+    g+=`<path d="M${brX+brW*.5} ${bt-1.2}V${bt-9}M${brX+brW*.5-2.4} ${bt-6.5}H${brX+brW*.5+2.4}" stroke="#7D8A98" stroke-width=".6"/><ellipse cx="${brX+brW*.5}" cy="${bt-9.3}" rx="2.2" ry=".5" style="fill:#5D6B7C"/>`;
+    const fx=m.deep?x0+L*.075:brX+brW*.18,fw=m.deep?brW*.75:brW*.64,fy=m.deep?deck-rows*ch-10:bt-9;
+    g+=`<path d="M${fx} ${fy+9}L${fx+.6} ${fy}L${fx+fw} ${fy}L${fx+fw-.2} ${fy+9}Z" style="fill:${lv.tail};stroke:${edge}" stroke-width=".4"/><rect x="${fx+.5}" y="${fy}" width="${fw-.6}" height="1.6" style="fill:#1F2B3B"/>`+
+       `<g transform="translate(${fx+fw/2-2.9} ${fy+2.4})">${logoSVG(lv,5.8,onCol(lv.tail))}</g>`}
+  // hull, boot-top and antifouling, company name, then water
+  g+=`<path d="${hull}" style="fill:${hullC};stroke:${edge}" stroke-width=".6"/>`;
+  g+=`<g clip-path="url(#${id}k)"><rect x="${x0-5}" y="${wl+.6}" width="${L+10}" height="10" style="fill:#A8322C"/><rect x="${x0-5}" y="${wl-.4}" width="${L+10}" height="1.1" style="fill:#151C26"/>`+
+     (m.eco?`<rect x="${x0-5}" y="${wl-1.9}" width="${L+10}" height="1.2" style="fill:#3FA66B"/>`:"")+
+     `<rect x="${x0-5}" y="${deck-3}" width="${L+10}" height="${keel-deck+6}" fill="url(#${id}h)"/>`+
+     `<rect x="${x0-5}" y="${deck+1}" width="${L+10}" height="1.1" style="fill:${lv.stripe}"/></g>`;
+  {const nm=lv.titleText||(S&&S.name)||"",fs=Math.min(hh*.55,(L*.5)/(Math.max(4,nm.length)*.6));
+   if(nm&&fs>=2)g+=`<text x="${x0+L*.32}" y="${deck+hh*.62}" font-family="Chakra Petch,Anuphan,sans-serif" font-weight="700" font-size="${fs.toFixed(2)}" letter-spacing="${(fs*.08).toFixed(2)}" fill="${hullTxt}" clip-path="url(#${id}k)">${esc(nm)}</text>`}
+  g+=`<linearGradient id="${id}w" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3F86C6" stop-opacity="0"/><stop offset=".15" stop-color="#3F86C6" stop-opacity=".28"/><stop offset=".85" stop-color="#3F86C6" stop-opacity=".28"/><stop offset="1" stop-color="#3F86C6" stop-opacity="0"/></linearGradient><rect x="0" y="${wl+.7}" width="200" height="${66-wl}" fill="url(#${id}w)"/>`;
+  g+=`<path d="M${x1-hh*.75} ${wl+.8}q2.2 -1.4 4.4 0t4.4 0" style="fill:none;stroke:#fff" stroke-width=".8" opacity=".75"/><path d="M${x0-6} ${wl+1.3}q3 -1.2 6 0t6 0t6 0" style="fill:none;stroke:#fff" stroke-width=".7" opacity=".55"/>`;
   return `<svg class="art" viewBox="0 0 200 66" role="img" aria-label="${m.name}">${g}</svg>`}
 function cargoHTML(){
   const seg=`<div class="seg"><button data-cseg="air" class="${cargoSeg==="air"?"on":""}">✈ ทางอากาศ</button><button data-cseg="sea" class="${cargoSeg==="sea"?"on":""}">🚢 ทางเรือ</button></div>`;
@@ -3197,7 +3234,7 @@ function drawMap(){
       x.fillStyle=paper;x.globalAlpha=.95;x.beginPath();x.arc(px,py,11,0,7);x.fill();x.globalAlpha=1;x.strokeStyle=cssv("--border");x.lineWidth=1;x.stroke();
       x.textAlign="center";x.fillText("🔒",px,py+.5);x.textAlign="left";mapHits.push({reg:R.id,px,py,hw:12})}}}
   // ships: sail at real speed along the lane, then sit in port while loading
-  shipsAtSea=0;{const HULL=new Path2D("M10 0L7-2H-9L-10-1.4V1.4L-9 2H7Z"),DECK=new Path2D("M6-1.2H-7.2V1.2H6Z"),BRG=new Path2D("M-7.6-1.8H-9.2V1.8H-7.6Z");
+  shipsAtSea=0;{const HULL=new Path2D("M11 0C10-1.3 8.3-2.2 6.2-2.2H-9.2Q-10.4-2.2-10.4-1V1Q-10.4 2.2-9.2 2.2H6.2C8.3 2.2 10 1.3 11 0Z"),DECK=new Path2D("M7.4-1.7H-8.4V1.7H7.4Z"),BRG=new Path2D("M-7.6-1.8H-9.2V1.8H-7.6Z");
    const at=(o,t)=>{const k=clamp(t,0,1)*o.km;let i=1;while(i<o.cum.length-1&&o.cum[i]<k)i++;const a=o.scr[i-1],b=o.scr[i],u=(k-o.cum[i-1])/((o.cum[i]-o.cum[i-1])||1);return [a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u]};
    for(const l of S.lanes){const o=laneScr.get(l.id);if(!o)continue;
      l.ships.forEach((id,i)=>{const sh=shipById(id);if(!sh||sh.down>S.day)return;const m=shipM(sh.m),Ld=legDaysS(m,o.km),sail=sailDays(m,o.km)/Ld;
@@ -3205,8 +3242,14 @@ function drawMap(){
        if(f<sail){shipsAtSea++;const e=f/sail,t=back?1-e:e;pos=at(o,t);const nx=at(o,t+(back?-.004:.004));ang=Math.atan2(nx[1]-pos[1],nx[0]-pos[0]);
          x.strokeStyle=paper;x.lineWidth=1.2;x.globalAlpha=.5;for(let j=1;j<=3;j++){const pp=at(o,t-(back?-1:1)*.006*j);x.beginPath();x.arc(pp[0],pp[1],.8+j*.5,0,7);x.stroke()}x.globalAlpha=1}
        else{const pc=port(back?l.from:l.to),[px,py]=PX(ulon(pc.lon),pc.lat);pos=[px+7*zp+i*3,py+5*zp];ang=0}
-       x.save();x.translate(...pos);x.rotate(ang);x.scale(sz,sz);x.lineWidth=2.2/sz;x.strokeStyle=paper;x.lineJoin="round";x.stroke(HULL);x.fillStyle="#26313F";x.fill(HULL);
-       x.fillStyle=m.reefer?"#EEF3F8":S.livery.tail;x.fill(DECK);x.fillStyle="#FFFFFF";x.fill(BRG);x.restore()})}}
+       x.save();x.translate(...pos);x.rotate(ang);x.scale(sz,sz);x.lineWidth=2.2/sz;x.strokeStyle=paper;x.lineJoin="round";x.stroke(HULL);
+       x.fillStyle=m.reefer||m.roro?"#E9EDF2":"#26313F";x.fill(HULL);x.lineWidth=.25;x.strokeStyle="rgba(20,34,52,.5)";x.stroke(HULL);
+       const lv=S.livery,bx=m.deep?2.6:-8.2;   // bridge: aft on most ships, forward on the big ones
+       if(m.roro){x.fillStyle="#F7F9FB";x.fill(DECK);x.fillStyle=lv.tail;x.fillRect(-7,-.35,12,.7)}
+       else{const cc=m.reefer?["#F7F9FB","#E3EAF1"]:[lv.tail,lv.stripe,"#C2CBD5","#8C99A9","#B5473A"];let k=(id*7)%5;
+         for(let bxx=-6.6;bxx<6.2;bxx+=1.35){if(Math.abs(bxx-bx-.6)<1.4)continue;for(const yy of [-1.65,-.05]){x.fillStyle=cc[k++%cc.length];x.fillRect(bxx,yy,1.18,1.55)}}}
+       x.fillStyle="#FFFFFF";x.fillRect(bx,-1.9,1.4,3.8);x.fillStyle="#2E4762";x.fillRect(bx+1.05,-1.7,.25,3.4);
+       x.fillStyle=lv.tail;x.fillRect(m.deep?-8.6:bx-1,-.55,.9,1.1);x.restore()})}}
   routeArcs=arcs;laneScrG=laneScr;
   if(pop&&pop.type==="lane"){const o=laneScr.get(pop.id);if(o){x.beginPath();o.scr.forEach((q,i)=>i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));x.lineCap="round";x.lineJoin="round";
     x.strokeStyle=portCol;x.globalAlpha=.3+.25*Math.sin(performance.now()/260);x.lineWidth=10*zf;x.stroke();x.globalAlpha=1;x.strokeStyle=paper;x.lineWidth=2*zf;x.stroke()}}
