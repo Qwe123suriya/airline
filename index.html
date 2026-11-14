@@ -617,6 +617,11 @@ nav.tabs button:active svg{transform:scale(.88)}
 .fcbox{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.fcbox>div{display:flex;flex-direction:column;background:var(--sky);border-radius:8px;padding:6px 8px;min-width:0}.fcbox b{font-size:14px}
 @media (max-width:520px){.fcbox{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+/* route needs */
+.needs{display:block;color:var(--muted)}.needs b{color:var(--ink);font-weight:600;margin-left:4px}
+.needbox{font-size:13.5px;line-height:1.5;background:color-mix(in srgb,var(--route) 9%,var(--paper));border:1px solid color-mix(in srgb,var(--route) 30%,var(--line));border-radius:10px;padding:8px 10px}
+.needbox b{margin:0 3px}
+
 /* livery colour sets */
 .presets{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
 .presets button{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--paper);font-size:12px;min-width:76px}
@@ -2819,7 +2824,12 @@ function routeForecast(from,dest,kind){
   let best=null;
   for(const m of cands){const fake={id:-77,m:m.id,route:null,down:0,cond:100,age:0};S.fleet.push(fake);r.planes=[-77];
     try{const pr=KC?baseFare(d):autoPrice(r),f=calc(r,pr);if(!best||f.profit>best.profit)best={m,profit:f.profit,lf:f.lf,cap:KC?f.ccap:f.cap,pax:KC?f.cargo:f.pax}}finally{S.fleet.pop()}}
-  const o={d,dem:KC?c0.cdem:c0.demand,tags,best,own};fcCache.m.set(ck,o);return o}
+  // aircraft size that fits: seats (or tonnes) per flight if a typical jet of that class flew its full daily schedule
+  const ref=model(KC?"738f":"a320")||MODELS.find(m=>KC?!m.seats:m.seats),legs=legsFor(ref,d),per=(KC?c0.cdem:c0.demand)/Math.max(1,legs);
+  const size=KC?(per<4?["small","ลำเล็ก (ATR/Cessna)"]:per<25?["mid","ลำตัวแคบ (737/A321)"]:["big","ลำตัวกว้าง (767/777)"]):(per<70?["small","ใบพัด (ATR/Dash 8)"]:per<190?["mid","ลำตัวแคบ (A320/737)"]:["big","ลำตัวกว้าง (787/A350)"]);
+  let fit=null;if(best){const bm=best.m,cls=KC?(bm.cargo<4?"small":bm.cargo<25?"mid":"big"):(bm.seats<80?"small":bm.seats<=220?"mid":"big"),ord={small:0,mid:1,big:2};
+    fit=ord[cls]<ord[size[0]]?"small":ord[cls]>ord[size[0]]?"big":"ok"}
+  const o={d,dem:KC?c0.cdem:c0.demand,pax:c0.demand,cargo:c0.cdem,per,size,fit,tags,best,own};fcCache.m.set(ck,o);return o}
 function fcLine(o,KC){const b=o.best;if(!b)return `<span class="muted">ไม่มีเครื่องที่บินถึงในงบตอนนี้</span>`;
   return `<span class="${b.profit>=0?"good":"bad"} num">${b.profit>=0?"+":"−"}${money(Math.abs(b.profit),true)}/วัน</span> <span class="muted">· ${o.own?"":"ถ้าซื้อ "}${b.m.name}</span>`}
 function newRouteSheet(st){
@@ -2841,12 +2851,13 @@ function newRouteSheet(st){
     out+=`<div class="row between" style="gap:8px;flex-wrap:wrap"><span class="eyebrow">ปลายทาง ${list.length} แห่ง</span><div class="seg sortseg">${[["profit","💰 กำไร"],["demand","👥 คนเยอะ"],["near","📍 ใกล้"]].map(([k,n])=>`<button data-sort="${k}" class="${st.sort===k?"on":""}">${n}</button>`).join("")}</div></div>
       <div class="muted small">ตัวเลขเป็นการประเมินจากราคาอัตโนมัติ ${idle.length?"และเครื่องที่จอดว่างอยู่":"และเครื่องรุ่นที่ซื้อไหวตอนนี้"} · คู่แข่งและเหตุการณ์อาจทำให้ต่างไป</div>`;
     out+=`<div class="pick dests">${list.map(({c,d,fc})=>`<button data-dest="${c.c}" class="${st.dest===c.c?"sel":""}"><span class="iata">${c.c}</span><span style="min-width:0">${top.has(c.c)?'<span class="topchip">⭐ แนะนำ</span> ':""}${c.n}
-        <span class="dline"><span class="dbar"><i style="width:${Math.max(4,fc.dem/maxDem*100).toFixed(0)}%"></i></span><span class="num">${KC?"📦 ~"+Math.round(fc.dem).toLocaleString()+" ตัน":"👥 ~"+Math.round(fc.dem).toLocaleString()+" คน"}/วัน</span></span>
+        <span class="dline"><span class="dbar"><i style="width:${Math.max(4,fc.dem/maxDem*100).toFixed(0)}%"></i></span><span class="num">${KC?"📦 ~"+Math.round(fc.dem).toLocaleString()+" ตัน":"👥 ~"+Math.round(fc.dem).toLocaleString()+" คน"}/วัน</span>${!KC&&fc.cargo>=1?`<span class="muted num">📦 ${Math.round(fc.cargo).toLocaleString()} ตัน</span>`:""}</span>
+        <span class="small needs">✈️ เหมาะกับ<b>${fc.size[1]}</b>${fc.fit==="small"?' <span class="bad">· เครื่องที่มีเล็กไป</span>':fc.fit==="big"?' <span class="warn">· เครื่องที่มีใหญ่ไป</span>':""}</span>
         <span class="small">${fcLine(fc,KC)}${fc.tags.length?` · ${fc.tags.join(" ")}`:""}</span></span><span class="num muted" style="font-size:13px">${d.toLocaleString()} กม.</span></button>`).join("")}</div>
     ${locked?`<button class="btn sm" id="gounlock">🔒 อีก ${locked} ภูมิภาคยังล็อก · ปลดล็อกแผนที่เพิ่ม</button>`:""}`;
     if(sel){const d=dist(from,sel),ok=idle.filter(p=>model(p.m).range>=d);
       out+=`<div class="panel stack" style="position:sticky;bottom:-20px"><div class="row between"><b>${st.from} → ${sel.c} · ${sel.n}</b><span class="num muted">${d.toLocaleString()} กม.</span></div>
-       ${(()=>{const fc=routeForecast(st.from,sel.c,st.kind),b=fc.best;return `<div class="fcbox"><div><span class="muted small">${KC?"สินค้า":"คนอยากบิน"}</span><b class="num">~${Math.round(fc.dem).toLocaleString()}${KC?" ตัน":" คน"}/วัน</b></div>${b?`<div><span class="muted small">${KC?"ความจุ":"ที่นั่ง"} (${b.m.name})</span><b class="num">${Math.round(b.cap).toLocaleString()}/วัน</b></div><div><span class="muted small">เต็มลำราว</span><b class="num">${Math.round(Math.min(1,b.pax/Math.max(1,b.cap))*100)}%</b></div><div><span class="muted small">กำไรประเมิน</span><b class="num ${b.profit>=0?"good":"bad"}">${b.profit>=0?"+":"−"}${money(Math.abs(b.profit),true)}/วัน</b></div>`:`<div class="muted small">ยังไม่มีเครื่องที่บินถึงในงบ</div>`}</div>`})()}
+       ${(()=>{const fc=routeForecast(st.from,sel.c,st.kind),b=fc.best;return `<div class="needbox">🧭 <b>${sel.n} ต้องการ</b> ${KC?`สินค้า ~${Math.round(fc.dem).toLocaleString()} ตัน/วัน`:`ผู้โดยสาร ~${Math.round(fc.pax).toLocaleString()} คน/วัน${fc.cargo>=1?` และพัสดุใต้ท้องเครื่อง ~${Math.round(fc.cargo).toLocaleString()} ตัน/วัน`:""}`} · เหมาะกับ<b>${fc.size[1]}</b> (ราว ${Math.round(fc.per).toLocaleString()} ${KC?"ตัน":"ที่นั่ง"}/เที่ยว)${fc.fit==="small"?" · <span class=\"bad\">เครื่องที่มีเล็กไป จะมีคนตกค้าง ใส่เพิ่มอีกลำหรือใช้ลำใหญ่ขึ้น</span>":fc.fit==="big"?" · <span class=\"warn\">เครื่องที่มีใหญ่ไป ที่นั่งจะว่างเยอะ</span>":""}</div><div class="fcbox"><div><span class="muted small">${KC?"สินค้า":"คนอยากบิน"} (ราคากลาง)</span><b class="num">~${Math.round(fc.dem).toLocaleString()}${KC?" ตัน":" คน"}/วัน</b></div>${b?`<div><span class="muted small">${KC?"ความจุ":"ที่นั่ง"} (${b.m.name})</span><b class="num">${Math.round(b.cap).toLocaleString()}/วัน</b></div><div><span class="muted small">เต็มลำราว (ราคาอัตโนมัติ)</span><b class="num">${Math.round(Math.min(1,b.pax/Math.max(1,b.cap))*100)}%</b></div><div><span class="muted small">กำไรประเมิน</span><b class="num ${b.profit>=0?"good":"bad"}">${b.profit>=0?"+":"−"}${money(Math.abs(b.profit),true)}/วัน</b></div>`:`<div class="muted small">ยังไม่มีเครื่องที่บินถึงในงบ</div>`}</div>`})()}
        <div class="small muted">${KC?`สินค้าราว ${Math.round(calc({id:-9,kind:"cargo",from:st.from,dest:sel.c,price:baseFare(d),planes:[],h:[]}).cdem).toLocaleString()} ตัน/วัน · ค่าระวางราว ฿${(d*CARGO_RATE/1000).toFixed(2)}/กก.`:`ราคาตั๋วเริ่มต้น ${money(baseFare(d))} · ใช้เวลาบิน ${(d/830+.4).toFixed(1)} ชม. (A320)`}</div>
        ${idle.length?`<label class="f">ใส่เครื่องบิน<select id="np"><option value="">ยังไม่ใส่</option>${idle.map(p=>{const m=model(p.m),go=m.range>=d;return `<option value="${p.id}" ${go?"":"disabled"}>${p.reg} · ${m.name} · บินได้ ${m.range.toLocaleString()} กม.${go?"":" · ไม่สามารถบินได้"}</option>`}).join("")}</select></label>`:""}
        <button class="btn primary block" id="openr" ${S.cash<3e6||!aptTakes(st.from,st.kind)?"disabled":""}>เปิดเส้นทาง ฿3 ล้าน</button></div>`}
