@@ -2446,6 +2446,8 @@ function routesHTML(){rseg=bm();const RL=S.routes.filter(r=>rkind(r)===rseg),np=
   <div class="panel row between"><div><div class="eyebrow">สาขา</div><div class="small muted">${S.bases.join(" · ")}</div></div><button class="btn sm" id="gobranch">จัดการสาขา</button></div>`;
 }
 let artSeq=0;
+// fuselage title lettering: [label, font stack, weight, style]
+const TITLE_FONTS={modern:["โมเดิร์น","Chakra Petch,Anuphan,sans-serif",700],classic:["คลาสสิก","Noto Serif Thai,Georgia,Times New Roman,serif",700],light:["บางเรียบหรู","Anuphan,sans-serif",400],italic:["เอียงเร็ว","Chakra Petch,Anuphan,sans-serif",700,"italic"]};
 const motif=(d,x,y,z,col,op)=>`<path d="${d}" transform="translate(${(x-z/2).toFixed(2)} ${(y-z/2).toFixed(2)}) scale(${(z/24).toFixed(4)})" fill="${col}"${op!=null?` opacity="${op}"`:""}/>`;
 // Side-view illustration, proportions scaled from each type's length and fuselage height
 function planeArt(m,lv,fly){lv=lv||S.livery;const A=m.a,id="pa"+(artSeq++);
@@ -2475,7 +2477,7 @@ function planeArt(m,lv,fly){lv=lv||S.livery;const A=m.a,id="pa"+(artSeq++);
   if(A.tt)g+=`<path d="M${ft0-Lx*.05} ${top-FH+H*.1}L${ft1+H*.1} ${top-FH-H*.04}L${ft1+H*.12} ${top-FH+H*.12}L${ft0-Lx*.035} ${top-FH+H*.26}Z" fill="${tail}"/>`;
   // landing gear (behind the fuselage, wing and engines)
   if(!fly){const wheel=(gx,r)=>`<circle cx="${gx}" cy="${G-r}" r="${r}" fill="#28313D" stroke="rgba(255,255,255,.4)" stroke-width=".35"/><circle cx="${gx}" cy="${G-r}" r="${r*.42}" fill="#B3BDC9"/>`;
-    const leg=(gx,r,n)=>`<path d="M${gx} ${bot-H*.15}L${gx} ${G-r}" stroke="${steel}" stroke-width="${Math.max(.9,r*.5)}" stroke-linecap="round"/>`+Array.from({length:n},(_,i)=>wheel(gx+(i-(n-1)/2)*r*2.15,r)).join("");
+    const leg=(gx,r,n)=>`<path d="M${gx+r*.7} ${bot-H*.08}L${gx+r*.85} ${bot+(G-bot)*.45}" stroke="${belly}" stroke-width="${Math.max(.7,r*.35)}" stroke-linecap="round"/><path d="M${gx} ${bot-H*.15}L${gx} ${G-r}" stroke="${steel}" stroke-width="${Math.max(.9,r*.5)}" stroke-linecap="round"/><path d="M${gx} ${bot+(G-bot)*.35}L${gx-r*.5} ${bot+(G-bot)*.55}L${gx} ${bot+(G-bot)*.72}" fill="none" stroke="${steel}" stroke-width="${Math.max(.4,r*.2)}"/>`+Array.from({length:n},(_,i)=>wheel(gx+(i-(n-1)/2)*r*2.15,r)).join("");
     const r=Math.max(1.5,H*.135);
     g+=leg(x0+nose*1.08,r*.82,1)+leg(x0+Lx*(A.hw?.5:.53),r,A.big?2:1)}
   // wing-to-body fairing under the cabin
@@ -2483,7 +2485,7 @@ function planeArt(m,lv,fly){lv=lv||S.livery;const A=m.a,id="pa"+(artSeq++);
   // fuselage, livery bands, outline
   g+=`<path d="${fus}" fill="${body}"/>`;
   {const sx=x0+Lx*(A.prop?.46:.4),ex=x1+2,PT=livPat(lv),band=(o,col,op)=>`<path d="M${sx+o*Lx*.06} ${bot+3}C${sx+Lx*.2+o*Lx*.05} ${bot-H*.08} ${x1-Lx*.3+o*Lx*.03} ${cy+H*.02-o*H*.16} ${ex} ${top-H*.1-o*H*.22}L${ex+4} ${bot+6}Z" fill="${col}"${op?` opacity="${op}"`:""}/>`;
-    g+=`<defs><linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".25"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/><stop offset=".7" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".2"/></linearGradient></defs><g clip-path="url(#${id})">`;
+    g+=`<defs><linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".38"/><stop offset=".3" stop-color="#fff" stop-opacity=".06"/><stop offset=".62" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".3"/></linearGradient><linearGradient id="${id}n" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".3"/></linearGradient><linearGradient id="${id}w" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#000" stop-opacity=".15"/></linearGradient></defs><g clip-path="url(#${id})">`;
     const sw=Math.max(.8,H*.07);
     if(PT==="swoosh")g+=band(0,stripe)+band(.55,tail)+band(1.05,stripe,.9)+band(1.35,tail)+
        `<path d="M${x0-2} ${cy+H*.3}C${x0+Lx*.2} ${cy+H*.26} ${sx} ${bot-H*.18} ${sx+Lx*.12} ${bot+2}L${x0-2} ${bot+2}Z" fill="${tail}" opacity=".9"/>`+
@@ -2518,21 +2520,33 @@ function planeArt(m,lv,fly){lv=lv||S.livery;const A=m.a,id="pa"+(artSeq++);
     // cockpit glazing (clipped to the nose)
     g+=hump?`<path d="M${x0+H*.62} ${top-H*.08}L${x0+H*1.05} ${top-H*.24}L${x0+H*1.45} ${top-H*.27}L${x0+H*1.42} ${top-H*.1}Z" fill="${ink}" opacity=".88"/>`
            :`<path d="M${x0+nose*.3} ${cy-H*.03}L${x0+nose*.52} ${top+H*.23}L${x0+nose*.7} ${top+H*.22}L${x0+nose*.68} ${cy-H*.03}Z" fill="${ink}" opacity=".9"/>`+
-            `<path d="M${x0+nose*.74} ${top+H*.22}L${x0+nose*1.02} ${top+H*.24}L${x0+nose*.96} ${cy-H*.03}L${x0+nose*.72} ${cy-H*.03}Z" fill="${ink}" opacity=".9"/>`;
+            `<path d="M${x0+nose*.74} ${top+H*.22}L${x0+nose*1.02} ${top+H*.24}L${x0+nose*.96} ${cy-H*.03}L${x0+nose*.72} ${cy-H*.03}Z" fill="${ink}" opacity=".9"/>`+
+            `<path d="M${x0+nose*.36} ${cy-H*.06}L${x0+nose*.55} ${top+H*.27}" stroke="#fff" stroke-opacity=".35" stroke-width="${(H*.035).toFixed(2)}" stroke-linecap="round"/>`+
+            `<path d="M${x0+nose*.3} ${cy-H*.03}L${x0+nose*.98} ${cy-H*.03}" stroke="${body}" stroke-opacity=".6" stroke-width="${(H*.03).toFixed(2)}"/>`;
+    g+=`<path d="M${x0+nose*1.1} ${top+H*.13}C${x0+Lx*.4} ${top+H*.08} ${x1-Lx*.3} ${top+H*.08} ${x1-H*1.3} ${top+H*.12}" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="${(H*.05).toFixed(2)}" stroke-linecap="round"/>`;
     g+=`</g>`}
   g+=`<path d="${fus}" fill="none" stroke="${edge}" stroke-width=".8"/>`;
   // airline titles above the windows
-  if(lv.titles!==false&&S&&S.name&&!A.cargo&&Lx>70){const nm=S.name,dbl=A.deck==="double",avail=(x1-up*1.25)-(x0+Lx*.2);
+  if(lv.titles!==false&&S&&(lv.titleText||S.name)&&!A.cargo&&Lx>70){const nm=lv.titleText||S.name,dbl=A.deck==="double",tx0=x0+Lx*(A.hw?.52:.2),avail=(x1-up*1.25)-tx0;   // high-wing props: start after the engine nacelle
     let fs=H*(dbl?.17:.25);fs=Math.min(fs,avail/(Math.max(4,nm.length)*.6));
     if(fs>=1.6){const tc=lv.body==="tail"||lum(body)<.45?"#FFFFFF":tail,ty=dbl?cy-H*.27:cy-H*.21;
-      g+=`<text x="${x0+Lx*.2}" y="${ty}" font-family="Chakra Petch,Anuphan,sans-serif" font-weight="700" font-size="${fs.toFixed(2)}" letter-spacing="${(fs*.04).toFixed(2)}" fill="${tc}" clip-path="url(#${id})">${esc(nm)}</text>`}}
+      const ff=TITLE_FONTS[lv.titleFont]||TITLE_FONTS.modern;
+      g+=`<text x="${tx0}" y="${ty}" font-family="${ff[1]}" font-weight="${ff[2]}"${ff[3]?` font-style="${ff[3]}"`:""} font-size="${fs.toFixed(2)}" letter-spacing="${(fs*.04).toFixed(2)}" fill="${tc}" clip-path="url(#${id})">${esc(nm)}</text>`}}
   // windows and doors
   const wEnd=x1-up*.95,wStart=x0+nose+H*.5;
   if(!A.cargo){const r=Math.max(.75,H*.06),step=Math.max(2.5,H*.27),rows=A.deck==="double"?[cy-H*.14,cy+H*.08]:[cy-H*.1];
     for(const wy of rows){let n=0;for(let wx=wStart;wx<wEnd;wx+=step){n++;if(n%12===0)continue;g+=`<rect x="${wx}" y="${wy-r}" width="${r*1.45}" height="${r*2}" rx="${r*.7}" fill="${win}"/>`}}
     if(hump)for(let wx=x0+H*1.9;wx<x0+Lx*.27;wx+=step)g+=`<rect x="${wx}" y="${top-H*.2}" width="${H*.09}" height="${H*.12}" rx="${H*.04}" fill="${win}"/>`;
-    for(const dx of [x0+nose+H*.12,x1-up*1.06])g+=`<rect x="${dx}" y="${cy-H*.34}" width="${H*.18}" height="${H*.56}" rx="1" fill="none" stroke="${edge}" stroke-width=".7"/>`}
+    for(const dx of [x0+nose+H*.12,x1-up*1.06])g+=`<rect x="${dx}" y="${cy-H*.34}" width="${H*.18}" height="${H*.56}" rx="1" fill="none" stroke="${edge}" stroke-width=".7"/>`;
+    // over-wing exit and, on long cabins, a mid-cabin door
+    g+=`<rect x="${x0+Lx*.47}" y="${cy-H*.2}" width="${H*.13}" height="${H*.3}" rx=".8" fill="none" stroke="${edge}" stroke-width=".55"/>`;
+    if(Lx>140)g+=`<rect x="${x0+Lx*.62}" y="${cy-H*.34}" width="${H*.18}" height="${H*.56}" rx="1" fill="none" stroke="${edge}" stroke-width=".7"/>`;
+    // forward cargo hold door on the lower body
+    g+=`<rect x="${x0+Lx*.2}" y="${cy+H*.18}" width="${H*.36}" height="${H*.2}" rx=".6" fill="none" stroke="${edge}" stroke-width=".5"/>`}
   else g+=`<rect x="${x0+nose+H*.4}" y="${top+H*.16}" width="${H*1.6}" height="${H*.56}" rx="1.5" fill="none" stroke="${edge}" stroke-width=".9"/>`;
+  // APU exhaust at the tail cone, beacon (top and belly) and tail strobe
+  g+=`<ellipse cx="${x1-H*.05}" cy="${top+H*.28}" rx="${(H*.07).toFixed(2)}" ry="${(H*.06).toFixed(2)}" fill="${ink}" opacity=".75"/>`;
+  {const lr=Math.max(.45,H*.055);g+=`<circle cx="${x0+Lx*.46}" cy="${top-lr*.4}" r="${lr}" fill="#E5322D"/><circle cx="${x0+Lx*.52}" cy="${bot+lr*.3}" r="${lr}" fill="#E5322D"/><circle cx="${x1-H*.02}" cy="${top+H*.42}" r="${lr*.9}" fill="#FFFFFF" stroke="${edge}" stroke-width=".25"/>`}
   // near horizontal stabilizer
   if(!A.tt)g+=`<path d="M${x1-H*2.05} ${cy-H*.12}L${x1-H*.45} ${cy-H*.33}L${x1-H*.1} ${cy-H*.31}L${x1-H*.95} ${cy-H*.06}Z" fill="${wing}" stroke="${edge}" stroke-width=".6"/>`;
   if(A.hw){
@@ -2553,6 +2567,7 @@ function planeArt(m,lv,fly){lv=lv||S.livery;const A=m.a,id="pa"+(artSeq++);
         `<path d="M${ex+L2*.98} ${ey+H2*.3}L${ex+L2*1.26} ${my}L${ex+L2*.98} ${ey+H2*.7}Z" fill="${ink}" opacity=".7"/>`+
         `<path d="M${ex+L2*.8} ${ey+H2*.1}L${ex+L2*1.03} ${ey+H2*.25}L${ex+L2*1.03} ${ey+H2*.75}L${ex+L2*.8} ${ey+H2*.9}Z" fill="${steel}"/>`+
         `<path d="M${ex+L2*.07} ${ey+H2*.03}Q${ex+L2*.45} ${ey-H2*.05} ${ex+L2*.85} ${ey+H2*.08}L${ex+L2*.85} ${ey+H2*.92}Q${ex+L2*.45} ${ey+H2*1.05} ${ex+L2*.07} ${ey+H2*.97}Z" fill="${body}" stroke="${edge}" stroke-width=".7"/>`+
+        `<path d="M${ex+L2*.07} ${ey+H2*.03}Q${ex+L2*.45} ${ey-H2*.05} ${ex+L2*.85} ${ey+H2*.08}L${ex+L2*.85} ${ey+H2*.92}Q${ex+L2*.45} ${ey+H2*1.05} ${ex+L2*.07} ${ey+H2*.97}Z" fill="url(#${id}n)"/>`+
         `<path d="M${ex+L2*.09} ${ey+H2*.03}Q${ex-L2*.03} ${my} ${ex+L2*.09} ${ey+H2*.97}L${ex+L2*.17} ${ey+H2*.985}L${ex+L2*.17} ${ey+H2*.015}Z" fill="#C7CED7" stroke="${edge}" stroke-width=".5"/>`+
         `<path d="M${ex+L2*.21} ${ey+H2*.01}L${ex+L2*.29} ${ey}L${ex+L2*.29} ${ey+H2}L${ex+L2*.21} ${ey+H2*.99}Z" fill="${tail}"/>`+
         `<path d="M${ex+L2*.12} ${ey+H2*.86}Q${ex+L2*.5} ${ey+H2*.99} ${ex+L2*.85} ${ey+H2*.82}" fill="none" stroke="#000" stroke-opacity=".13" stroke-width="${H2*.14}"/>`+
@@ -2561,7 +2576,10 @@ function planeArt(m,lv,fly){lv=lv||S.livery;const A=m.a,id="pa"+(artSeq++);
     g+=eng(wx-EL*.58,bot-H*.1,1);
     g+=`<path d="M${wx} ${wr}L${tx} ${ty}L${tx+Lx*.03} ${ty+H*.03}L${wx+Lx*.215} ${wr+H*.12}L${wx+Lx*.03} ${wr+H*.15}Q${wx-Lx*.01} ${wr+H*.1} ${wx} ${wr}Z" fill="${wing}" stroke="${edge}" stroke-width=".6"/>`+
        `<path d="M${wx+Lx*.03} ${wr+H*.15}L${wx+Lx*.215} ${wr+H*.12}L${tx+Lx*.03} ${ty+H*.03}" fill="none" stroke="${wingD}" stroke-width="${Math.max(.7,H*.06)}"/>`+
-       `<path d="M${tx-Lx*.012} ${ty+H*.02}L${tx+H*.16} ${ty-H*.5}L${tx+H*.36} ${ty-H*.5}L${tx+Lx*.03} ${ty+H*.03}Z" fill="${tail}" stroke="${edge}" stroke-width=".4"/>`}
+       `<path d="M${tx-Lx*.012} ${ty+H*.02}L${tx+H*.16} ${ty-H*.5}L${tx+H*.36} ${ty-H*.5}L${tx+Lx*.03} ${ty+H*.03}Z" fill="${tail}" stroke="${edge}" stroke-width=".4"/>`;
+    g+=`<path d="M${wx} ${wr}L${tx} ${ty}L${tx+Lx*.03} ${ty+H*.03}L${wx+Lx*.215} ${wr+H*.12}L${wx+Lx*.03} ${wr+H*.15}Q${wx-Lx*.01} ${wr+H*.1} ${wx} ${wr}Z" fill="url(#${id}w)"/>`;
+    {const ax=wx+Lx*.215,ay=wr+H*.12,bx=tx+Lx*.03,by=ty+H*.03;for(const t of [.15,.42,.68]){const fx=ax+(bx-ax)*t,fy=ay+(by-ay)*t;g+=`<ellipse cx="${(fx+H*.12).toFixed(2)}" cy="${(fy+H*.02).toFixed(2)}" rx="${(H*.22).toFixed(2)}" ry="${(H*.055).toFixed(2)}" transform="rotate(${(Math.atan2(by-ay,bx-ax)*180/Math.PI).toFixed(1)} ${fx.toFixed(2)} ${fy.toFixed(2)})" fill="${wingD}" stroke="${edge}" stroke-width=".3"/>`}}
+    g+=`<circle cx="${tx+H*.3}" cy="${ty-H*.46}" r="${Math.max(.45,H*.055)}" fill="#2ECC71"/>`}
   return `<svg class="art${fly?"":" gnd"}" viewBox="${vx.toFixed(2)} ${vy.toFixed(2)} ${vw.toFixed(2)} ${vh.toFixed(2)}" role="img" aria-label="${m.name}">${g}</svg>`}
 let mktCat="all";
 function fleetHTML(){
@@ -2599,7 +2617,9 @@ function liverySheet(st){st.lv=st.lv||{...S.livery};st.m=st.m||(S.fleet.length?S
      <div class="stack" style="gap:6px"><span class="eyebrow">โลโก้</span><div class="logos">${Object.entries(LOGOS).map(([k,[n]])=>`<button data-logo="${k}" class="${lv.logo===k?"on":""}"><span class="lg" style="background:${lv.tail}">${logoSVG({...lv,logo:k},22,onCol(lv.tail))}</span><span>${n}</span></button>`).join("")}</div></div>
      <div class="stack" style="gap:6px"><span class="eyebrow">สีโลโก้</span>${lsw("logoCol")}</div>
      <div class="stack" style="gap:6px"><span class="eyebrow">สีรองของโลโก้ (โลโก้แบบ 2 สี)</span>${lsw("logoAcc")}</div>
-     <div class="stack" style="gap:6px"><span class="eyebrow">ชื่อสายการบินบนลำตัว</span><div class="seg"><button data-titles="1" class="${lv.titles!==false?"on":""}">แสดงชื่อ</button><button data-titles="0" class="${lv.titles===false?"on":""}">ไม่แสดง</button></div></div>
+     <div class="stack" style="gap:6px"><span class="eyebrow">ชื่อบนลำตัวเครื่อง</span><div class="seg"><button data-titles="1" class="${lv.titles!==false?"on":""}">แสดงชื่อ</button><button data-titles="0" class="${lv.titles===false?"on":""}">ไม่แสดง</button></div>
+       ${lv.titles!==false?`<label class="f">ข้อความบนลำตัว (เว้นว่าง = ใช้ชื่อบริษัท)<input id="lvtitle" type="text" maxlength="22" value="${esc(lv.titleText||"")}" placeholder="${esc(S.name)}"></label>
+       <div class="seg">${Object.entries(TITLE_FONTS).map(([k,[n,f,w,st]])=>`<button data-tfont="${k}" class="${(lv.titleFont||"modern")===k?"on":""}" style="font-family:${f};font-weight:${w}${st?";font-style:"+st:""}">${n}</button>`).join("")}</div>`:""}</div>
      <div class="row"><button class="btn" style="flex:1" data-x>ยกเลิก</button><button class="btn primary" style="flex:1.4" id="lvsave">ใช้ลายนี้</button></div>`};
   fn.bind=()=>{const lv=st.lv;
     $$("[data-sw]").forEach(b=>b.onclick=()=>{lv[b.dataset.sw]=b.dataset.c;drawSheet()});
@@ -2608,6 +2628,8 @@ function liverySheet(st){st.lv=st.lv||{...S.livery};st.m=st.m||(S.fleet.length?S
     $$("[data-logo]").forEach(b=>b.onclick=()=>{lv.logo=b.dataset.logo;drawSheet()});
     $$("[data-titles]").forEach(b=>b.onclick=()=>{lv.titles=b.dataset.titles==="1";drawSheet()});
     $$("[data-lsw]").forEach(b=>b.onclick=()=>{lv[b.dataset.lsw]=b.dataset.c||null;drawSheet()});
+    $$("[data-tfont]").forEach(b=>b.onclick=()=>{lv.titleFont=b.dataset.tfont;drawSheet()});
+    {const ti=$("#lvtitle");if(ti){ti.oninput=()=>{lv.titleText=ti.value.trim()||null};ti.onchange=()=>{lv.titleText=ti.value.trim()||null;drawSheet()}}}
     $$("[data-preset]").forEach(b=>b.onclick=()=>{const [,t,st,bd,lg]=PRESETS[+b.dataset.preset];Object.assign(lv,{tail:t,stripe:st,body:bd,logo:lg,logoCol:null,logoAcc:null});drawSheet()});
     $$("[data-pat]").forEach(b=>b.onclick=()=>{lv.pat=b.dataset.pat;drawSheet()});
     $$("[data-pm]").forEach(b=>b.onclick=()=>{st.m=b.dataset.pm;drawSheet()});
