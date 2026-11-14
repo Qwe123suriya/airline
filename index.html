@@ -608,6 +608,14 @@ nav.tabs button:active svg{transform:scale(.88)}
 /* logo colour swatches: 'automatic' chip */
 .sw.auto{width:auto;padding:0 10px;border-radius:999px;font-size:12px;background:var(--sky);color:var(--ink)}
 
+/* route opportunities on the routes tab */
+.opps{display:flex;flex-direction:column;gap:6px;border:1.5px solid color-mix(in srgb,var(--accent) 55%,var(--line));background:color-mix(in srgb,var(--accent) 6%,var(--paper));border-radius:16px;padding:12px 14px;margin-bottom:14px}
+.opp{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;padding:7px 0;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.opp>span{display:flex;flex-direction:column;min-width:0}.opp small{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.opp-rt b{font-size:15px}.opp-dem,.opp-pf{text-align:right}.opp-dem b,.opp-pf b{font-size:15px}
+.opp-pf.good b{color:var(--good)}.opp-pf.bad b{color:var(--bad)}
+@media (max-width:400px){.opp{grid-template-columns:1fr auto auto}.opp-dem{display:none!important}}
+
 /* airport wishes (hub and branches) */
 .wish{display:flex;flex-direction:column;gap:6px;border-top:1px dashed var(--line);padding-top:10px}
 .wish-say{font-size:14px;line-height:1.5;background:color-mix(in srgb,var(--route) 9%,var(--paper));border-radius:12px;padding:8px 12px;position:relative}
@@ -2546,10 +2554,10 @@ function wishesOf(code){const key=S.day+":"+S.routes.length+":"+S.unlocked.join(
     const r=S.routes.find(x=>rkind(x)==="pax"&&((x.from===code&&x.dest===w.c.c)||(x.dest===code&&x.from===w.c.c)));
     if(!isOpen(w.c.c))return {...w,st:"lock",R:regionOf(w.c.c)};
     if(!r)return {...w,st:"want"};
-    const L=r.last,left=L?Math.max(0,Math.round(L.demand-L.pax)):0;
-    return {...w,r,st:!r.planes.length?"idle":left>Math.max(20,L.demand*.15)?"short":"happy",left}});
+    const L=r.last,left=L?Math.max(0,Math.round(L.demand-L.pax)):0;   // a route opened today has no results yet
+    return {...w,r,st:!r.planes.length?"idle":!L?"new":left>Math.max(20,L.demand*.15)?"short":"happy",left}});
   wishCache.m.set(code,top);return top}
-function wishMood(w){return w.st==="happy"?["😊","พอใจ","good"]:w.st==="short"?["😟",`ที่นั่งไม่พอ · ตกค้าง ~${w.left.toLocaleString()} คน/วัน`,"warn"]:w.st==="idle"?["😐","เปิดเส้นทางแล้วแต่ยังไม่มีเครื่อง","warn"]:w.st==="lock"?["🔒",`อยากไป แต่${w.R.n}ยังล็อก`,"muted"]:["🙏","อยากให้เปิดเส้นทาง","accent"]}
+function wishMood(w){return w.st==="happy"?["😊","พอใจ","good"]:w.st==="short"?["😟",`ที่นั่งไม่พอ · ตกค้าง ~${w.left.toLocaleString()} คน/วัน`,"warn"]:w.st==="idle"?["😐","เปิดเส้นทางแล้วแต่ยังไม่มีเครื่อง","warn"]:w.st==="new"?["🆕","เพิ่งเปิดเส้นทาง รอผลพรุ่งนี้","muted"]:w.st==="lock"?["🔒",`อยากไป แต่${w.R.n}ยังล็อก`,"muted"]:["🙏","อยากให้เปิดเส้นทาง","accent"]}
 function wishLine(code){const ws=wishesOf(code),c=city(code),w=ws.find(x=>x.st==="want")||ws.find(x=>x.st==="short")||ws.find(x=>x.st==="lock");
   if(!ws.length)return "";if(!w)return `คน${c.n}พอใจกับเที่ยวบินของเราแล้ว 😊`;
   return w.st==="want"?`คน${c.n}อยากไป<b>${w.c.n}</b>มากที่สุด แต่เรายังไม่มีเที่ยวบิน`:w.st==="short"?`คน${c.n}บ่นว่าเที่ยวบินไป<b>${w.c.n}</b>ที่นั่งไม่พอ`:`คน${c.n}อยากไป<b>${w.c.n}</b> แต่ภูมิภาคนั้นยังล็อกอยู่`}
@@ -2557,6 +2565,18 @@ function wishesHTML(code,n){const ws=wishesOf(code).slice(0,n||6);if(!ws.length)
   return `<div class="wish"><div class="wish-say">💭 ${wishLine(code)}</div>${ws.map(w=>{const [e,t,cl]=wishMood(w);
     return `<div class="wish-row"><span class="wish-code">${w.c.c}</span><span class="wish-mid"><b>${w.c.n}</b> <span class="muted small">${w.d.toLocaleString()} กม.</span><span class="wish-bar"><i style="width:${Math.max(6,w.dem/mx*100).toFixed(0)}%"></i></span><span class="small ${cl}">${e} ${t}</span></span>
       <span class="wish-end"><b class="num">${Math.round(w.dem).toLocaleString()}</b><small>คน/วัน</small>${w.st==="want"?`<button class="btn sm primary" data-wish="${code}>${w.c.c}">เปิดเส้นทาง</button>`:w.st==="lock"?`<button class="btn sm" data-wunlock="${w.R.id}">ปลดล็อก</button>`:w.st==="short"||w.st==="idle"?`<button class="btn sm" data-wroute="${w.r.id}">ดูเส้นทาง</button>`:""}</span></div>`}).join("")}</div>`}
+/* Route opportunities: destinations that people at any of your airports want and you don't serve yet,
+   with the profit forecast; best first. */
+function oppsList(){const seen=new Set(),out=[];
+  for(const code of S.bases)for(const w of wishesOf(code)){if(w.st!=="want")continue;const k=[code,w.c.c].sort().join("-");if(seen.has(k))continue;seen.add(k);
+    const fc=routeForecast(code,w.c.c,"pax");out.push({from:code,w,fc,profit:fc.best?fc.best.profit:-1e15})}
+  return out.sort((a,b)=>b.profit-a.profit)}
+function oppsHTML(){if(rseg!=="pax")return "";const L=oppsList().slice(0,5);if(!L.length)return "";
+  return `<div class="opps"><div class="row between"><b>💡 ผู้โดยสารเรียกร้องเส้นทางใหม่</b><span class="muted small">${L.length} เส้นทาง · จากทุกสาขา</span></div>
+    ${L.map(({from,w,fc})=>{const b=fc.best;return `<div class="opp"><span class="opp-rt"><b class="num">${from} → ${w.c.c}</b><small>${city(from).n} → ${w.c.n} · ${w.d.toLocaleString()} กม.</small></span>
+      <span class="opp-dem"><b class="num">${Math.round(w.dem).toLocaleString()}</b><small>คน/วัน</small></span>
+      <span class="opp-pf ${!b?"muted":b.profit>=0?"good":"bad"}"><b class="num">${b?(b.profit>=0?"+":"−")+money(Math.abs(b.profit),true):"—"}</b><small>${b?"กำไร/วัน":"ยังไม่มีเครื่อง"}</small></span>
+      <button class="btn sm primary" data-wish="${from}>${w.c.c}">เปิด</button></div>`}).join("")}</div>`}
 function bindWishes(){
   $$("[data-wish]").forEach(b=>b.onclick=e=>{e.stopPropagation();const [f,t]=b.dataset.wish.split(">");openSheet(newRouteSheet({from:f,kind:"pax",dest:t}))});
   $$("[data-wunlock]").forEach(b=>b.onclick=e=>{e.stopPropagation();openSheet(regionSheet({id:b.dataset.wunlock}))});
@@ -2599,7 +2619,7 @@ function openBranch(code){const c=city(code),cost=branchCost(c);if(S.cash<cost||
   if(tab==="branch")renderView();else refreshAirports()}
 let rseg="pax";
 function routesHTML(){rseg=bm();const RL=S.routes.filter(r=>rkind(r)===rseg),np=S.routes.filter(r=>rkind(r)==="pax").length,nc=S.routes.length-np;
-  return `${firstStepsHTML()}<div class="row between"><h2>เส้นทางบิน</h2><button class="btn primary sm" id="newr">+ เปิดเส้นทาง${rseg==="cargo"?"สินค้า":""}</button></div>
+  return `${firstStepsHTML()}${oppsHTML()}<div class="row between"><h2>เส้นทางบิน</h2><button class="btn primary sm" id="newr">+ เปิดเส้นทาง${rseg==="cargo"?"สินค้า":""}</button></div>
   <div class="seg"><button data-rseg="pax" class="${rseg==="pax"?"on":""}">✈ ผู้โดยสาร <span class="num muted small">${np}</span></button><button data-rseg="cargo" class="${rseg==="cargo"?"on":""}">📦 ขนสินค้า <span class="num muted small">${nc}</span></button></div>
   ${RL.length?`<div class="strips">${RL.map(r=>{const c=r.last||calc(r),dc=city(r.dest);
     const cls=!r.planes.length?"idle":c.profit<0?"loss":"";
@@ -2873,7 +2893,7 @@ function bindView(rest){
   $$("[data-claim]").forEach(b=>b.onclick=()=>claimMission(+b.dataset.claim,b));
   {const pb=$("#perkbtn");if(pb)pb.onclick=()=>openSheet(perkSheet())}
   $$("[data-go]").forEach(b=>b.onclick=()=>{tab=b.dataset.go;renderView(true)});
-  const nr=$("#newr");if(nr)nr.onclick=()=>openSheet(newRouteSheet({from:S.hub,kind:rseg}));
+  bindWishes();const nr=$("#newr");if(nr)nr.onclick=()=>openSheet(newRouteSheet({from:S.hub,kind:rseg}));
   $$("[data-rseg]").forEach(b=>b.onclick=()=>setBM(b.dataset.rseg));
   const gb=$("#gobranch");if(gb)gb.onclick=()=>{tab="branch";renderView(true);window.scrollTo(0,0)};
   $$("[data-route]").forEach(b=>b.onclick=()=>openSheet(routeSheet(+b.dataset.route,{})));
