@@ -477,6 +477,7 @@ details.g code{font-family:var(--f-num);font-size:12.5px;background:var(--sky);p
 .flyover svg{width:84px;height:40px;display:block}
 @keyframes fly{from{transform:translate(-120px,50px) rotate(-6deg)}to{transform:translate(calc(100vw + 40px),-70px) rotate(-10deg)}}
 .unlock{position:fixed;left:50%;top:max(150px,22%);z-index:60;background:var(--paper);border:2px solid var(--accent);border-radius:14px;padding:16px 24px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.25);animation:pop 2.8s both;cursor:pointer;max-width:86vw}
+.unlock .celoff{display:block;margin:8px auto 0;font:inherit;font-size:11.5px;color:var(--muted);background:none;border:0;text-decoration:underline;cursor:pointer;padding:2px 4px}
 .unlock.multi{animation-duration:3.6s;text-align:left;padding:12px 18px;width:min(340px,86vw)}
 .unlock ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:3px}
 .unlock li{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:12px}.unlock li b{display:inline;font-size:15px;margin:0;font-family:var(--f-display)}.unlock li span{flex:none}
@@ -1410,7 +1411,9 @@ function floatCash(n){const host=$(".cash");if(!host||reduce)return;const now=pe
   const f=document.createElement("span");f.className="float "+(n>=0?"good":"bad");f.textContent=(n>=0?"+":"")+money(n,true);host.appendChild(f);setTimeout(()=>f.remove(),1150)}
 const cel=[];
 let celBusy=false,celWait=0;
-function celebrate(k,t){if(afk){afk.log.unshift(`🏅 ${k}: ${t}`);return}cel.push([k,t]);
+const updCelBtn=()=>{const l=$("#cellbl");if(l&&S)l.textContent=S.celOff?"ป๊อปอัปปลดล็อก: ปิดอยู่ · แตะเพื่อเปิด":"ป๊อปอัปปลดล็อก: เปิดอยู่ · แตะเพื่อปิด"};
+function celebrate(k,t){if(afk){afk.log.unshift(`🏅 ${k}: ${t}`);return}if(S&&S.celOff)return;   // player turned the pop-ups off (news still records them)
+  cel.push([k,t]);
   if(!celBusy){clearTimeout(celWait);celWait=setTimeout(nextCel,350)}}   // wait a moment so things unlocked together show as one card
 function nextCel(){if(!cel.length){celBusy=false;return}celBusy=true;
   const seen=new Set(),batch=cel.splice(0,6).filter(([k,t])=>!seen.has(k+t)&&seen.add(k+t)).slice(0,4),lab=k=>k.startsWith("!")?k.slice(1):"ปลดล็อก"+k,short=k=>k.startsWith("!")?k.slice(1).replace(/[!]/g,""):k;
@@ -1418,7 +1421,9 @@ function nextCel(){if(!cel.length){celBusy=false;return}celBusy=true;
   d.innerHTML=batch.length===1?`<div class="eyebrow">${esc(lab(batch[0][0]))}</div><b>${esc(batch[0][1])}</b>`
     :`<div class="eyebrow">🎉 ปลดล็อก ${batch.length} อย่าง</div><ul>${batch.map(([k,t])=>`<li><b>${esc(t)}</b><span class="muted">${esc(short(k))}</span></li>`).join("")}</ul>`;
   document.body.appendChild(d);confetti(innerWidth/2,innerHeight*.16);
+  d.insertAdjacentHTML("beforeend",`<button class="celoff" type="button">ไม่ต้องแสดงป๊อปอัปแบบนี้อีก</button>`);
   const done=()=>{if(!d.isConnected)return;d.remove();nextCel()};d.onclick=done;
+  d.querySelector(".celoff").onclick=e=>{e.stopPropagation();S.celOff=true;cel.length=0;save();d.remove();celBusy=false;toast("ปิดป๊อปอัปปลดล็อกแล้ว · เปิดใหม่ได้ที่เมนู ⋯");updCelBtn()};
   setTimeout(done,reduce?1800:batch.length>1?3600:2600)}
 function flyover(){if(reduce)return;const d=document.createElement("div");d.className="flyover";if(S)d.style.color=S.livery.tail;
   d.innerHTML=`<svg viewBox="0 0 84 40"><defs><linearGradient id="tr" x1="0" x2="1"><stop offset="0" stop-color="currentColor" stop-opacity="0"/><stop offset="1" stop-color="currentColor" stop-opacity=".5"/></linearGradient></defs><rect x="0" y="19" width="44" height="2" rx="1" fill="url(#tr)"/><path fill="currentColor" d="M44 20l10-3 4-12h4l-2 11 14-3c3-.5 6 0 8 1.5v1c-2 1.5-5 2-8 1.5l-14-3 2 11h-4l-4-12-10-3z" transform="translate(0,4) scale(1,.8)"/></svg>`;
@@ -1450,6 +1455,7 @@ function renderApp(){
        <div class="moremenu" id="moremenu" hidden role="menu">
         <div class="muted small" id="hubl"></div>
         <button role="menuitem" id="themebtn"><span class="mi">${themeIcon()}</span><span id="themelbl">โหมดแสง</span></button>
+        <button role="menuitem" id="celtg"><span class="mi">🎉</span><span id="cellbl"></span></button>
         <button role="menuitem" id="help"><span class="mi">?</span>คู่มือระบบ</button>
         <button role="menuitem" id="fsbtn"><span class="mi">⛶</span><span id="fslbl">เต็มจอ (ซ่อนแถบเบราว์เซอร์)</span></button>
         <button role="menuitem" id="spotbtn"><span class="mi">🎵</span>เชื่อม Spotify</button>
@@ -1473,6 +1479,7 @@ function renderApp(){
   if(!window._fsl){window._fsl=1;const up=()=>{const l=$("#fslbl");if(l)l.textContent=fsEl()?"ออกจากเต็มจอ":"เต็มจอ (ซ่อนแถบเบราว์เซอร์)";setTimeout(()=>{if($("#mapfull"))sizeFullMap()},250)};document.addEventListener("fullscreenchange",up);document.addEventListener("webkitfullscreenchange",up)}
   $("#afkbtn").onclick=()=>startAfk();
   $("#themebtn").onclick=cycleTheme;
+  $("#celtg").onclick=()=>{S.celOff=!S.celOff;save();updCelBtn();toast(S.celOff?"ปิดป๊อปอัปปลดล็อกแล้ว (ยังดูได้ในข่าว)":"เปิดป๊อปอัปปลดล็อกแล้ว")};updCelBtn();
   $("#badge").onclick=()=>openSheet(liverySheet({}));
   $$("[data-sp]").forEach(b=>b.onclick=()=>{speed=+b.dataset.sp;paused=false;updateTop()});
   $$("[data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;renderView(true);window.scrollTo(0,0)});
@@ -2446,6 +2453,12 @@ function routesHTML(){rseg=bm();const RL=S.routes.filter(r=>rkind(r)===rseg),np=
   <div class="panel row between"><div><div class="eyebrow">สาขา</div><div class="small muted">${S.bases.join(" · ")}</div></div><button class="btn sm" id="gobranch">จัดการสาขา</button></div>`;
 }
 let artSeq=0;
+/* wingtip shape of each type, as on the real aircraft */
+const TIPS={a320:"sharklet",a321:"sharklet","321f":"sharklet",a339:"sharklet","33f":"sharklet",e90f:"sharklet",
+  b738:"blended","738f":"blended","75f":"blended","763f":"blended",
+  b789:"raked",b78x:"raked",b77w:"raked",b748:"raked",b74f:"raked",b77f:"raked","78f8":"raked",
+  a359:"curved",a35k:"curved","350f":"curved",a388:"fence",m11f:"fence",a220:"none",e190:"none",a124:"none"};
+const tipOf=m=>TIPS[m.id]||(m.a&&m.a.prop?"none":"sharklet");
 // fuselage title lettering: [label, font stack, weight, style]
 const TITLE_FONTS={modern:["โมเดิร์น","Chakra Petch,Anuphan,sans-serif",700],classic:["คลาสสิก","Noto Serif Thai,Georgia,Times New Roman,serif",700],light:["บางเรียบหรู","Anuphan,sans-serif",400],italic:["เอียงเร็ว","Chakra Petch,Anuphan,sans-serif",700,"italic"]};
 const motif=(d,x,y,z,col,op)=>`<path d="${d}" transform="translate(${(x-z/2).toFixed(2)} ${(y-z/2).toFixed(2)}) scale(${(z/24).toFixed(4)})" fill="${col}"${op!=null?` opacity="${op}"`:""}/>`;
@@ -2576,10 +2589,17 @@ function planeArt(m,lv,fly){lv=lv||S.livery;const A=m.a,id="pa"+(artSeq++);
     g+=eng(wx-EL*.58,bot-H*.1,1);
     g+=`<path d="M${wx} ${wr}L${tx} ${ty}L${tx+Lx*.03} ${ty+H*.03}L${wx+Lx*.215} ${wr+H*.12}L${wx+Lx*.03} ${wr+H*.15}Q${wx-Lx*.01} ${wr+H*.1} ${wx} ${wr}Z" fill="${wing}" stroke="${edge}" stroke-width=".6"/>`+
        `<path d="M${wx+Lx*.03} ${wr+H*.15}L${wx+Lx*.215} ${wr+H*.12}L${tx+Lx*.03} ${ty+H*.03}" fill="none" stroke="${wingD}" stroke-width="${Math.max(.7,H*.06)}"/>`+
-       `<path d="M${tx-Lx*.012} ${ty+H*.02}L${tx+H*.16} ${ty-H*.5}L${tx+H*.36} ${ty-H*.5}L${tx+Lx*.03} ${ty+H*.03}Z" fill="${tail}" stroke="${edge}" stroke-width=".4"/>`;
+       "";
+    const tip=tipOf(m),ws=`stroke="${edge}" stroke-width=".4"`;let nav=[tx,ty];
+    if(tip==="sharklet"){g+=`<path d="M${tx-Lx*.012} ${ty+H*.02}Q${tx+H*.04} ${ty-H*.06} ${tx+H*.16} ${ty-H*.5}L${tx+H*.36} ${ty-H*.5}Q${tx+H*.24} ${ty-H*.08} ${tx+Lx*.03} ${ty+H*.03}Z" fill="${tail}" ${ws}/>`;nav=[tx+H*.27,ty-H*.47]}
+    else if(tip==="blended"){g+=`<path d="M${tx-Lx*.015} ${ty+H*.02}C${tx+H*.12} ${ty-H*.02} ${tx+H*.14} ${ty-H*.3} ${tx+H*.2} ${ty-H*.7}L${tx+H*.4} ${ty-H*.7}C${tx+H*.34} ${ty-H*.3} ${tx+H*.32} ${ty-H*.04} ${tx+Lx*.03} ${ty+H*.03}Z" fill="${tail}" ${ws}/>`;nav=[tx+H*.3,ty-H*.66]}
+    else if(tip==="curved"){g+=`<path d="M${tx-Lx*.02} ${ty+H*.02}C${tx+H*.25} ${ty} ${tx+H*.38} ${ty-H*.22} ${tx+H*.46} ${ty-H*.56}L${tx+H*.56} ${ty-H*.53}C${tx+H*.5} ${ty-H*.14} ${tx+H*.34} ${ty+H*.05} ${tx+Lx*.03} ${ty+H*.03}Z" fill="${tail}" ${ws}/>`;nav=[tx+H*.5,ty-H*.52]}
+    else if(tip==="raked"){g+=`<path d="M${tx-Lx*.01} ${ty+H*.005}L${tx+H*.75} ${ty-H*.05}L${tx+Lx*.03} ${ty+H*.03}Z" fill="${wing}" ${ws}/>`;nav=[tx+H*.66,ty-H*.04]}
+    else if(tip==="fence"){g+=`<path d="M${tx} ${ty+H*.01}L${tx+H*.1} ${ty-H*.28}L${tx+H*.26} ${ty-H*.28}L${tx+Lx*.03} ${ty+H*.02}Z" fill="${tail}" ${ws}/><path d="M${tx+H*.03} ${ty+H*.04}L${tx+H*.14} ${ty+H*.24}L${tx+H*.25} ${ty+H*.24}L${tx+Lx*.03} ${ty+H*.05}Z" fill="${tail}" ${ws}/>`;nav=[tx+H*.18,ty-H*.25]}
+    g+=`<circle cx="${nav[0].toFixed(2)}" cy="${nav[1].toFixed(2)}" r="${Math.max(.45,H*.055)}" fill="#E5322D"/>`;
     g+=`<path d="M${wx} ${wr}L${tx} ${ty}L${tx+Lx*.03} ${ty+H*.03}L${wx+Lx*.215} ${wr+H*.12}L${wx+Lx*.03} ${wr+H*.15}Q${wx-Lx*.01} ${wr+H*.1} ${wx} ${wr}Z" fill="url(#${id}w)"/>`;
     {const ax=wx+Lx*.215,ay=wr+H*.12,bx=tx+Lx*.03,by=ty+H*.03;for(const t of [.15,.42,.68]){const fx=ax+(bx-ax)*t,fy=ay+(by-ay)*t;g+=`<ellipse cx="${(fx+H*.12).toFixed(2)}" cy="${(fy+H*.02).toFixed(2)}" rx="${(H*.22).toFixed(2)}" ry="${(H*.055).toFixed(2)}" transform="rotate(${(Math.atan2(by-ay,bx-ax)*180/Math.PI).toFixed(1)} ${fx.toFixed(2)} ${fy.toFixed(2)})" fill="${wingD}" stroke="${edge}" stroke-width=".3"/>`}}
-    g+=`<circle cx="${tx+H*.3}" cy="${ty-H*.46}" r="${Math.max(.45,H*.055)}" fill="#2ECC71"/>`}
+  }
   return `<svg class="art${fly?"":" gnd"}" viewBox="${vx.toFixed(2)} ${vy.toFixed(2)} ${vw.toFixed(2)} ${vh.toFixed(2)}" role="img" aria-label="${m.name}">${g}</svg>`}
 let mktCat="all";
 function fleetHTML(){
@@ -2979,15 +2999,20 @@ const along=(pts,t)=>{const f=clamp(t,0,1)*(pts.length-1),i=Math.min(pts.length-
 const SILS={},SILD={};
 const ring=pts=>{let a=0;for(let i=0;i<pts.length;i++){const p=pts[i],q=pts[(i+1)%pts.length];a+=p[0]*q[1]-q[0]*p[1]}if(a>0)pts=pts.slice().reverse();return "M"+pts.map(p=>p[0].toFixed(2)+" "+p[1].toFixed(2)).join("L")+"Z"};
 // Top-view aircraft: white airframe with a livery outline, coloured fin and engines
-function silPath(m){if(SILS[m.id])return SILS[m.id];const A=m.a,L=20,hl=L/2,w=L*A.fw/2,s=L*A.sr/2,rc=L*(A.prop?.16:.21),xr=A.prop?L*.1:L*.07,sw=A.prop?L*.015:(s-w)*(A.big?.62:.56),tc=rc*(A.prop?.55:.3);
+function silPath(m){if(SILS[m.id])return SILS[m.id];const tip=tipOf(m);const A=m.a,L=20,hl=L/2,w=L*A.fw/2,s=L*A.sr/2,rc=L*(A.prop?.16:.21),xr=A.prop?L*.1:L*.07,sw=A.prop?L*.015:(s-w)*(A.big?.62:.56),tc=rc*(A.prop?.55:.3);
   const fus=new Path2D(`M${hl} 0C${hl} ${-w*.95} ${hl-w*1.5} ${-w} ${hl-w*3} ${-w}L${-hl+L*.3} ${-w}C${-hl+L*.15} ${-w} ${-hl+L*.04} ${-w*.45} ${-hl} ${-w*.12}L${-hl} ${w*.12}C${-hl+L*.04} ${w*.45} ${-hl+L*.15} ${w} ${-hl+L*.3} ${w}L${hl-w*3} ${w}C${hl-w*1.5} ${w} ${hl} ${w*.95} ${hl} 0Z`);
-  const parts=[fus],acc=[],eng=[];
+  const parts=[fus],acc=[],eng=[],engF=[],nav=[],flap=[];
   const ts=L*(A.prop?.3:.36)/2,tx=-hl+L*.2,tsw=A.prop?L*.02:(ts-w*.5)*.8,tcs=L*(A.prop?.06:.05);
   for(const g of [-1,1]){
     parts.push(new Path2D(`M${xr} ${g*w*.7}L${xr-sw} ${g*s}Q${xr-sw-tc*.5} ${g*s*1.02} ${xr-sw-tc} ${g*s}Q${xr-rc*.78} ${g*s*.42} ${xr-rc} ${g*w*.7}Z`));
-    if(!A.prop){const t=new Path2D();t.ellipse(xr-sw-tc*.5,g*s,tc*.55,Math.max(.35,w*.28),0,0,Math.PI*2);acc.push(t)}
+    // wingtip: raked tips stretch the wing, winglets show as a coloured edge, A380/MD-11 fences as a small bar
+    if(tip==="raked")parts.push(new Path2D(`M${xr-sw} ${g*s*.97}L${xr-sw-tc*1.7} ${g*s*1.08}L${xr-sw-tc} ${g*s*.99}Z`));
+    else if(tip!=="none"&&!A.prop){const t=new Path2D();t.ellipse(xr-sw-tc*.5,g*s,tc*(tip==="fence"?.35:tip==="curved"?.7:.55),Math.max(.35,w*(tip==="blended"?.34:.28)),0,0,Math.PI*2);acc.push(t)}
+    nav.push([xr-sw-tc*(tip==="raked"?1.5:.5),g*s*(tip==="raked"?1.07:1.03),g<0?"#E5322D":"#2ECC71"]);
+    {const y0=w*.85,y1=s*.9,te=y=>{const t=(y-w*.7)/(s-w*.7);return (xr-rc)+t*((xr-sw-tc)-(xr-rc))};flap.push(new Path2D(`M${te(y0)+rc*.14} ${g*y0}L${te(y1)+tc*.4} ${g*y1}`))}   // flap line just inside the trailing edge
     parts.push(new Path2D(`M${tx} ${g*w*.35}L${tx-tsw} ${g*ts}Q${tx-tsw-tcs*.5} ${g*ts*1.02} ${tx-tsw-tcs} ${g*ts}L${tx-L*.12} ${g*w*.35}Z`));
-    for(const f of A.pods){const y=w+(s-w)*f,xle=xr-sw*f,pl=A.prop?L*.12:L*.1,pw=Math.max(.5,w*(A.prop?.45:.55));const e=new Path2D();e.ellipse(xle+pl*.1,g*y,pl/2,pw,0,0,Math.PI*2);eng.push(e)}}
+    for(const f of A.pods){const y=w+(s-w)*f,xle=xr-sw*f,pl=A.prop?L*.12:L*.1,pw=Math.max(.5,w*(A.prop?.45:.55));const e=new Path2D();e.ellipse(xle+pl*.1,g*y,pl/2,pw,0,0,Math.PI*2);eng.push(e);
+      const fp=new Path2D();if(A.prop)fp.ellipse(xle+pl*.62,g*y,pl*.06,pw*2.2,0,0,Math.PI*2);else fp.ellipse(xle+pl*.55,g*y,pl*.08,pw*.8,0,0,Math.PI*2);engF.push(fp)}}
   const fin=new Path2D(`M${-hl+L*.02} 0L${-hl+L*.24} ${-w*.22}L${-hl+L*.24} ${w*.22}Z`);acc.push(fin);
   const win=new Path2D(`M${hl-w*.55} ${-w*.5}Q${hl-w*.2} 0 ${hl-w*.55} ${w*.5}L${hl-w*1.05} ${w*.42}Q${hl-w*.8} 0 ${hl-w*1.05} ${-w*.42}Z`);
   const spine=new Path2D(`M${hl-w*2.2} ${-w*.22}L${-hl+L*.2} ${-w*.22}L${-hl+L*.2} ${w*.22}L${hl-w*2.2} ${w*.22}Z`);
@@ -2997,7 +3022,7 @@ function silPath(m){if(SILS[m.id])return SILS[m.id];const A=m.a,L=20,hl=L/2,w=L*
   const noseCap=new Path2D(`M${hl+1} ${-w*1.2}L${hl-w*2.6} ${-w*1.2}L${hl-w*2.6} ${w*1.2}L${hl+1} ${w*1.2}Z`);
   const thin=new Path2D(`M${hl-w*2.6} ${-w*.1}L${-hl+L*.2} ${-w*.1}L${-hl+L*.2} ${w*.1}L${hl-w*2.6} ${w*.1}Z`);
   const shade=new Path2D(`M${hl-w*1.6} ${w*.25}L${-hl+L*.28} ${w*.25}L${-hl+L*.28} ${w*.95}L${hl-w*2.6} ${w*.95}Z`);
-  return SILS[m.id]={parts,acc,eng,win,spine,shade,spineRear,rearFill,ribs,noseCap,thin}}
+  return SILS[m.id]={parts,acc,eng,engF,nav,flap,win,spine,shade,spineRear,rearFill,ribs,noseCap,thin}}
 const aircraftKind=m=>m;
 function drawAircraft(x,pos,ang,m,scale,col,edge,alt){const sz=(.55+m.len/80)*scale,P=silPath(m);
   if(alt>0){x.save();x.translate(pos[0]+alt*2.5,pos[1]+alt*3.5);x.rotate(ang);x.scale(sz,sz);x.fillStyle=`rgba(10,20,40,${(.1*alt).toFixed(3)})`;for(const q of P.parts)x.fill(q);x.restore()}
@@ -3006,7 +3031,9 @@ function drawAircraft(x,pos,ang,m,scale,col,edge,alt){const sz=(.55+m.len/80)*sc
   // soft halo in the livery colour so the plane stands out on any map colour
   x.strokeStyle="rgba(22,34,52,.55)";x.lineWidth=ol;
   x.fillStyle="#DDE4EC";for(const q of wings){x.fill(q);x.stroke(q)}
-  x.fillStyle=livPat(S.livery)==="belly"?col:"#3A4A5E";for(const q of P.eng)x.fill(q);
+  x.strokeStyle="rgba(60,75,95,.45)";x.lineWidth=.35;for(const q of P.flap)x.stroke(q);x.strokeStyle="rgba(22,34,52,.55)";x.lineWidth=ol;
+  x.fillStyle=livPat(S.livery)==="belly"?col:"#C3CCD6";for(const q of P.eng){x.fill(q);x.stroke(q)}
+  x.fillStyle="#2B3746";for(const q of P.engF)x.fill(q);
   x.fillStyle="#FFFFFF";x.fill(fus);x.stroke(fus);
   const PT=livPat(S.livery);
   x.save();x.clip(fus);x.fillStyle="rgba(120,140,165,.18)";x.fill(P.shade);x.fillStyle=col;
@@ -3020,6 +3047,7 @@ function drawAircraft(x,pos,ang,m,scale,col,edge,alt){const sz=(.55+m.len/80)*sc
   x.restore();
   x.fillStyle=col;for(const q of P.acc)x.fill(q);
   if(sz*20>12){x.fillStyle="#22364E";x.fill(P.win)}
+  if(sz*20>10)for(const [nx,ny,nc] of P.nav){x.fillStyle=nc;x.beginPath();x.arc(nx,ny,.55,0,7);x.fill()}
   x.restore()}
 let animDay=0, view=null, landCv=null, landKey="", baseCv=null, baseKey="", baseView=null, lastCamKey="", camMoveT=0, mapHits=[], selCity=null, camMode="world", camFocus=null, fogCv=null, fogKey="", unlockAnim=null;
 const kOf=cy=>Math.cos(clamp(cy,-60,60)*Math.PI/180);
