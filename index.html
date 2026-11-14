@@ -608,6 +608,9 @@ nav.tabs button:active svg{transform:scale(.88)}
 /* logo colour swatches: 'automatic' chip */
 .sw.auto{width:auto;padding:0 10px;border-radius:999px;font-size:12px;background:var(--sky);color:var(--ink)}
 
+/* mode sections (routes / fleet tabs in cargo mode) */
+.modesec{display:flex;align-items:center;gap:10px;margin:22px 0 4px;font-family:var(--f-display);font-weight:600;font-size:15px;color:var(--port)}.modesec::after{content:"";flex:1;height:1px;background:var(--line)}
+
 /* cargo kinds */
 .advice{display:flex;align-items:center;gap:10px;justify-content:space-between;font-size:13.5px;line-height:1.5;background:var(--paper);border:1.5px solid color-mix(in srgb,var(--accent) 50%,var(--line));border-radius:12px;padding:8px 10px}.advice .btn{flex:none}
 .kbox{display:flex;flex-direction:column;gap:8px;background:var(--sky);border-radius:14px;padding:12px}
@@ -1633,7 +1636,8 @@ const ICONS={
  fleet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M10.5 3.5c0-1 3-1 3 0V9l7 4v2l-7-2v4.5l2.5 2V21l-4-1-4 1v-1.5l2.5-2V13l-7 2v-2l7-4z"/></svg>',
  map:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg>',
  money:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5M4 19h16M8 15l4-4 3 3 5-6"/></svg>'};
-const TABS=[["home","ภาพรวม"],["map","แผนที่"],["routes","เส้นทาง"],["branch","สาขา"],["fleet","ฝูงบิน"],["cargo","สินค้า"],["money","การเงิน"]];
+const TABS_ALL=[["home","ภาพรวม"],["map","แผนที่"],["routes","เส้นทาง"],["branch","สาขา"],["fleet","ฝูงบิน"],["cargo","สินค้า"],["money","การเงิน"]];
+const TABS=TABS_ALL.filter(t=>t[0]!=="cargo");   // freight lives in the routes / fleet tabs (cargo mode)
 
 function renderApp(){
   if(!S){renderStart();return}
@@ -1702,6 +1706,7 @@ function renderView(anim){
   if(tab==="fleet")v.innerHTML=fleetHTML();
   if(tab==="money")v.innerHTML=moneyHTML();
   if(tab==="branch")v.innerHTML=branchHTML();
+  if(tab==="cargo")tab="routes";
   if(tab==="cargo")v.innerHTML=cargoHTML();
   v.classList.toggle("enter",!!anim);
   bindView();updateTop();
@@ -2240,7 +2245,7 @@ function airCargoHTML(){const L=S.last||{},fr=S.fleet.filter(p=>!model(p.m).seat
     <div class="spec"><span>บรรทุก</span><span class="num">${m.cargo} ตัน</span><span>พิสัยบิน</span><span class="num">${m.range.toLocaleString()} กม.</span><span>ค่าบิน/กม.</span><span class="num">฿${m.cpk}</span></div>
     <button class="btn ${S.cash>=priceFor(m)?"primary":""} sm" data-buy="${m.id}" ${S.cash>=priceFor(m)?"":"disabled"}>${priceFor(m)<m.price?`🏷️ ดีล ซื้อ ${money(priceFor(m))}`:`ซื้อ ${money(m.price)}`}</button></div>`).join("")}</div>`}
 function seaHTML(){const lp=S.lanes.reduce((a,l)=>a+laneAvg(l),0),tpd=S.lanes.reduce((a,l)=>a+laneCalc(l).teu,0);
-  return `<div class="row between"><h2>ขนส่งทางเรือ</h2><button class="btn primary sm" id="newlane">+ เปิดเส้นทางเรือ</button></div>
+  return `<div class="row between"><h2>🚢 เส้นทางเรือ</h2><button class="btn primary sm" id="newlane">+ เปิดเส้นทางเรือ</button></div>
   <div class="stats"><div><div class="k">เรือ</div><div class="v">${S.ships.length} ลำ</div></div><div><div class="k">เส้นทางเรือ</div><div class="v">${S.lanes.length}</div></div>
    <div><div class="k">ตู้/วัน (เฉลี่ย)</div><div class="v">${Math.round(tpd).toLocaleString()} TEU</div></div><div><div class="k">กำไรเรือ/วัน (เฉลี่ย)</div><div class="v ${lp<0?"bad":"good"}">${money(lp,true)}</div></div></div>
   ${suezShut()?`<div class="panel small bad">คลองสุเอซปิดอยู่ เรือที่วิ่งระหว่างเอเชียกับยุโรปต้องอ้อมแหลมกู๊ดโฮป ระยะทางไกลขึ้น</div>`:""}
@@ -2256,6 +2261,11 @@ function seaHTML(){const lp=S.lanes.reduce((a,l)=>a+laneAvg(l),0),tpd=S.lanes.re
   <div class="models">${SHIPS.filter(m=>scat==="all"||shipType(m)===scat).map(m=>`<div class="model">${shipArt(m)}<b>${m.name}</b>${shipBadges(m)}<span class="tag">${m.tag}</span>
     <div class="spec"><span>ความจุ</span><span class="num">${m.teu.toLocaleString()} TEU</span><span>ความเร็ว</span><span class="num">${m.speed} กม./ชม.</span><span>ค่าน้ำมัน/กม.</span><span class="num">฿${m.cpk.toLocaleString()}</span><span>ท่าเรือ</span><span class="num">${m.deep?"น้ำลึกเท่านั้น":"ทุกท่า"}</span></div>
     <button class="btn ${S.cash>=m.price?"primary":""} sm" data-buyship="${m.id}" ${S.cash>=m.price?"":"disabled"}>ซื้อ ${money(m.price)}</button></div>`).join("")}</div>`}
+/* One mode switch for everything: passenger mode shows passenger routes / aircraft / airports; cargo mode shows
+   freight routes AND sea lanes on the routes tab, freighters AND ships on the fleet tab, airports AND ports on branches.
+   The separate cargo tab is gone; its pieces are reused here. */
+function seaPart(part){const h=seaHTML(),k=h.indexOf("<h2>กองเรือของคุณ</h2>"),i=k>=0?k:h.indexOf("<h2>อู่ต่อเรือ");return part==="lanes"?h.slice(0,i):h.slice(i)}
+function cargoCalHTML(){const h=airCargoHTML(),i=h.indexOf('<div class="row between"><h2>เส้นทางที่ขนสินค้า</h2>');return i>0?h.slice(0,i):""}
 function bindCargo(){
   $$("[data-cseg]").forEach(b=>b.onclick=()=>{cargoSeg=b.dataset.cseg;renderView()});
   const nl=$("#newlane");if(nl)nl.onclick=()=>openSheet(newLaneSheet({}));
@@ -2279,7 +2289,7 @@ function newLaneSheet(st){
   fn.bind=()=>{const gp=$("#gopbr");if(gp){gp.onclick=()=>{sheetFn=null;$("#sheet").innerHTML="";tab="branch";brSeg="sea";renderView(true)};return}
     $("#lf").onchange=e=>{st.from=e.target.value;st.to=null;drawSheet()};
     $$("[data-lto]").forEach(b=>b.onclick=()=>{st.to=b.dataset.lto;drawSheet();const s2=$(".sheet");s2.scrollTop=s2.scrollHeight});
-    const o=$("#openl");if(o)o.onclick=()=>{S.cash-=20e6;const l={id:S.nid++,from:st.from,to:st.to,ships:[],h:[]};S.lanes.push(l);addNews(`🚢 เปิดเส้นทางเรือ ${port(l.from).n} → ${port(l.to).n}`);save();tab="cargo";cargoSeg="sea";openSheet(laneSheet(l.id,{buy:1}))}};
+    const o=$("#openl");if(o)o.onclick=()=>{S.cash-=20e6;const l={id:S.nid++,from:st.from,to:st.to,ships:[],h:[]};S.lanes.push(l);addNews(`🚢 เปิดเส้นทางเรือ ${port(l.from).n} → ${port(l.to).n}`);if(bm()!=="cargo")setBM("cargo");save();tab="routes";renderView();openSheet(laneSheet(l.id,{buy:1}))}};
   return fn}
 function laneSheet(lid,st){
   const fn=()=>{const l=S.lanes.find(x=>x.id===lid);if(!l)return head("ไม่พบเส้นทางเรือ");const c=laneCalc(l),a=port(l.from),b=port(l.to),v=viaText(c.sp);
@@ -2634,7 +2644,7 @@ function ratingHTML(){const R=S.rating;if(!R)return "";const cats=RCATS.map(([k,
    <div class="rating"><div class="rbig"><div class="n">${R.overall.toFixed(1)}</div>${starsHTML(R.overall,17)}<div class="muted small">โดยรวม</div></div><div class="rsub">${cats}</div></div>
    ${weakest?`<div class="rtip">💡 ด้านที่ควรพัฒนา: <b>${RCATS.find(x=>x[0]===weakest[0])[1]}</b> · ${weakest[1].tip}</div>`:`<div class="rtip">เริ่มบินหรือเดินเรือเพื่อรับเรตติ้งแรก</div>`}${voiceHTML()}</div>`}
 let brReg=null,brSeg="air";
-function branchHTML(){const seg=`<div class="seg"><button data-brseg="air" class="${brSeg==="air"?"on":""}">✈ สาขาสนามบิน <span class="num muted small">${S.bases.length}</span></button><button data-brseg="sea" class="${brSeg==="sea"?"on":""}">⚓ สาขาท่าเรือ <span class="num muted small">${pbList().length}</span></button></div>`;
+function branchHTML(){if(bm()!=="cargo")brSeg="air";const seg=bm()!=="cargo"?"":`<div class="seg"><button data-brseg="air" class="${brSeg==="air"?"on":""}">✈ สาขาสนามบิน <span class="num muted small">${S.bases.length}</span></button><button data-brseg="sea" class="${brSeg==="sea"?"on":""}">⚓ สาขาท่าเรือ <span class="num muted small">${pbList().length}</span></button></div>`;
   return seg+(brSeg==="sea"?portBranchHTML():airBranchHTML())}
 function portBranchHTML(){
   const mine=pbList().map(code=>{const pt=port(code),ls=S.lanes.filter(l=>l.from===code||l.to===code),sh=ls.reduce((a,l)=>a+l.ships.length,0),pf=ls.filter(l=>l.from===code).reduce((a,l)=>a+laneAvg(l),0),lv=pbl(code);
@@ -2740,7 +2750,7 @@ function routesHTML(){rseg=bm();const RL=S.routes.filter(r=>rkind(r)===rseg),np=
       <div style="min-width:0"><div class="iata">${r.from} → ${r.dest}</div>${r.cmp?`<div class="cmpchip cmpline">⚔️ ${esc(r.cmp.rv)} · คุณได้ ${Math.round((r.cmp.share??compShare(r,priceOf(r)))*100)}%</div>`:""}<div class="sub">${dc.n} · ${c.d.toLocaleString()} กม. · ${rkind(r)==="cargo"?(c.crate?crateText(c):""):money(c.price??r.price,true)}${r.pmode==="auto"&&rkind(r)!=="cargo"?' <span class="tagauto">อัตโนมัติ</span>':""}${c.ground?' · <span class="bad">งดบินพายุ</span>':""}${evMult(r.dest)>1?' · <span class="warn">เทศกาล</span>':""}</div><div class="lf"><i style="width:${Math.round((rkind(r)==="cargo"?(c.ccap?(c.cargo||0)/c.ccap:0):c.lf)*100)}%;${rkind(r)==="cargo"?"background:var(--cargo)":""}"></i></div></div>
       <div class="right"><div class="num ${c.profit<0?"bad":"good"}">${c.profit>=0?"+":""}${money(c.profit,true)}</div><div class="sub">${rkind(r)==="cargo"?`${Math.round(c.cargo||0).toLocaleString()} ตัน`:`${(c.pax||0).toLocaleString()} คน ${trend(r)}`}</div></div>
     </button>`}).join("")}</div>`:`<div class="panel muted">${rseg==="cargo"?"ยังไม่มีเส้นทางขนสินค้า เปิดเส้นทางสินค้าจากสาขาไหนก็ได้ แล้วใส่เครื่องบินขนสินค้า":`ยังไม่มีเส้นทางผู้โดยสาร เส้นทางทุกเส้นออกจากสาขา เช่น ${city(S.hub).n} (${S.hub})`}</div>`}
-  <div class="panel row between"><div><div class="eyebrow">สาขา</div><div class="small muted">${S.bases.join(" · ")}</div></div><button class="btn sm" id="gobranch">จัดการสาขา</button></div>`;
+  <div class="panel row between"><div><div class="eyebrow">สาขา</div><div class="small muted">${S.bases.join(" · ")}</div></div><button class="btn sm" id="gobranch">จัดการสาขา</button></div>${rseg==="cargo"?`<div class="modesec"></div>${seaPart("lanes")}<div class="modesec"><span>🗓️ ฤดูสินค้าและสถิติ</span></div>${cargoCalHTML()}`:""}`;
 }
 let artSeq=0;
 /* wingtip shape of each type, as on the real aircraft */
@@ -2911,7 +2921,7 @@ function fleetHTML(){
   ${KC?`<div class="seg scrollx">${CCLS.map(([k,n])=>`<button data-ccls="${k}" class="${ccls===k?"on":""}">${n}</button>`).join("")}</div><div class="muted small">ใช้ได้เฉพาะเส้นทางขนสินค้า · ขนสินค้าเต็มลำ ได้ค่าระวางต่อตัน</div>`:`<div class="seg scrollx">${CATS.filter(([k])=>k!=="cargo").map(([k,n])=>`<button data-cat="${k}" class="${mktCat===k?"on":""}">${n}</button>`).join("")}</div><div class="muted small">ใช้ได้เฉพาะเส้นทางผู้โดยสาร · ใต้ท้องเครื่องขนสินค้าได้เล็กน้อย</div>`}
   <div class="models">${list.map(m=>`<div class="model">${planeArt(m)}<b>${m.name}</b><span class="tag">${m.tag}</span>
     <div class="spec"><span>ที่นั่ง</span><span class="num">${m.seats||"—"}</span><span>สินค้า/เที่ยว</span><span class="num">${m.cargo} ตัน</span><span>พิสัยบิน</span><span class="num">${m.range.toLocaleString()} กม.</span><span>ความเร็ว</span><span class="num">${m.speed} กม./ชม.</span><span>ค่าบิน/กม.</span><span class="num">฿${m.cpk}</span></div>
-    <button class="btn ${S.cash>=priceFor(m)?"primary":""} sm" data-buy="${m.id}" ${S.cash>=priceFor(m)?"":"disabled"}>${priceFor(m)<m.price?`🏷️ ดีล ซื้อ ${money(priceFor(m))}`:`ซื้อ ${money(m.price)}`}</button></div>`).join("")}</div>`;
+    <button class="btn ${S.cash>=priceFor(m)?"primary":""} sm" data-buy="${m.id}" ${S.cash>=priceFor(m)?"":"disabled"}>${priceFor(m)<m.price?`🏷️ ดีล ซื้อ ${money(priceFor(m))}`:`ซื้อ ${money(m.price)}`}</button></div>`).join("")}</div>${KC?`<div class="modesec"><span>🚢 เรือ</span></div>${seaPart("fleet")}`:""}`;
 }
 function liverySheet(st){st.lv=st.lv||{...S.livery};st.m=st.m||(S.fleet.length?S.fleet[S.fleet.length-1].m:"a320");
   const fn=()=>{const lv=st.lv,lsw=(key)=>`<div class="swatches"><button class="sw auto ${lv[key]?"":"on"}" data-lsw="${key}" data-c="" aria-label="อัตโนมัติ">อัตโนมัติ</button>${LOGO_SWATCH.map(c=>`<button class="sw ${(lv[key]||"").toLowerCase()===c.toLowerCase()?"on":""}" data-lsw="${key}" data-c="${c}" style="background:${c}" aria-label="${c}"></button>`).join("")}</div>`,sw=(key)=>`<div class="swatches">${SWATCH.map(c=>`<button class="sw ${lv[key].toLowerCase()===c.toLowerCase()?"on":""}" data-sw="${key}" data-c="${c}" style="background:${c}" aria-label="${c}"></button>`).join("")}<label class="sw custom" aria-label="เลือกสีเอง"><input type="color" id="cc-${key}" value="${lv[key]}"><span>+</span></label></div>`;
@@ -3001,7 +3011,7 @@ function moneyHTML(){
 function bindView(rest){
   if(tab==="home"||tab==="map"){bindAirports();if(!rest)bindMap()}
   if(tab==="branch")bindBranch();
-  if(tab==="cargo")bindCargo();
+  bindCargo();
   $$("[data-claim]").forEach(b=>b.onclick=()=>claimMission(+b.dataset.claim,b));
   {const pb=$("#perkbtn");if(pb)pb.onclick=()=>openSheet(perkSheet())}
   $$("[data-go]").forEach(b=>b.onclick=()=>{tab=b.dataset.go;renderView(true)});
