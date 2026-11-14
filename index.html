@@ -1192,7 +1192,14 @@ function compShare(r,price,svc){if(!r.cmp||rkind(r)==="cargo")return 1;
   const me=SERVICE[svc??svcOf(r)].f*(.6+S.rep/125)*Math.pow(base/(price||base),1.5),them=RV_STR*(st/4)*Math.pow(1/r.cmp.fare,1.5);
   return me/(me+them)}
 // Automatic fare: aims for ~90% full on the full schedule — rises when more people want to fly than there are seats, falls when they don't
-function autoPrice(r){const a=city(r.from),b=city(r.dest),d=dist(a,b),base=baseFare(d);
+// Automatic fare = 60% of the way from "fill the seats" to the most profitable fare (cached per route per day; setting it yourself still earns more)
+const AUTO_SMART=.6;
+function autoPrice(r){const key=S.day+":"+r.planes.join(".")+":"+svcOf(r)+":"+(r.cmp?r.cmp.fare.toFixed(2):"-")+":"+S.rep.toFixed(0);
+  if(r._apk===key)return r._apv;const p0=fillPrice(r);if(!r.planes.length){r._apk=key;r._apv=p0;return p0}
+  const base=baseFare(dist(city(r.from),city(r.dest)));let best=p0,bp=calc(r,p0).profit;
+  for(let i=0;i<=24;i++){const pr=Math.round(base*(.7+1.3*i/24)/10)*10,pf=calc(r,pr).profit;if(pf>bp){bp=pf;best=pr}}
+  const v=Math.round((p0+AUTO_SMART*(best-p0))/10)*10;r._apk=key;r._apv=v;return v}
+function fillPrice(r){const a=city(r.from),b=city(r.dest),d=dist(a,b),base=baseFare(d);
   const D0=60*Math.sqrt(a.w*b.w)*distF(d)*(.6+S.rep/125)*SERVICE[svcOf(r)].f*evMult(r.dest)*evMult(r.from)*mktMult()*brBoost(r.from)*brBoost(r.dest)*starMult()*pk("pax")*compShare(r,r.price||base);
   let cap=0;for(const id of r.planes){const p=plane(id);if(!p||p.down>S.day)continue;const m=model(p.m);cap+=legsFor(m,d)*m.seats}
   if(!cap)return base;
@@ -2682,7 +2689,7 @@ function routeSheet(rid,st){
       <div class="seg svcseg">${SERVICE.map((sv,i)=>{const cc=calc(r,price,undefined,i);return `<button data-rsvc="${i}" class="${svcOf(r)===i?"on":""}">${sv.n}<br><span class="num" style="font-size:11.5px">฿${sv.cost}/คน</span><br><span class="num ${cc.profit<0?"bad":"good"}" style="font-size:12px;font-weight:700">${cc.profit>=0?"+":""}${money(cc.profit,true)}</span></button>`}).join("")}</div>
       <div class="muted small">ตัวเลขสีเขียว/แดงใต้ปุ่มคือกำไรต่อวันที่คาดว่าจะได้ ถ้าเลือกบริการนั้น บริการดีขึ้นคนอยากบินมากขึ้นและชื่อเสียงขึ้น แต่ต้นทุนต่อคนสูงขึ้น</div></div>`;
     out+=`${cg?"":`<div class="stack" style="gap:6px"><span class="eyebrow">วิธีตั้งราคาตั๋ว</span><div class="seg"><button data-pmode="auto" class="${r.pmode==="auto"?"on":""}">อัตโนมัติตามคน</button><button data-pmode="manual" class="${r.pmode!=="auto"?"on":""}">ตั้งเอง</button></div>
-      <div class="muted small">${r.pmode==="auto"?"ระบบปรับราคาทุกวัน คนอยากบินมากกว่าที่นั่งก็ขึ้นราคา คนน้อยก็ลดราคา ให้เต็มราว 90% (ช่วง 0.7–1.6 เท่าของราคากลาง) เลื่อนแถบเพื่อเปลี่ยนเป็นตั้งเอง":"ราคาคงที่ตามที่คุณตั้ง ไม่เปลี่ยนตามจำนวนคน"}</div></div>
+      <div class="muted small">${r.pmode==="auto"?"ระบบปรับราคาทุกวัน หาจุดกึ่งกลางระหว่างราคาที่ขายตั๋วได้เต็มลำกับราคาที่กำไรสูงสุด ใช้ได้ดีแต่ยังไม่ดีที่สุด ลองกดตั้งเองแล้วใช้ปุ่ม “กำไรสูงสุด” ถ้าอยากได้เพิ่ม เลื่อนแถบเพื่อเปลี่ยนเป็นตั้งเอง":"ราคาคงที่ตามที่คุณตั้ง ไม่เปลี่ยนตามจำนวนคน"}</div></div>
      <div><div class="row between"><span class="eyebrow">ราคาตั๋ว${auto?" · อัตโนมัติ":""}</span><span class="num" style="font-weight:600;font-size:17px" id="pv">${money(price)}</span></div>
       <input type="range" id="pr" min="${Math.round(c.base*.5)}" max="${Math.round(c.base*2)}" step="10" value="${price}">
       <div class="row between muted num" style="font-size:12px"><span>ถูก</span><span>ราคากลาง ${money(c.base)}</span><span>แพง</span></div>
