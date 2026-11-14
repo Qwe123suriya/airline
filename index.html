@@ -608,6 +608,18 @@ nav.tabs button:active svg{transform:scale(.88)}
 /* logo colour swatches: 'automatic' chip */
 .sw.auto{width:auto;padding:0 10px;border-radius:999px;font-size:12px;background:var(--sky);color:var(--ink)}
 
+/* airport wishes (hub and branches) */
+.wish{display:flex;flex-direction:column;gap:6px;border-top:1px dashed var(--line);padding-top:10px}
+.wish-say{font-size:14px;line-height:1.5;background:color-mix(in srgb,var(--route) 9%,var(--paper));border-radius:12px;padding:8px 12px;position:relative}
+.wish-say b{color:var(--route)}
+.wish-row{display:grid;grid-template-columns:46px 1fr auto;gap:10px;align-items:center;padding:6px 2px;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.wish-row:last-child{border-bottom:0}
+.wish-code{font-family:var(--f-num);font-weight:700;font-size:13px;text-align:center;background:var(--sky);border-radius:8px;padding:6px 0}
+.wish-mid{display:flex;flex-direction:column;gap:2px;min-width:0}.wish-mid b{font-size:14.5px}
+.wish-bar{display:block;height:5px;border-radius:99px;background:var(--line);overflow:hidden;max-width:160px}.wish-bar i{display:block;height:100%;background:var(--route)}
+.wish-end{display:flex;flex-direction:column;align-items:flex-end;gap:3px;text-align:right}.wish-end b{font-size:15px}.wish-end small{font-size:11px;color:var(--muted);margin-top:-3px}
+.wish .accent{color:var(--accent)}.wish .muted{color:var(--muted)}
+
 /* value of buying one more aircraft / ship */
 .enough{font-size:13.5px;line-height:1.5;background:color-mix(in srgb,var(--good) 10%,var(--paper));border:1px solid color-mix(in srgb,var(--good) 35%,var(--line));border-radius:10px;padding:8px 10px;margin:6px 0}
 .vbox{display:flex;flex-direction:column;align-items:flex-end;text-align:right;border-radius:10px;padding:5px 8px;min-width:96px}
@@ -1747,7 +1759,7 @@ function apInfoHTML(){const hub=city(S.hub);
   if(selCity&&!isOpen(selCity)){const c=city(selCity),R=regionOf(selCity);
     info=`<div class="apinfo"><span><b>🔒 ${c.c} · ${c.n}</b><br><span class="muted small">อยู่ในภูมิภาค${R.n}ที่ยังไม่ปลดล็อก · ${dist(hub,c).toLocaleString()} กม.</span></span><button class="btn sm primary" id="apunlock">ปลดล็อก ${money(regionCost(R),true)}</button></div>`}
   else if(selCity){const c=city(selCity),r=S.routes.find(x=>x.dest===selCity),isB=S.bases.includes(c.c);
-    info=`<div class="apinfo"><span><b>${c.c} · ${c.n}</b><br><span class="muted small">${isB?`สาขาของคุณ · ระดับ ${blv(c.c)}`:dist(hub,c).toLocaleString()+" กม. จาก "+S.hub}${r?" · เส้นทาง "+fno(r):""}</span>${!isB&&!r&&aptTakes(c.c,"pax")&&aptTakes(S.hub,"pax")?(()=>{const fc=routeForecast(S.hub,c.c,"pax");return `<br><span class="small">👥 ~${Math.round(fc.dem).toLocaleString()} คน/วัน · ${fcLine(fc,false)}</span>`})():""}</span>
+    info=`<div class="apinfo"><span><b>${c.c} · ${c.n}</b><br><span class="muted small">${isB?`สาขาของคุณ · ระดับ ${blv(c.c)}`:dist(hub,c).toLocaleString()+" กม. จาก "+S.hub}${isB&&wishLine(c.c)?`</span><br><span class="small">💭 ${wishLine(c.c)}`:""}${r?" · เส้นทาง "+fno(r):""}</span>${!isB&&!r&&aptTakes(c.c,"pax")&&aptTakes(S.hub,"pax")?(()=>{const fc=routeForecast(S.hub,c.c,"pax");return `<br><span class="small">👥 ~${Math.round(fc.dem).toLocaleString()} คน/วัน · ${fcLine(fc,false)}</span>`})():""}</span>
       <span class="row" style="gap:6px">${isB?`<button class="btn sm" id="apbr">ดูสาขา</button>`:`<button class="btn sm" id="apbr">เปิดสาขา ${money(branchCost(c),true)}</button><button class="btn sm ${r?"":"primary"}" id="apgo">${r?"ดูเส้นทาง":"เปิดเส้นทาง"}</button>`}</span></div>`}
   return info}
 function portListHTML(){const used=new Set(S.lanes.flatMap(l=>[l.from,l.to]));
@@ -2521,12 +2533,41 @@ function portBranchHTML(){
   ${open?"":`<div class="panel row between"><span class="small">ภูมิภาค${reg.n}ยังล็อกอยู่</span><button class="btn sm primary" data-brunlock="${reg.id}">ปลดล็อก ${money(regionCost(reg),true)}</button></div>`}
   <div class="pick">${cand.map(pt=>{const cost=pBranchCost(pt.c);return `<button data-pbopen="${pt.c}" ${!open||S.cash<cost?"disabled":""}><span class="iata" style="font-size:12px">${pt.c.slice(2)}</span><span>${pt.n}<br><span class="muted" style="font-size:12.5px">ปริมาณตู้ ${"●".repeat(Math.max(1,Math.round(pt.w/4)))}${pt.deep?" · น้ำลึก":""} · ค่าดูแล ${money(120e3+pt.w*20e3,true)}/วัน</span></span><span class="num small" style="font-weight:600;color:${open&&S.cash>=cost?"var(--accent)":"var(--muted)"}">${open?money(cost,true):"🔒"}</span></button>`}).join("")||'<div class="muted small">ไม่มีท่าเรือให้เปิดในภูมิภาคนี้แล้ว</div>'}</div>
   <div class="muted small">สาขาท่าเรือแพงขึ้น 30% ต่อสาขาที่มีอยู่ · อัปเกรดเพิ่มตู้สินค้า 8% และลดค่าท่าเรือ 15% ต่อระดับ</div>`}
+/* What people at one of your airports (hub or branch) want: top destinations by passengers a day,
+   and how each is served — happy, short of seats, wished-for, or in a locked region. Cached per day. */
+let wishCache={k:"",m:new Map()};
+function wishesOf(code){const key=S.day+":"+S.routes.length+":"+S.unlocked.join()+":"+S.rep.toFixed(0);if(wishCache.k!==key)wishCache={k:key,m:new Map()};
+  if(wishCache.m.has(code))return wishCache.m.get(code);
+  const a=city(code),out=[];
+  if(aptTakes(code,"pax"))for(const b of CITIES){if(b.c===code||!aptTakes(b.c,"pax"))continue;const d=dist(a,b);if(d<150)continue;
+    const dem=calc({id:-9,kind:"pax",from:code,dest:b.c,price:baseFare(d),pmode:"auto",planes:[],h:[]},baseFare(d)).demand;out.push({c:b,d,dem})}
+  out.sort((x,y)=>y.dem-x.dem);   // places you can fly to now first (4), then the biggest wishes in locked regions (2)
+  const top=[...out.filter(w=>isOpen(w.c.c)).slice(0,4),...out.filter(w=>!isOpen(w.c.c)).slice(0,2)].map(w=>{
+    const r=S.routes.find(x=>rkind(x)==="pax"&&((x.from===code&&x.dest===w.c.c)||(x.dest===code&&x.from===w.c.c)));
+    if(!isOpen(w.c.c))return {...w,st:"lock",R:regionOf(w.c.c)};
+    if(!r)return {...w,st:"want"};
+    const L=r.last,left=L?Math.max(0,Math.round(L.demand-L.pax)):0;
+    return {...w,r,st:!r.planes.length?"idle":left>Math.max(20,L.demand*.15)?"short":"happy",left}});
+  wishCache.m.set(code,top);return top}
+function wishMood(w){return w.st==="happy"?["😊","พอใจ","good"]:w.st==="short"?["😟",`ที่นั่งไม่พอ · ตกค้าง ~${w.left.toLocaleString()} คน/วัน`,"warn"]:w.st==="idle"?["😐","เปิดเส้นทางแล้วแต่ยังไม่มีเครื่อง","warn"]:w.st==="lock"?["🔒",`อยากไป แต่${w.R.n}ยังล็อก`,"muted"]:["🙏","อยากให้เปิดเส้นทาง","accent"]}
+function wishLine(code){const ws=wishesOf(code),c=city(code),w=ws.find(x=>x.st==="want")||ws.find(x=>x.st==="short")||ws.find(x=>x.st==="lock");
+  if(!ws.length)return "";if(!w)return `คน${c.n}พอใจกับเที่ยวบินของเราแล้ว 😊`;
+  return w.st==="want"?`คน${c.n}อยากไป<b>${w.c.n}</b>มากที่สุด แต่เรายังไม่มีเที่ยวบิน`:w.st==="short"?`คน${c.n}บ่นว่าเที่ยวบินไป<b>${w.c.n}</b>ที่นั่งไม่พอ`:`คน${c.n}อยากไป<b>${w.c.n}</b> แต่ภูมิภาคนั้นยังล็อกอยู่`}
+function wishesHTML(code,n){const ws=wishesOf(code).slice(0,n||6);if(!ws.length)return "";const mx=Math.max(1,...ws.map(w=>w.dem));
+  return `<div class="wish"><div class="wish-say">💭 ${wishLine(code)}</div>${ws.map(w=>{const [e,t,cl]=wishMood(w);
+    return `<div class="wish-row"><span class="wish-code">${w.c.c}</span><span class="wish-mid"><b>${w.c.n}</b> <span class="muted small">${w.d.toLocaleString()} กม.</span><span class="wish-bar"><i style="width:${Math.max(6,w.dem/mx*100).toFixed(0)}%"></i></span><span class="small ${cl}">${e} ${t}</span></span>
+      <span class="wish-end"><b class="num">${Math.round(w.dem).toLocaleString()}</b><small>คน/วัน</small>${w.st==="want"?`<button class="btn sm primary" data-wish="${code}>${w.c.c}">เปิดเส้นทาง</button>`:w.st==="lock"?`<button class="btn sm" data-wunlock="${w.R.id}">ปลดล็อก</button>`:w.st==="short"||w.st==="idle"?`<button class="btn sm" data-wroute="${w.r.id}">ดูเส้นทาง</button>`:""}</span></div>`}).join("")}</div>`}
+function bindWishes(){
+  $$("[data-wish]").forEach(b=>b.onclick=e=>{e.stopPropagation();const [f,t]=b.dataset.wish.split(">");openSheet(newRouteSheet({from:f,kind:"pax",dest:t}))});
+  $$("[data-wunlock]").forEach(b=>b.onclick=e=>{e.stopPropagation();openSheet(regionSheet({id:b.dataset.wunlock}))});
+  $$("[data-wroute]").forEach(b=>b.onclick=e=>{e.stopPropagation();openSheet(routeSheet(+b.dataset.wroute,{}))})}
 function airBranchHTML(){
   const mine=S.bases.map(code=>{const c=city(code),rs=S.routes.filter(r=>r.from===code),pf=rs.reduce((a,r)=>a+(r.last?r.last.profit:0),0),pl=rs.reduce((a,r)=>a+r.planes.length,0),lv=blv(code);
     return `<div class="brcard ${code===S.hub?"hub":""}"><div class="row between" style="align-items:flex-start"><div style="min-width:0"><div class="row" style="gap:8px"><span class="iata" style="font-family:var(--f-display);font-weight:700;font-size:20px">${code}</span><span class="stars">${"★".repeat(lv)}${"☆".repeat(BR_MAX-lv)}</span></div>
       <div class="small muted">${c.n} · ${regionOf(code).n}${code===S.hub?" · สำนักงานใหญ่":""}</div></div><button class="btn sm" data-brroute="${code}">+ เส้นทาง</button></div>
       <div class="kv" style="grid-template-columns:repeat(3,1fr)"><div><div class="k">เส้นทาง</div><div class="v">${rs.length}</div></div><div><div class="k">เครื่องบิน</div><div class="v">${pl}</div></div><div><div class="k">กำไรเมื่อวาน</div><div class="v ${pf<0?"bad":"good"}">${money(pf,true)}</div></div></div>
       <div class="small muted">ผู้โดยสาร +${Math.round((brBoost(code)-1)*100)}% · ค่าสนามบิน −${Math.round(15*(lv-1))}% · ค่าดูแล ${branchUpkeep(code)?money(branchUpkeep(code),true)+"/วัน":"ฟรี"}</div>
+      ${wishesHTML(code,6)}
       <div class="row">${lv<BR_MAX?`<button class="btn sm ${S.cash>=branchUpCost(code)?"primary":""}" style="flex:1" data-brup="${code}" ${S.cash>=branchUpCost(code)?"":"disabled"}>อัปเกรดเป็นระดับ ${lv+1} · ${money(branchUpCost(code),true)}</button>`:`<span class="small good" style="flex:1">ระดับสูงสุดแล้ว</span>`}
       ${code!==S.hub?`<button class="btn sm danger" data-brclose="${code}" ${rs.length?"disabled":""} title="${rs.length?"ปิดเส้นทางจากสาขานี้ก่อน":""}">ปิดสาขา</button>`:""}</div></div>`}).join("");
   const reg=brReg&&REGIONS.find(R=>R.id===brReg)||REGIONS.find(R=>R.id===regionOf(S.hub).id);
@@ -2539,7 +2580,7 @@ function airBranchHTML(){
   ${open?"":`<div class="panel row between"><span class="small">ภูมิภาค${reg.n}ยังล็อกอยู่ ต้องปลดล็อกแผนที่ก่อนจึงเปิดสาขาและบินไปที่นี่ได้</span><button class="btn sm primary" data-brunlock="${reg.id}">ปลดล็อก ${money(regionCost(reg),true)}</button></div>`}
   <div class="pick">${cand.map(c=>{const cost=branchCost(c);return `<button data-bropen="${c.c}" ${!open||S.cash<cost?"disabled":""}><span class="iata">${c.c}</span><span>${c.n}<br><span class="muted" style="font-size:12.5px">ความต้องการ ${"●".repeat(Math.max(1,Math.round(c.w/4)))} · ${dist(city(S.hub),c).toLocaleString()} กม. จาก ${S.hub} · ค่าดูแล ${money(100e3+c.w*15e3,true)}/วัน</span></span><span class="num small" style="font-weight:600;color:${open&&S.cash>=cost?"var(--accent)":"var(--muted)"}">${open?money(cost,true):"🔒"}</span></button>`}).join("")||'<div class="muted small">เปิดสาขาครบทุกสนามบินในภูมิภาคนี้แล้ว</div>'}</div>
   <div class="muted small">สาขาใหม่แพงขึ้นทีละ 30% ต่อสาขาที่มีอยู่ · อัปเกรดสาขาเพิ่มผู้โดยสาร 8% และลดค่าสนามบิน 15% ต่อระดับ ทุกเส้นทางที่บินเข้าหรือออกสนามบินนั้น</div>`}
-function bindBranch(){
+function bindBranch(){bindWishes();
   $$("[data-brreg]").forEach(b=>b.onclick=()=>{brReg=b.dataset.brreg;renderView()});
   $$("[data-brseg]").forEach(b=>b.onclick=()=>{brSeg=b.dataset.brseg;renderView()});
   $$("[data-pbopen]").forEach(b=>b.onclick=()=>{if(openPortBranch(b.dataset.pbopen))renderView()});
