@@ -608,6 +608,15 @@ nav.tabs button:active svg{transform:scale(.88)}
 /* logo colour swatches: 'automatic' chip */
 .sw.auto{width:auto;padding:0 10px;border-radius:999px;font-size:12px;background:var(--sky);color:var(--ink)}
 
+/* route planner */
+.dests button{grid-template-columns:52px 1fr auto;align-items:start}
+.dline{display:flex;align-items:center;gap:8px;margin:3px 0 2px;font-size:12.5px}
+.dbar{flex:1;max-width:120px;height:6px;border-radius:99px;background:var(--line);overflow:hidden}.dbar i{display:block;height:100%;background:var(--route)}
+.topchip{font-size:11px;font-weight:600;color:var(--warn);background:color-mix(in srgb,var(--warn) 15%,var(--paper));border-radius:999px;padding:0 6px}
+.sortseg button{font-size:12.5px;padding:5px 8px}
+.fcbox{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.fcbox>div{display:flex;flex-direction:column;background:var(--sky);border-radius:8px;padding:6px 8px;min-width:0}.fcbox b{font-size:14px}
+@media (max-width:520px){.fcbox{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
 /* livery colour sets */
 .presets{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
 .presets button{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--paper);font-size:12px;min-width:76px}
@@ -1128,12 +1137,14 @@ function migrate(s){
 let fate=null, justRolled=true;
 /* Fair start: remote hubs (Perth, Anchorage, Tahiti, ...) get enough starting money for an aircraft that
    reaches at least 3 cities in their home region; otherwise the game could not be started at all. */
+// hubs where no route makes money at the start (tested with the route forecast): left out of the random roll, still selectable
+const HARD_HUBS=new Set(["PPT"]);
 const START_CAPS=[40e6,55e6,75e6,100e6,130e6,180e6];
 function starterNeed(hub){const H=city(hub),ds=regionOf(hub).c.filter(c=>c!==hub&&aptTakes(c,"pax")).map(c=>dist(H,city(c))).filter(d=>d>150).sort((a,b)=>a-b);
   if(!ds.length)return 0;const d3=ds[Math.min(2,ds.length-1)],m=MODELS.filter(m=>m.seats&&m.range*.95>=d3).sort((a,b)=>a.price-b.price)[0];return m?m.price+3e6+15e6:0}
 function fairCap(hub,cap){const need=starterNeed(hub);return cap>=need?cap:(START_CAPS.find(c=>c>=need)||Math.ceil(need/10e6)*10e6)}
 function rollFate(keepName){
-  const hub=rnd(CITIES.filter(c=>aptKind(c.c)!=="cargo"&&c.w>=2));   // tiny island airports can still be picked by hand
+  const hub=rnd(CITIES.filter(c=>aptKind(c.c)!=="cargo"&&c.w>=2&&!HARD_HUBS.has(c.c)));   // tiny island airports can still be picked by hand
   const cap0=rnd(START_CAPS),cap=fairCap(hub.c,cap0);
   const fuel=+(0.8+Math.random()*0.5).toFixed(2);
   fate={hub:hub.c,cap,cap0,fuel,name:keepName&&fate?fate.name:rnd(NAMES),code:keepName&&fate?fate.code:String.fromCharCode(65+Math.random()*26|0,65+Math.random()*26|0)};
@@ -1679,7 +1690,7 @@ function apInfoHTML(){const hub=city(S.hub);
   if(selCity&&!isOpen(selCity)){const c=city(selCity),R=regionOf(selCity);
     info=`<div class="apinfo"><span><b>🔒 ${c.c} · ${c.n}</b><br><span class="muted small">อยู่ในภูมิภาค${R.n}ที่ยังไม่ปลดล็อก · ${dist(hub,c).toLocaleString()} กม.</span></span><button class="btn sm primary" id="apunlock">ปลดล็อก ${money(regionCost(R),true)}</button></div>`}
   else if(selCity){const c=city(selCity),r=S.routes.find(x=>x.dest===selCity),isB=S.bases.includes(c.c);
-    info=`<div class="apinfo"><span><b>${c.c} · ${c.n}</b><br><span class="muted small">${isB?`สาขาของคุณ · ระดับ ${blv(c.c)}`:dist(hub,c).toLocaleString()+" กม. จาก "+S.hub}${r?" · เส้นทาง "+fno(r):""}</span></span>
+    info=`<div class="apinfo"><span><b>${c.c} · ${c.n}</b><br><span class="muted small">${isB?`สาขาของคุณ · ระดับ ${blv(c.c)}`:dist(hub,c).toLocaleString()+" กม. จาก "+S.hub}${r?" · เส้นทาง "+fno(r):""}</span>${!isB&&!r&&aptTakes(c.c,"pax")&&aptTakes(S.hub,"pax")?(()=>{const fc=routeForecast(S.hub,c.c,"pax");return `<br><span class="small">👥 ~${Math.round(fc.dem).toLocaleString()} คน/วัน · ${fcLine(fc,false)}</span>`})():""}</span>
       <span class="row" style="gap:6px">${isB?`<button class="btn sm" id="apbr">ดูสาขา</button>`:`<button class="btn sm" id="apbr">เปิดสาขา ${money(branchCost(c),true)}</button><button class="btn sm ${r?"":"primary"}" id="apgo">${r?"ดูเส้นทาง":"เปิดเส้นทาง"}</button>`}</span></div>`}
   return info}
 function portListHTML(){const used=new Set(S.lanes.flatMap(l=>[l.from,l.to]));
@@ -2792,11 +2803,33 @@ function drawSheet(anim){if(!sheetFn)return;const html=sheetFn();const keep=$(".
   sheetFn.bind&&sheetFn.bind()}
 const head=(t,sub)=>`<div class="row between" style="align-items:flex-start"><div><h2>${t}</h2>${sub?`<div class="muted" style="font-size:13.5px">${sub}</div>`:""}</div><button class="x" data-x aria-label="ปิด">✕</button></div>`;
 
+/* Route forecast for the planner: passengers (or tonnes) a day, local events and the most profitable aircraft
+   the player has idle — or, if none, can afford — for that city pair. Cached per day. */
+let fcCache={k:"",m:new Map()};
+function routeForecast(from,dest,kind){
+  const key=S.day+":"+S.fleet.length+":"+Math.round(S.cash/1e6)+":"+S.rep.toFixed(0);if(fcCache.k!==key)fcCache={k:key,m:new Map()};
+  const ck=from+">"+dest+":"+kind;if(fcCache.m.has(ck))return fcCache.m.get(ck);
+  const a=city(from),b=city(dest),d=dist(a,b),KC=kind==="cargo",r={id:-9,kind,from,dest,price:baseFare(d),pmode:"auto",planes:[],h:[]};
+  const c0=calc(r,baseFare(d)),tags=[];
+  for(const e of S.events)if(e.until>S.day&&(e.city===dest||e.city===from)){if(e.type==="fest")tags.push("🎉 เทศกาล");else if(e.type==="storm")tags.push("🌀 พายุ");else if(e.type==="comp")tags.push("⚔️ คู่แข่งเพิ่งมา");else if(e.type==="cboost")tags.push("📦 สินค้าพิเศษ")}
+  if(KC)for(const [n] of cargoSeasons(dest).concat(cargoSeasons(from)))tags.push("🗓️ "+n);
+  const idle=S.fleet.filter(p=>!p.route&&p.down<=S.day&&(KC?!model(p.m).seats:!!model(p.m).seats)).map(p=>p.m);
+  let cands=[...new Set(idle)].map(model).filter(m=>m.range*.95>=d),own=true;
+  if(!cands.length){own=false;cands=MODELS.filter(m=>(KC?!m.seats:!!m.seats)&&m.range*.95>=d&&priceFor(m)<=S.cash-3e6)}
+  let best=null;
+  for(const m of cands){const fake={id:-77,m:m.id,route:null,down:0,cond:100,age:0};S.fleet.push(fake);r.planes=[-77];
+    try{const pr=KC?baseFare(d):autoPrice(r),f=calc(r,pr);if(!best||f.profit>best.profit)best={m,profit:f.profit,lf:f.lf,cap:KC?f.ccap:f.cap,pax:KC?f.cargo:f.pax}}finally{S.fleet.pop()}}
+  const o={d,dem:KC?c0.cdem:c0.demand,tags,best,own};fcCache.m.set(ck,o);return o}
+function fcLine(o,KC){const b=o.best;if(!b)return `<span class="muted">ไม่มีเครื่องที่บินถึงในงบตอนนี้</span>`;
+  return `<span class="${b.profit>=0?"good":"bad"} num">${b.profit>=0?"+":"−"}${money(Math.abs(b.profit),true)}/วัน</span> <span class="muted">· ${o.own?"":"ถ้าซื้อ "}${b.m.name}</span>`}
 function newRouteSheet(st){
   const fn=()=>{
     st.kind=st.kind||bm();const KC=st.kind==="cargo",from=city(st.from),open=new Set(S.routes.filter(r=>r.from===st.from&&rkind(r)===st.kind).map(r=>r.dest));
     const idle=S.fleet.filter(p=>!p.route&&(KC?!model(p.m).seats:!!model(p.m).seats));
-    const list=CITIES.filter(c=>c.c!==st.from&&!open.has(c.c)&&isOpen(c.c)&&aptTakes(c.c,st.kind)).map(c=>({c,d:dist(from,c)})).sort((a,b)=>a.d-b.d);
+    st.sort=st.sort||"profit";
+    const list=CITIES.filter(c=>c.c!==st.from&&!open.has(c.c)&&isOpen(c.c)&&aptTakes(c.c,st.kind)).map(c=>({c,d:dist(from,c),fc:routeForecast(st.from,c.c,st.kind)}))
+      .sort((a,b)=>st.sort==="near"?a.d-b.d:st.sort==="demand"?b.fc.dem-a.fc.dem:((b.fc.best?b.fc.best.profit:-1e15)-(a.fc.best?a.fc.best.profit:-1e15)));
+    const maxDem=Math.max(1,...list.map(o=>o.fc.dem)),top=new Set(list.filter(o=>o.fc.best&&o.fc.best.profit>0).sort((a,b)=>b.fc.best.profit-a.fc.best.profit).slice(0,3).map(o=>o.c.c));
     const locked=REGIONS.length-S.unlocked.length;
     const sel=st.dest&&city(st.dest);
     let out=head(KC?"เปิดเส้นทางขนสินค้า":"เปิดเส้นทางผู้โดยสาร",`ออกจากสาขา ${from.n} · ค่าเปิดเส้นทาง ฿3 ล้าน`);
@@ -2805,17 +2838,22 @@ function newRouteSheet(st){
     out+=`<div class="row small" style="gap:6px;flex-wrap:wrap"><span class="muted">สาขา ${from.c}:</span>${aptChip(from.c)}<span class="muted">· แสดงเฉพาะสนามบินที่รับ${KC?"สินค้า":"ผู้โดยสาร"}</span></div>`;
     if(!aptTakes(st.from,st.kind))out+=`<div class="panel small bad">สาขา ${from.n} ${APT_LABEL[aptKind(st.from)][1]} เปิดเส้นทาง${KC?"สินค้า":"ผู้โดยสาร"}จากที่นี่ไม่ได้ ลองเลือกสาขาอื่น หรือเปลี่ยนเป็น${KC?"ผู้โดยสาร":"ขนสินค้า"}</div>`;
     if(!idle.length)out+=`<div class="panel muted" style="font-size:14px">ยังไม่มีเครื่องบินว่าง เปิดเส้นทางไว้ก่อนได้ แล้วค่อยใส่เครื่องทีหลัง</div>`;
-    out+=`<div class="pick">${list.map(({c,d})=>{const reach=idle.some(p=>model(p.m).range>=d);
-      return `<button data-dest="${c.c}" class="${st.dest===c.c?"sel":""}"><span class="iata">${c.c}</span><span>${c.n}<br><span class="muted" style="font-size:12.5px">${APT_LABEL[aptKind(c.c)][0]} · ความต้องการ ${"●".repeat(Math.max(1,Math.round(c.w/5)))}${idle.length?(reach?" · มีเครื่องบินถึง":" · เครื่องที่มีบินไม่ถึง"):""}</span></span><span class="num muted" style="font-size:13px">${d.toLocaleString()} กม.</span></button>`}).join("")}</div>
+    out+=`<div class="row between" style="gap:8px;flex-wrap:wrap"><span class="eyebrow">ปลายทาง ${list.length} แห่ง</span><div class="seg sortseg">${[["profit","💰 กำไร"],["demand","👥 คนเยอะ"],["near","📍 ใกล้"]].map(([k,n])=>`<button data-sort="${k}" class="${st.sort===k?"on":""}">${n}</button>`).join("")}</div></div>
+      <div class="muted small">ตัวเลขเป็นการประเมินจากราคาอัตโนมัติ ${idle.length?"และเครื่องที่จอดว่างอยู่":"และเครื่องรุ่นที่ซื้อไหวตอนนี้"} · คู่แข่งและเหตุการณ์อาจทำให้ต่างไป</div>`;
+    out+=`<div class="pick dests">${list.map(({c,d,fc})=>`<button data-dest="${c.c}" class="${st.dest===c.c?"sel":""}"><span class="iata">${c.c}</span><span style="min-width:0">${top.has(c.c)?'<span class="topchip">⭐ แนะนำ</span> ':""}${c.n}
+        <span class="dline"><span class="dbar"><i style="width:${Math.max(4,fc.dem/maxDem*100).toFixed(0)}%"></i></span><span class="num">${KC?"📦 ~"+Math.round(fc.dem).toLocaleString()+" ตัน":"👥 ~"+Math.round(fc.dem).toLocaleString()+" คน"}/วัน</span></span>
+        <span class="small">${fcLine(fc,KC)}${fc.tags.length?` · ${fc.tags.join(" ")}`:""}</span></span><span class="num muted" style="font-size:13px">${d.toLocaleString()} กม.</span></button>`).join("")}</div>
     ${locked?`<button class="btn sm" id="gounlock">🔒 อีก ${locked} ภูมิภาคยังล็อก · ปลดล็อกแผนที่เพิ่ม</button>`:""}`;
     if(sel){const d=dist(from,sel),ok=idle.filter(p=>model(p.m).range>=d);
       out+=`<div class="panel stack" style="position:sticky;bottom:-20px"><div class="row between"><b>${st.from} → ${sel.c} · ${sel.n}</b><span class="num muted">${d.toLocaleString()} กม.</span></div>
+       ${(()=>{const fc=routeForecast(st.from,sel.c,st.kind),b=fc.best;return `<div class="fcbox"><div><span class="muted small">${KC?"สินค้า":"คนอยากบิน"}</span><b class="num">~${Math.round(fc.dem).toLocaleString()}${KC?" ตัน":" คน"}/วัน</b></div>${b?`<div><span class="muted small">${KC?"ความจุ":"ที่นั่ง"} (${b.m.name})</span><b class="num">${Math.round(b.cap).toLocaleString()}/วัน</b></div><div><span class="muted small">เต็มลำราว</span><b class="num">${Math.round(Math.min(1,b.pax/Math.max(1,b.cap))*100)}%</b></div><div><span class="muted small">กำไรประเมิน</span><b class="num ${b.profit>=0?"good":"bad"}">${b.profit>=0?"+":"−"}${money(Math.abs(b.profit),true)}/วัน</b></div>`:`<div class="muted small">ยังไม่มีเครื่องที่บินถึงในงบ</div>`}</div>`})()}
        <div class="small muted">${KC?`สินค้าราว ${Math.round(calc({id:-9,kind:"cargo",from:st.from,dest:sel.c,price:baseFare(d),planes:[],h:[]}).cdem).toLocaleString()} ตัน/วัน · ค่าระวางราว ฿${(d*CARGO_RATE/1000).toFixed(2)}/กก.`:`ราคาตั๋วเริ่มต้น ${money(baseFare(d))} · ใช้เวลาบิน ${(d/830+.4).toFixed(1)} ชม. (A320)`}</div>
        ${idle.length?`<label class="f">ใส่เครื่องบิน<select id="np"><option value="">ยังไม่ใส่</option>${idle.map(p=>{const m=model(p.m),go=m.range>=d;return `<option value="${p.id}" ${go?"":"disabled"}>${p.reg} · ${m.name} · บินได้ ${m.range.toLocaleString()} กม.${go?"":" · ไม่สามารถบินได้"}</option>`}).join("")}</select></label>`:""}
        <button class="btn primary block" id="openr" ${S.cash<3e6||!aptTakes(st.from,st.kind)?"disabled":""}>เปิดเส้นทาง ฿3 ล้าน</button></div>`}
     return out};
   fn.bind=()=>{$$("[data-rk]").forEach(b=>b.onclick=()=>{st.kind=b.dataset.rk;st.dest=null;drawSheet()});const gu=$("#gounlock");if(gu)gu.onclick=()=>openSheet(regionSheet({}));$$("[data-from]").forEach(b=>b.onclick=()=>{st.from=b.dataset.from;st.dest=null;drawSheet()});
     $$("[data-dest]").forEach(b=>b.onclick=()=>{st.dest=b.dataset.dest;drawSheet();const s=$(".sheet");s.scrollTop=s.scrollHeight});
+    $$("[data-sort]").forEach(b=>b.onclick=()=>{st.sort=b.dataset.sort;drawSheet()});
     const o=$("#openr");if(o)o.onclick=()=>{const d=dist(city(st.from),city(st.dest));
       const r={id:S.nid++,kind:st.kind||"pax",from:st.from,dest:st.dest,price:baseFare(d),pmode:"auto",planes:[],h:[]};S.cash-=3e6;S.routes.push(r);rseg=r.kind;if(bm()!==r.kind){S.bmode=r.kind;S.ui_fk=r.kind;$$("[data-bm]").forEach(b=>{const on=b.dataset.bm===r.kind;b.classList.toggle("on",on);b.classList.toggle("cg",on&&r.kind==="cargo")})}
       const pid=$("#np")&&+$("#np").value;if(pid){r.planes.push(pid);plane(pid).route=r.id}
