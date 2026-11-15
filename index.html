@@ -633,7 +633,7 @@ body:not(.nf-regions) .wishpanel{bottom:92px}
 .wishpanel[hidden]{display:none!important}
 .mw-br{display:flex;flex-direction:column;gap:2px;border-top:1px solid var(--line);padding-top:4px}
 .mw-h{font-size:12px;color:var(--muted)}.mw-h b{color:var(--ink)}
-.mw-row{display:grid;grid-template-columns:auto 1fr auto auto;gap:6px;align-items:center;font-size:12.5px;line-height:1.25}
+.mw-row{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center;font-size:12.5px;line-height:1.25}
 .mw-to{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.mw-n{font-size:12px}
 .mw-row .btn.sm{padding:3px 8px;font-size:12px;border-radius:7px}
 .mw-end{display:flex;flex-direction:column;align-items:flex-end}.mw-end small{color:var(--muted);font-size:11px}
@@ -1949,10 +1949,11 @@ function sizeFullMap(){const c=$("#mapfull canvas"),mf=$("#mapfull");if(!c)retur
 function refreshMapTab(){if(!$("#mapfull")){renderView();return}{const wp=$("#wishpanel");if(wp&&!wp.hidden&&!wp.matches(":hover")){wp.innerHTML=mapWishHTML();bindWishes()}}{const rp=$("#rankpanel");if(rp&&!rp.hidden)rp.innerHTML=rankPanelHTML();const rn=$("#rankno");if(rn)rn.textContent="#"+rank()}$("#legend").innerHTML=legendHTML();$("#maphud").innerHTML=mapHudHTML();
   $("#regbtn").innerHTML=`🔓 ปลดล็อกแผนที่ <span class="num">${S.unlocked.length}/${REGIONS.length}</span>`;refreshAirports();if(pop)renderPop()}
 // map tab: where the people at each of your airports want to fly (top wishes per branch)
-function mapWishHTML(){const rows=S.bases.filter(c=>aptTakes(c,"pax")).map(code=>{const ws=wishesOf(code).filter(w=>w.st!=="lock").slice(0,3),c=city(code);
+function wantsOf(code,n){wishesOf(code);return (wishCache.all.get(code)||[]).filter(w=>isOpen(w.c.c)&&w.d<=AIR_MAX("pax")&&!S.routes.some(x=>rkind(x)==="pax"&&((x.from===code&&x.dest===w.c.c)||(x.dest===code&&x.from===w.c.c)))).slice(0,n)}
+function mapWishHTML(){const rows=S.bases.filter(c=>aptTakes(c,"pax")).map(code=>{const ws=wantsOf(code,3),c=city(code);
     return `<div class="mw-br"><div class="mw-h"><b class="num">${code}</b> ${c.n}${code===S.hub?' <span class="muted">· ฐานหลัก</span>':""}</div>
-      ${ws.length?ws.map(w=>{const [e,t]=wishMood(w);return `<div class="mw-row" title="${t}"><span class="mw-e">${e}</span><span class="mw-to"><b class="num">${w.c.c}</b> ${w.c.n}</span><b class="num mw-n">${Math.round(w.dem).toLocaleString()}</b>${w.st==="want"?`<button class="btn sm primary" data-wish="${code}>${w.c.c}">เปิด</button>`:w.st==="short"||w.st==="idle"?`<button class="btn sm" data-wroute="${w.r.id}">ดู</button>`:"<span></span>"}</div>`}).join(""):`<div class="muted small">ยังไม่มีข้อมูล</div>`}</div>`}).join("");
-  return `<div class="row between mw-top"><b>💭 อยากไปไหน</b><span class="muted">คน/วัน · 🙏 อยากให้เปิด 😟 ที่นั่งไม่พอ 😊 พอใจ</span></div>${rows||'<div class="muted small">ยังไม่มีสาขาที่รับผู้โดยสาร</div>'}`}
+      ${ws.length?ws.map(w=>`<div class="mw-row"><span class="mw-to"><b class="num">${w.c.c}</b> ${w.c.n}</span><b class="num mw-n">${Math.round(w.dem).toLocaleString()}</b><button class="btn sm primary" data-wish="${code}>${w.c.c}">เปิด</button></div>`).join(""):`<div class="muted small">เปิดเส้นทางไปที่คนอยากไปครบแล้ว</div>`}</div>`}).join("");
+  return `<div class="row between mw-top"><b>💭 อยากไปไหน</b><span class="muted">ที่ที่คนอยากไปแต่ยังไม่มีเที่ยวบิน · คน/วัน</span></div>${rows||'<div class="muted small">ยังไม่มีสาขาที่รับผู้โดยสาร</div>'}`}
 function rankPanelHTML(){const B=standings(),mine=myScoreParts();
   return `<div class="row between"><b>🏆 การแข่งขัน</b><span class="muted small">วันที่ ${S.day+1}</span></div>
    <div class="rlist">${B.map((b,i)=>{const mv=b.prev?b.prev-(i+1):0;return `<div class="rk ${b.me?"me":""}"><span class="rkn num">${i+1}</span><span class="rkname">${esc(b.n)}</span><span class="rkmv ${mv>0?"good":mv<0?"bad":"muted"}">${mv>0?"▲"+mv:mv<0?"▼"+(-mv):"–"}</span><span class="num rksc">${b.sc.toLocaleString()}</span></div>`}).join("")}</div>
@@ -2859,12 +2860,12 @@ function portBranchHTML(){
 /* What people at one of your airports (hub or branch) want: top destinations by passengers a day,
    and how each is served — happy, short of seats, wished-for, or in a locked region. Cached per day. */
 let wishCache={k:"",m:new Map()};
-function wishesOf(code){const key=S.day+":"+S.routes.length+":"+S.unlocked.join()+":"+S.rep.toFixed(0);if(wishCache.k!==key)wishCache={k:key,m:new Map()};
+function wishesOf(code){const key=S.day+":"+S.routes.length+":"+S.unlocked.join()+":"+S.rep.toFixed(0);if(wishCache.k!==key)wishCache={k:key,m:new Map(),all:new Map()};
   if(wishCache.m.has(code))return wishCache.m.get(code);
   const a=city(code),out=[];
   if(aptTakes(code,"pax"))for(const b of CITIES){if(b.c===code||!aptTakes(b.c,"pax"))continue;const d=dist(a,b);if(d<150)continue;
     const dem=calc({id:-9,kind:"pax",from:code,dest:b.c,price:baseFare(d),pmode:"auto",planes:[],h:[]},baseFare(d)).demand;out.push({c:b,d,dem})}
-  out.sort((x,y)=>y.dem-x.dem);   // places you can fly to now first (4), then the biggest wishes in locked regions (2)
+  out.sort((x,y)=>y.dem-x.dem);wishCache.all.set(code,out);   // places you can fly to now first (4), then the biggest wishes in locked regions (2)
   const top=[...out.filter(w=>isOpen(w.c.c)).slice(0,4),...(has("regions")?out.filter(w=>!isOpen(w.c.c)).slice(0,2):[])].map(w=>{
     const r=S.routes.find(x=>rkind(x)==="pax"&&((x.from===code&&x.dest===w.c.c)||(x.dest===code&&x.from===w.c.c)));
     if(!isOpen(w.c.c))return {...w,st:"lock",R:regionOf(w.c.c)};
