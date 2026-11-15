@@ -627,12 +627,15 @@ body.nf-cargo .seg:has([data-rk]),body.nf-cargo .seg:has([data-rseg]){display:no
 .wishbtn{position:absolute;right:8px;bottom:8px;z-index:6;border:1px solid var(--line);background:color-mix(in srgb,var(--paper) 94%,transparent);border-radius:999px;padding:7px 12px;font-weight:600;font-size:13px;box-shadow:0 2px 10px rgba(0,0,0,.12);color:var(--ink)}
 .wishbtn.on{border-color:var(--accent);color:var(--accent)}
 body:not(.nf-regions) .wishbtn{bottom:50px}
-.wishpanel{position:absolute;right:8px;bottom:50px;z-index:6;width:min(320px,calc(100% - 16px));max-height:min(52vh,420px);overflow:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 26px rgba(10,20,40,.22);padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.wishpanel{position:absolute;right:8px;bottom:50px;z-index:6;width:min(250px,calc(100% - 16px));max-height:min(32vh,260px);overflow:auto;background:color-mix(in srgb,var(--paper) 96%,transparent);border:1px solid var(--line);border-radius:12px;box-shadow:0 6px 20px rgba(10,20,40,.2);padding:7px 9px;display:flex;flex-direction:column;gap:5px;font-size:12px}
+.mw-top{flex-direction:column;align-items:flex-start!important;gap:1px}.mw-top b{font-size:13px}.mw-top span{font-size:10.5px;line-height:1.3}
 body:not(.nf-regions) .wishpanel{bottom:92px}
 .wishpanel[hidden]{display:none!important}
-.mw-br{display:flex;flex-direction:column;gap:4px;border-top:1px solid var(--line);padding-top:6px}
-.mw-h{font-size:14px}
-.mw-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;font-size:13px;line-height:1.35}
+.mw-br{display:flex;flex-direction:column;gap:2px;border-top:1px solid var(--line);padding-top:4px}
+.mw-h{font-size:12px;color:var(--muted)}.mw-h b{color:var(--ink)}
+.mw-row{display:grid;grid-template-columns:auto 1fr auto auto;gap:6px;align-items:center;font-size:12.5px;line-height:1.25}
+.mw-to{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.mw-n{font-size:12px}
+.mw-row .btn.sm{padding:3px 8px;font-size:12px;border-radius:7px}
 .mw-end{display:flex;flex-direction:column;align-items:flex-end}.mw-end small{color:var(--muted);font-size:11px}
 
 /* connections */
@@ -1947,9 +1950,9 @@ function refreshMapTab(){if(!$("#mapfull")){renderView();return}{const wp=$("#wi
   $("#regbtn").innerHTML=`🔓 ปลดล็อกแผนที่ <span class="num">${S.unlocked.length}/${REGIONS.length}</span>`;refreshAirports();if(pop)renderPop()}
 // map tab: where the people at each of your airports want to fly (top wishes per branch)
 function mapWishHTML(){const rows=S.bases.filter(c=>aptTakes(c,"pax")).map(code=>{const ws=wishesOf(code).filter(w=>w.st!=="lock").slice(0,3),c=city(code);
-    return `<div class="mw-br"><div class="mw-h"><b class="num">${code}</b> <span>${c.n}</span>${code===S.hub?' <span class="muted small">ฐานหลัก</span>':""}</div>
-      ${ws.length?ws.map(w=>{const [e,t,cl]=wishMood(w);return `<div class="mw-row"><span class="mw-to"><b class="num">${w.c.c}</b> <span class="small">${w.c.n}</span><br><span class="small ${cl}">${e} ${t}</span></span><span class="mw-end"><b class="num">${Math.round(w.dem).toLocaleString()}</b><small>คน/วัน</small></span>${w.st==="want"?`<button class="btn sm primary" data-wish="${code}>${w.c.c}">เปิด</button>`:w.st==="short"||w.st==="idle"?`<button class="btn sm" data-wroute="${w.r.id}">ดู</button>`:"<span></span>"}</div>`}).join(""):`<div class="muted small">ยังไม่มีข้อมูล</div>`}</div>`}).join("");
-  return `<div class="row between"><b>💭 แต่ละสาขาอยากไปไหน</b><span class="muted small">${S.bases.length} สาขา</span></div>${rows||'<div class="muted small">ยังไม่มีสาขาที่รับผู้โดยสาร</div>'}`}
+    return `<div class="mw-br"><div class="mw-h"><b class="num">${code}</b> ${c.n}${code===S.hub?' <span class="muted">· ฐานหลัก</span>':""}</div>
+      ${ws.length?ws.map(w=>{const [e,t]=wishMood(w);return `<div class="mw-row" title="${t}"><span class="mw-e">${e}</span><span class="mw-to"><b class="num">${w.c.c}</b> ${w.c.n}</span><b class="num mw-n">${Math.round(w.dem).toLocaleString()}</b>${w.st==="want"?`<button class="btn sm primary" data-wish="${code}>${w.c.c}">เปิด</button>`:w.st==="short"||w.st==="idle"?`<button class="btn sm" data-wroute="${w.r.id}">ดู</button>`:"<span></span>"}</div>`}).join(""):`<div class="muted small">ยังไม่มีข้อมูล</div>`}</div>`}).join("");
+  return `<div class="row between mw-top"><b>💭 อยากไปไหน</b><span class="muted">คน/วัน · 🙏 อยากให้เปิด 😟 ที่นั่งไม่พอ 😊 พอใจ</span></div>${rows||'<div class="muted small">ยังไม่มีสาขาที่รับผู้โดยสาร</div>'}`}
 function rankPanelHTML(){const B=standings(),mine=myScoreParts();
   return `<div class="row between"><b>🏆 การแข่งขัน</b><span class="muted small">วันที่ ${S.day+1}</span></div>
    <div class="rlist">${B.map((b,i)=>{const mv=b.prev?b.prev-(i+1):0;return `<div class="rk ${b.me?"me":""}"><span class="rkn num">${i+1}</span><span class="rkname">${esc(b.n)}</span><span class="rkmv ${mv>0?"good":mv<0?"bad":"muted"}">${mv>0?"▲"+mv:mv<0?"▼"+(-mv):"–"}</span><span class="num rksc">${b.sc.toLocaleString()}</span></div>`}).join("")}</div>
