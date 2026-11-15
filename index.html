@@ -623,6 +623,18 @@ body.nf-cargo .seg:has([data-rk]),body.nf-cargo .seg:has([data-rseg]){display:no
 .featpop b{font-family:var(--f-display);font-size:19px}.featpop p{margin:0;font-size:14px;line-height:1.5;color:var(--ink)}
 @keyframes featin{from{opacity:0;transform:translate(-50%,-14px)}to{opacity:1;transform:translate(-50%,0)}}
 
+/* map tab: branch wishes */
+.wishbtn{position:absolute;right:8px;bottom:8px;z-index:6;border:1px solid var(--line);background:color-mix(in srgb,var(--paper) 94%,transparent);border-radius:999px;padding:7px 12px;font-weight:600;font-size:13px;box-shadow:0 2px 10px rgba(0,0,0,.12);color:var(--ink)}
+.wishbtn.on{border-color:var(--accent);color:var(--accent)}
+body:not(.nf-regions) .wishbtn{bottom:50px}
+.wishpanel{position:absolute;right:8px;bottom:50px;z-index:6;width:min(320px,calc(100% - 16px));max-height:min(52vh,420px);overflow:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 26px rgba(10,20,40,.22);padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+body:not(.nf-regions) .wishpanel{bottom:92px}
+.wishpanel[hidden]{display:none!important}
+.mw-br{display:flex;flex-direction:column;gap:4px;border-top:1px solid var(--line);padding-top:6px}
+.mw-h{font-size:14px}
+.mw-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;font-size:13px;line-height:1.35}
+.mw-end{display:flex;flex-direction:column;align-items:flex-end}.mw-end small{color:var(--muted);font-size:11px}
+
 /* connections */
 .xfbox{display:flex;flex-direction:column;gap:6px;background:var(--paper);border:1.5px solid color-mix(in srgb,var(--route) 45%,var(--line));border-radius:14px;padding:10px 12px;font-size:14px;line-height:1.5}
 .xfbox summary{display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer;list-style:none}.xfbox summary::-webkit-details-marker{display:none}
@@ -1926,12 +1938,18 @@ function mapTabHTML(){return `<div class="mapbox full" id="mapfull"><canvas id="
    <div class="rankpanel" id="rankpanel" ${S.ui_rank?"":"hidden"}>${rankPanelHTML()}</div>
    <div class="mapinfo" id="mapinfo" ${selCity?"":"hidden"}>${apInfoHTML()}</div>
    <div class="maphud" id="maphud">${mapHudHTML()}</div>
+   ${bm()==="pax"?`<button class="wishbtn ${S.ui_wish?"on":""}" id="wishbtn" aria-expanded="${!!S.ui_wish}">💭 อยากไปไหน${S.ui_wish?" ▾":" ▴"}</button><div class="wishpanel" id="wishpanel" ${S.ui_wish?"":"hidden"}>${mapWishHTML()}</div>`:""}
    ${modeHTML()}<button class="mapunlock" id="regbtn">🔓 ปลดล็อกแผนที่ <span class="num">${S.unlocked.length}/${REGIONS.length}</span></button></div>`}
 function applyBarMin(){const on=!!(S&&S.ui_barmin);document.body.classList.toggle("barmin",on);const b=$("#barmin");if(b){b.setAttribute("aria-expanded",!on);b.setAttribute("aria-label",on?"ขยายแถบด้านบน":"ย่อแถบด้านบน")}
   if($("#mapfull")){sizeFullMap();if(typeof renderPop==="function"&&pop)renderPop()}}
 function sizeFullMap(){const c=$("#mapfull canvas"),mf=$("#mapfull");if(!c)return;const top=mf.getBoundingClientRect().top+scrollY,nav=$("nav.tabs").offsetHeight;c.style.height=Math.max(320,innerHeight-top-nav)+"px";mf.style.setProperty("--barh",Math.round($(".top").getBoundingClientRect().bottom-top+8)+"px")}
-function refreshMapTab(){if(!$("#mapfull")){renderView();return}{const rp=$("#rankpanel");if(rp&&!rp.hidden)rp.innerHTML=rankPanelHTML();const rn=$("#rankno");if(rn)rn.textContent="#"+rank()}$("#legend").innerHTML=legendHTML();$("#maphud").innerHTML=mapHudHTML();
+function refreshMapTab(){if(!$("#mapfull")){renderView();return}{const wp=$("#wishpanel");if(wp&&!wp.hidden&&!wp.matches(":hover")){wp.innerHTML=mapWishHTML();bindWishes()}}{const rp=$("#rankpanel");if(rp&&!rp.hidden)rp.innerHTML=rankPanelHTML();const rn=$("#rankno");if(rn)rn.textContent="#"+rank()}$("#legend").innerHTML=legendHTML();$("#maphud").innerHTML=mapHudHTML();
   $("#regbtn").innerHTML=`🔓 ปลดล็อกแผนที่ <span class="num">${S.unlocked.length}/${REGIONS.length}</span>`;refreshAirports();if(pop)renderPop()}
+// map tab: where the people at each of your airports want to fly (top wishes per branch)
+function mapWishHTML(){const rows=S.bases.filter(c=>aptTakes(c,"pax")).map(code=>{const ws=wishesOf(code).filter(w=>w.st!=="lock").slice(0,3),c=city(code);
+    return `<div class="mw-br"><div class="mw-h"><b class="num">${code}</b> <span>${c.n}</span>${code===S.hub?' <span class="muted small">ฐานหลัก</span>':""}</div>
+      ${ws.length?ws.map(w=>{const [e,t,cl]=wishMood(w);return `<div class="mw-row"><span class="mw-to"><b class="num">${w.c.c}</b> <span class="small">${w.c.n}</span><br><span class="small ${cl}">${e} ${t}</span></span><span class="mw-end"><b class="num">${Math.round(w.dem).toLocaleString()}</b><small>คน/วัน</small></span>${w.st==="want"?`<button class="btn sm primary" data-wish="${code}>${w.c.c}">เปิด</button>`:w.st==="short"||w.st==="idle"?`<button class="btn sm" data-wroute="${w.r.id}">ดู</button>`:"<span></span>"}</div>`}).join(""):`<div class="muted small">ยังไม่มีข้อมูล</div>`}</div>`}).join("");
+  return `<div class="row between"><b>💭 แต่ละสาขาอยากไปไหน</b><span class="muted small">${S.bases.length} สาขา</span></div>${rows||'<div class="muted small">ยังไม่มีสาขาที่รับผู้โดยสาร</div>'}`}
 function rankPanelHTML(){const B=standings(),mine=myScoreParts();
   return `<div class="row between"><b>🏆 การแข่งขัน</b><span class="muted small">วันที่ ${S.day+1}</span></div>
    <div class="rlist">${B.map((b,i)=>{const mv=b.prev?b.prev-(i+1):0;return `<div class="rk ${b.me?"me":""}"><span class="rkn num">${i+1}</span><span class="rkname">${esc(b.n)}</span><span class="rkmv ${mv>0?"good":mv<0?"bad":"muted"}">${mv>0?"▲"+mv:mv<0?"▼"+(-mv):"–"}</span><span class="num rksc">${b.sc.toLocaleString()}</span></div>`}).join("")}</div>
@@ -2324,6 +2342,7 @@ function bindMap(){
   $("#regbtn").onclick=()=>openSheet(regionSheet({}));
   $$("[data-night]").forEach(b=>b.onclick=()=>{S.night=S.night===false;save();$$("[data-night]").forEach(x=>{x.classList.toggle("on",S.night);x.setAttribute("aria-pressed",S.night);x.setAttribute("aria-label",(S.night?"ปิด":"เปิด")+"เงากลางวันกลางคืน")});toast(S.night?"🌙 เปิดกลางวัน-กลางคืนบนแผนที่":"☀️ ปิดเงากลางคืนแล้ว · เวลาในเกมยังเดินตามปกติ")});
   $$("[data-vm]").forEach(b=>b.onclick=()=>setMode(b.dataset.vm));
+  const wb=$("#wishbtn");if(wb)wb.onclick=()=>{S.ui_wish=!S.ui_wish;save();const wp=$("#wishpanel");wp.hidden=!S.ui_wish;if(S.ui_wish){wp.innerHTML=mapWishHTML();bindWishes()}wb.classList.toggle("on",S.ui_wish);wb.setAttribute("aria-expanded",S.ui_wish);wb.textContent="💭 อยากไปไหน"+(S.ui_wish?" ▾":" ▴")};
   const rb=$("#rankbtn");if(rb)rb.onclick=()=>{S.ui_rank=!S.ui_rank;save();const rp=$("#rankpanel");rp.hidden=!S.ui_rank;if(S.ui_rank)rp.innerHTML=rankPanelHTML();rb.classList.toggle("on",S.ui_rank);rb.setAttribute("aria-expanded",S.ui_rank)}}
 function setCam(m,focus){camMode=m;camFocus=focus||null;$$("[data-cam]").forEach(b=>b.classList.toggle("on",b.dataset.cam===m))}
 function refreshAirports(){const el=$("#aplist");if(el)el.innerHTML=airportListHTML();const mi=$("#mapinfo");if(mi)mi.hidden=true;bindAirports()}
