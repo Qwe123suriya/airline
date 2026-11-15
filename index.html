@@ -2479,7 +2479,7 @@ function newLaneSheet(st){
   fn.bind=()=>{const gp=$("#gopbr");if(gp){gp.onclick=()=>{sheetFn=null;$("#sheet").innerHTML="";tab="branch";brSeg="sea";renderView(true)};return}
     $("#lf").onchange=e=>{st.from=e.target.value;st.to=null;drawSheet()};
     $$("[data-lto]").forEach(b=>b.onclick=()=>{st.to=b.dataset.lto;drawSheet();const s2=$(".sheet");s2.scrollTop=s2.scrollHeight});
-    const o=$("#openl");if(o)o.onclick=()=>{if(seaPath(st.from,st.to).km>SHIP_MAX||S.cash<20e6)return;S.cash-=20e6;const l={id:S.nid++,from:st.from,to:st.to,ships:[],h:[]};S.lanes.push(l);addNews(`🚢 เปิดเส้นทางเรือ ${port(l.from).n} → ${port(l.to).n}`);if(bm()!=="cargo")setBM("cargo");save();tab="routes";renderView();openSheet(laneSheet(l.id,{buy:1}))}};
+    const o=$("#openl");if(o)o.onclick=()=>{if(seaPath(st.from,st.to).km>SHIP_MAX||S.cash<20e6)return;S.cash-=20e6;const l={id:S.nid++,from:st.from,to:st.to,ships:[],h:[]};S.lanes.push(l);addNews(`🚢 เปิดเส้นทางเรือ ${port(l.from).n} → ${port(l.to).n}`);if(bm()!=="cargo")setBM("cargo");save();if(tab!=="map"&&tab!=="home")tab="routes";renderView();openSheet(laneSheet(l.id,{buy:1}))}};
   return fn}
 function laneSheet(lid,st){
   const fn=()=>{const l=S.lanes.find(x=>x.id===lid);if(!l)return head("ไม่พบเส้นทางเรือ");const c=laneCalc(l),a=port(l.from),b=port(l.to),v=viaText(c.sp);
@@ -3371,7 +3371,7 @@ function newRouteSheet(st){
     const o=$("#openr");if(o)o.onclick=()=>{const d=dist(city(st.from),city(st.dest));if(d>AIR_MAX(st.kind||"pax"))return;
       const r={id:S.nid++,kind:st.kind||"pax",from:st.from,dest:st.dest,price:baseFare(d),pmode:"auto",planes:[],h:[]};S.cash-=3e6;S.routes.push(r);rseg=r.kind;if(bm()!==r.kind){S.bmode=r.kind;S.ui_fk=r.kind;$$("[data-bm]").forEach(b=>{const on=b.dataset.bm===r.kind;b.classList.toggle("on",on);b.classList.toggle("cg",on&&r.kind==="cargo")})}
       const pid=$("#np")&&+$("#np").value;if(pid){r.planes.push(pid);plane(pid).route=r.id}
-      addNews(`🛫 เปิดเส้นทางใหม่ ${fno(r)} ${st.from} → ${st.dest} (${city(st.dest).n})`);save();tab="routes";openSheet(routeSheet(r.id,{}))}};
+      addNews(`🛫 เปิดเส้นทางใหม่ ${fno(r)} ${st.from} → ${st.dest} (${city(st.dest).n})`);save();if(tab!=="map"&&tab!=="home")tab="routes";renderView();openSheet(routeSheet(r.id,{}))}};
   return fn}
 
 function itHTML(it){const sea=it.kind==="sea",nm=x=>sea?port(x).n:x;return `<div class="xf-it"><span class="${sea?"":"num"}">${it.path.map((x,i)=>i&&i<it.path.length-1?`<b>${nm(x)}</b>`:nm(x)).join(" → ")}</span><span class="muted small">${sea?"ถ่ายลำ ":"ต่อ "}${it.path.length-2} ครั้ง</span><b class="num">~${Math.round(it.dem).toLocaleString()}<small> ${sea?"TEU":it.kind==="cargo"?"ตัน":"คน"}/วัน</small></b></div>`}
