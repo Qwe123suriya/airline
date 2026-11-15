@@ -747,3 +747,9 @@ body:not(.nf-regions) .wishpanel{bottom:92px}
 
 /* profit sparkline on route / lane cards */
 .spk{display:block;margin:2px 0 1px auto}
+
+/* ranked league */
+.league{display:flex;flex-direction:column;gap:4px;padding:8px 10px;margin:4px 0 8px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--paper) 92%,var(--sky))}
+.lg-tier{font-family:var(--f-display);font-weight:700;font-size:16px}
+.lg-bar{height:6px;margin:0}
+.lg-res{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12.5px}

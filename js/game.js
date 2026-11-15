@@ -703,7 +703,7 @@ const RV_STR=.62,RV_GRACE=20,RV_EXIT_SHARE=.62,RV_EXIT_DAYS=20;
 const rivalByName=n=>S.rivals.find(x=>x.n===n);
 function compShare(r,price,svc){if(!r.cmp||rkind(r)==="cargo")return 1;
   const base=baseFare(dist(city(r.from),city(r.dest))),rv=rivalByName(r.cmp.rv),st=rv?rivalStars(rv):3.5;
-  const me=SERVICE[svc??svcOf(r)].f*(.6+S.rep/125)*Math.pow(base/(price||base),1.5),them=RV_STR*(st/4)*Math.pow(1/r.cmp.fare,1.5);
+  const me=SERVICE[svc??svcOf(r)].f*(.6+S.rep/125)*Math.pow(base/(price||base),1.5),them=RV_STR*(1+.3*botLv())*(st/4)*Math.pow(1/r.cmp.fare,1.5);
   return me/(me+them)}
 // Automatic fare: aims for ~90% full on the full schedule — rises when more people want to fly than there are seats, falls when they don't
 // Automatic fare = 60% of the way from "fill the seats" to the most profitable fare (cached per route per day; setting it yourself still earns more)
@@ -903,7 +903,7 @@ function simDay(){
   const target=(wsum?wrep/wsum:SERVICE[S.service].rep)-(avgCond<60?(60-avgCond)*.5:0);
   S.rep=clamp(S.rep+(target-S.rep)*.03,0,100);
   {const prev=standings();prev.forEach((x,i)=>{if(x.me)S.prank=i+1;else{const rv=S.rivals.find(r=>r.n===x.n);if(rv)rv.prank=i+1}})}
-  rivalTurn();
+  rivalTurn();leagueTick();
   for(const rv of S.rivals){rv.ops=(rv.ops||0)+rv.v/2e6*.07*(.6+Math.random()*.8);rv.v*=1+(rv.v>1.1*Math.max(1,valuation())?.0004:.002)+(Math.random()-.5)*.014;rv.st=clamp(rivalStars(rv)+(Math.random()-.5)*.06,2.5,4.8)}
   S.hist.push({d:S.day,c:S.cash,r:rev,x:cost});if(S.hist.length>365)S.hist.shift();
   {const had=suezShut();S.events=S.events.filter(e=>e.until>S.day);if(had&&!suezShut()){seaCache.clear();addNews("🚢 คลองสุเอซเปิดใช้ได้อีกครั้ง")}}
@@ -923,6 +923,41 @@ function simDay(){
   checkMissions();
   save();
 }
+/* ---------- Ranked league ----------
+   Every 7 days is a league week. Your competition score growth that week is compared with each rival's growth
+   (a "match": win if you grew faster, draw if within 0.3 points of a percent). Results move your skill rating (SR, Elo style,
+   K=20, start 1000) and the rival's rating the other way. SR sets your tier and how hard the rival airlines play:
+   they fight harder in price wars, attack more routes, stay longer and grow faster as your SR rises (easier below 1000). */
+const LG_WEEK=7,LG_K=20;
+// league measures growth of the business itself (value, traffic, fights), not the star rating (a big near-constant part of the score)
+const lgMe=()=>Math.max(1,myScoreParts().filter(x=>x[0]!=="เรตติ้ง").reduce((a,x)=>a+x[1],0)),lgRv=rv=>Math.max(1,rv.v/2e6+(rv.ops||0));
+const TIERS=[[0,"🥉 ทองแดง","#B4532A"],[900,"🥈 เงิน","#7C8A99"],[1050,"🥇 ทอง","#D4A017"],[1200,"💠 แพลทินัม","#2A9D8F"],[1350,"💎 เพชร","#3A7BC8"],[1500,"👑 มาสเตอร์","#8E44AD"],[1700,"🔥 ตำนาน","#D9482B"]];
+const mySR=()=>S.sr??1000;
+const tierOf=sr=>{let t=TIERS[0],i=0;TIERS.forEach((x,k)=>{if(sr>=x[0]){t=x;i=k}});return {i,n:t[1],col:t[2],lo:t[0],hi:TIERS[i+1]?TIERS[i+1][0]:null}};
+// bot difficulty from your rating: -0.6 (easy) .. 0 (normal at 1000) .. +1.6 (legend)
+const botLv=()=>has("rank")?clamp((mySR()-1000)/500,-.6,1.6):0;
+const botLvTxt=()=>{const d=botLv();return d<-.3?"ง่าย":d<.15?"ปกติ":d<.5?"ยากขึ้น":d<.9?"ยาก":d<1.3?"ยากมาก":"โหดสุด"};
+function leagueTick(){if(!has("rank")||!S.rivals||!S.rivals.length)return;
+  const snap=()=>({start:S.day,my:lgMe(),rv:Object.fromEntries(S.rivals.map(rv=>[rv.n,lgRv(rv)])),m:1});
+  if(!S.lg||!S.lg.m){S.lg=snap();S.lgHist=S.lgHist||[];return}
+  if(S.day-S.lg.start<LG_WEEK)return;
+  const g=(a,b)=>(b-a)/Math.max(1,a)*100,myG=g(S.lg.my,lgMe()),res=[];let dSR=0;
+  for(const rv of S.rivals){rv.sr=rv.sr??1000;const rg=g(S.lg.rv[rv.n]??lgRv(rv),lgRv(rv)),out=myG>rg+.3?1:myG<rg-.3?0:.5;
+    const E=1/(1+Math.pow(10,(rv.sr-mySR())/400)),d=LG_K*(out-E);dSR+=d;rv.sr=Math.round(rv.sr-d);res.push({n:rv.n,out,myG,rg})}
+  const before=mySR(),tb=tierOf(before);S.sr=Math.max(100,Math.round(before+dSR));const ta=tierOf(S.sr);
+  const w=res.filter(x=>x.out===1).length,l=res.filter(x=>x.out===0).length,dr=res.length-w-l;
+  S.lgHist=[{d:S.day,w,l,dr,sr:S.sr,ch:S.sr-before,myG:+myG.toFixed(1),res:res.map(x=>({n:x.n,o:x.out,g:+x.rg.toFixed(1)}))},...(S.lgHist||[])].slice(0,60);
+  addNews(`📊 จบสัปดาห์ลีก: ชนะ ${w} เสมอ ${dr} แพ้ ${l} · คุณโต ${myG.toFixed(1)}% · SR ${S.sr} (${S.sr>=before?"+":""}${S.sr-before}) · ${ta.n}`);
+  if(ta.i>tb.i){celebrate("!⬆️ เลื่อนระดับลีก",`${ta.n} · คู่แข่งจะเล่นเก่งขึ้น (${botLvTxt()})`);S.cash+=Math.round(S.startCap*.02*ta.i/1e5)*1e5}
+  else if(ta.i<tb.i)addNews(`⬇️ ตกระดับลีกเป็น ${ta.n} · คู่แข่งผ่อนลงเป็นระดับ “${botLvTxt()}”`);
+  S.lg=snap()}
+function leagueHTML(compact){if(!has("rank"))return "";const sr=mySR(),t=tierOf(sr),L=S.lgHist||[],last=L[0],left=S.lg?Math.max(0,LG_WEEK-(S.day-S.lg.start)):LG_WEEK;
+  const pc=t.hi?clamp((sr-t.lo)/(t.hi-t.lo),0,1)*100:100;
+  return `<div class="league"><div class="row between"><span class="lg-tier" style="color:${t.col}">${t.n}</span><span class="num"><b>SR ${sr}</b>${last?` <span class="${last.ch>=0?"good":"bad"} small">${last.ch>=0?"▲":"▼"}${Math.abs(last.ch)}</span>`:""}</span></div>
+    <div class="bar lg-bar"><i style="width:${pc}%;background:${t.col}"></i></div>
+    <div class="row between small muted"><span>${t.hi?`อีก ${t.hi-sr} SR ถึง ${tierOf(t.hi).n}`:"ระดับสูงสุดแล้ว"}</span><span>คู่แข่ง: <b style="color:var(--ink)">${botLvTxt()}</b></span></div>
+    <div class="small muted">สัปดาห์ลีกนี้เหลือ ${left} วัน · ชนะคู่แข่งที่คะแนนโตช้ากว่าคุณ${last?` · สัปดาห์ก่อน ชนะ ${last.w} เสมอ ${last.dr} แพ้ ${last.l}`:""}</div>
+    ${!compact&&last?`<div class="lg-res">${last.res.map(x=>`<span class="${x.o===1?"good":x.o===0?"bad":"muted"}">${x.o===1?"ชนะ":x.o===0?"แพ้":"เสมอ"} ${esc(x.n)} <small class="num">(${x.g>=0?"+":""}${x.g}%)</small></span>`).join("")}</div>`:""}</div>`}
 function rivalTurn(){
   const myV=valuation(),pax=S.routes.filter(r=>rkind(r)==="pax"&&r.planes.length&&r.last);
   const contested=pax.filter(r=>r.cmp).length,lead=rank()===1;
@@ -930,19 +965,19 @@ function rivalTurn(){
     if(!r.cmp){
       if(S.day<RV_GRACE||contested>=Math.ceil(pax.length*.5)||(r.cmpCool||0)>S.day)continue;
       const margin=clamp(r.last.profit/Math.max(1,r.last.rev),0,1);
-      if(Math.random()<(.002+.016*margin)*(lead?1.6:1)*(pax.length<2?.4:1)){
+      if(Math.random()<(.002+.016*margin)*(lead?1.6:1)*(pax.length<2?.4:1)*Math.max(.3,1+.6*botLv())){
         const tot=S.rivals.reduce((a,x)=>a+x.v,0);let k=Math.random()*tot,rv=S.rivals[0];for(const x of S.rivals){k-=x.v;if(k<=0){rv=x;break}}
         r.cmp={rv:rv.n,fare:.92,since:S.day,weak:0};
         addNews(`⚔️ ${rv.n} เปิดบิน ${r.from}→${r.dest} แข่งกับคุณ ตั้งราคาถูกกว่าราคากลาง 8%`);toast(`⚔️ ${rv.n} บุกเส้นทาง ${r.from}→${r.dest} ของคุณ`)}
       continue}
     // price war: the rival undercuts whatever you charge, within limits
-    const my=priceOf(r)/base,tg=clamp(my*.96,.65,1.15);r.cmp.fare+=(tg-r.cmp.fare)*.15;
+    const my=priceOf(r)/base,tg=clamp(my*(.96-.03*Math.max(0,botLv())),.6,1.15);r.cmp.fare+=(tg-r.cmp.fare)*.15;
     const sh=compShare(r,priceOf(r));r.cmp.share=sh;
     r.cmp.weak=sh>RV_EXIT_SHARE?(r.cmp.weak||0)+1:Math.max(0,(r.cmp.weak||0)-1);
-    if(r.cmp.weak>=RV_EXIT_DAYS||(S.day-r.cmp.since>60&&sh>.5&&Math.random()<.01)){addNews(`🏳️ ${r.cmp.rv} ถอนตัวจาก ${r.from}→${r.dest} คุณครองเส้นทางนี้แล้ว`);celebrate("!ชนะศึกเส้นทาง",`${r.from}→${r.dest}`);S.rep=clamp(S.rep+2,0,100);delete r.cmp;r.cmpCool=S.day+90}}
+    if(r.cmp.weak>=RV_EXIT_DAYS+Math.round(8*Math.max(0,botLv()))||(S.day-r.cmp.since>60&&sh>.5&&Math.random()<.01)){addNews(`🏳️ ${r.cmp.rv} ถอนตัวจาก ${r.from}→${r.dest} คุณครองเส้นทางนี้แล้ว`);celebrate("!ชนะศึกเส้นทาง",`${r.from}→${r.dest}`);S.rep=clamp(S.rep+2,0,100);delete r.cmp;r.cmpCool=S.day+90}}
   // rivals keep pace: they grow faster when you pull ahead and from every route they fight you on
   for(const rv of S.rivals){const fights=S.routes.filter(r=>r.cmp&&r.cmp.rv===rv.n).length;
-    rv.v*=1+(rv.v<1.5*myV?.0004*Math.min(fights,5):0)+(myV>rv.v?.003*clamp((myV-rv.v)/myV,0,1):0);rv.ops=(rv.ops||0)+Math.min(fights,5)*3}
+    rv.v*=1+(rv.v<1.5*myV?.0004*Math.min(fights,5):0)+(myV>rv.v?.003*clamp((myV-rv.v)/myV,0,1):0)+(botLv()<0?.0015*botLv():rv.v<3*myV?.008*botLv():0);rv.ops=(rv.ops||0)+Math.min(fights,5)*3}
 }
 function randomEvent(){
   if(Math.random()>.07)return;
@@ -1221,7 +1256,7 @@ function mapWishHTML(){if(bm()==="cargo")return cargoWishHTML();const rows=S.bas
       ${ws.length?ws.map(w=>`<div class="mw-row"><span class="mw-to"><b class="num">${w.c.c}</b> ${w.c.n}</span><b class="num mw-n">${Math.round(w.dem).toLocaleString()}</b><button class="btn sm primary" data-wish="${code}>${w.c.c}">เปิด</button></div>`).join(""):`<div class="muted small">เปิดเส้นทางไปที่คนอยากไปครบแล้ว</div>`}</div>`}).join("");
   return `<div class="row between mw-top"><b>💭 อยากไปไหน</b><span class="muted">ที่ที่คนอยากไปแต่ยังไม่มีเที่ยวบิน · คน/วัน</span></div>${rows||'<div class="muted small">ยังไม่มีสาขาที่รับผู้โดยสาร</div>'}`}
 function rankPanelHTML(){const B=standings(),mine=myScoreParts();
-  return `<div class="row between"><b>🏆 การแข่งขัน</b><span class="muted small">วันที่ ${S.day+1}</span></div>
+  return `<div class="row between"><b>🏆 การแข่งขัน</b><span class="muted small">วันที่ ${S.day+1}</span></div>${leagueHTML(true)}
    <div class="rlist">${B.map((b,i)=>{const mv=b.prev?b.prev-(i+1):0;return `<div class="rk ${b.me?"me":""}"><span class="rkn num">${i+1}</span><span class="rkname">${esc(b.n)}</span><span class="rkmv ${mv>0?"good":mv<0?"bad":"muted"}">${mv>0?"▲"+mv:mv<0?"▼"+(-mv):"–"}</span><span class="num rksc">${b.sc.toLocaleString()}</span></div>`}).join("")}</div>
    <details class="more"><summary>คะแนนของคุณมาจากอะไร ▾</summary><div class="rparts">${mine.map(([n,v])=>`<div class="row between small"><span class="muted">${n}</span><span class="num">${Math.round(v).toLocaleString()}</span></div>`).join("")}</div></details>`}
 const niceShort=v=>v>=1e6?(v/1e6).toFixed(1)+"M":v>=1e4?Math.round(v/1e3)+"K":v>=1e3?(v/1e3).toFixed(1)+"K":Math.round(v).toString();
@@ -1324,7 +1359,7 @@ function homeRestHTML(){
   <div class="panel"><div class="row between"><div><div class="eyebrow">เป้าหมายถัดไป</div><b>${S.goal>=GOALS.length?"พิชิตครบทุกระดับแล้ว":g[1]}</b></div><span class="num muted small">${money(v,true)} / ${money(g[0],true)}</span></div><div class="bar" style="margin-top:8px"><i style="width:${pct}%"></i></div></div>
   ${S.fleet.length===0?`<div class="panel row between"><span>ยังไม่มีเครื่องบินเลย เริ่มจากซื้อลำแรก</span><button class="btn primary sm" data-go="fleet">ไปซื้อ</button></div>`:
     !S.routes.some(r=>r.planes.length)?`<div class="panel row between"><span>มีเครื่องแล้ว ต่อไปเปิดเส้นทางแล้วใส่เครื่องบิน</span><button class="btn primary sm" data-go="routes">ไปเส้นทาง</button></div>`:""}
-  <div class="panel ${has("rank")?"":"hide"}"><div class="eyebrow" style="margin-bottom:4px">🏆 อันดับการแข่งขัน · คะแนน</div><div class="board">${board.map((b,i)=>`<div class="r ${b.me?"me":""}"><span class="num muted">#${i+1}</span><span class="nm" style="min-width:0">${esc(b.n)}<br>${starsHTML(b.st||0,11)} <span class="num muted" style="font-size:11px">${(b.st||0).toFixed(1)}</span></span><span class="num">${b.sc.toLocaleString()}<span class="muted small"> คะแนน</span></span></div>`).join("")}</div></div>
+  <div class="panel ${has("rank")?"":"hide"}"><div class="eyebrow" style="margin-bottom:4px">🏆 อันดับการแข่งขัน · คะแนน</div>${leagueHTML()}<div class="board">${board.map((b,i)=>`<div class="r ${b.me?"me":""}"><span class="num muted">#${i+1}</span><span class="nm" style="min-width:0">${esc(b.n)}<br>${starsHTML(b.st||0,11)} <span class="num muted" style="font-size:11px">${(b.st||0).toFixed(1)}</span></span><span class="num">${b.sc.toLocaleString()}<span class="muted small"> คะแนน</span></span></div>`).join("")}</div></div>
   <div class="panel"><div class="eyebrow" style="margin-bottom:6px">ข่าวการบิน</div><ul class="news">${S.news.slice(0,8).map(n=>`<li class="${isFresh(n)?"fresh":""}"><span class="when">${dateOf(n.d)}</span><span>${esc(n.t)}</span></li>`).join("")}</ul></div>
   <div class="panel"><div class="eyebrow" style="margin-bottom:8px">🎖️ ตู้โชว์ความสำเร็จ ${S.ach.length}/${ACH.length}</div><div class="badges">${ACH.map(([id,n])=>{const g=S.ach.includes(id);return `<div class="bdg ${g?"got":""}"><b>${g?(ACHI[id]||"🎖️"):"🔒"}</b><span>${n}</span></div>`}).join("")}</div></div>`;
   seenNews=fresh;return out;
@@ -2881,6 +2916,7 @@ function guideSheet(){return head("คู่มือระบบ","ทุกร
 <details class="g"><summary>ชื่อเสียงและระดับบริการ</summary><div><p>ชื่อเสียงจะค่อย ๆ เคลื่อนเข้าหาค่าเป้าหมายของระดับบริการ ประหยัด 35 มาตรฐาน 60 พรีเมียม 85 คลิปไวรัลและแคมเปญใหญ่ช่วยดันขึ้น เครื่องเสียกลางทางทำให้ลดลง</p></div></details>
 <details class="g"><summary>การตลาดและล็อกราคาน้ำมัน</summary><div><p>แคมเปญการตลาดเพิ่มคนบินทุกเส้นทางชั่วคราว เปิดได้ทีละแคมเปญ</p><p>ดัชนีน้ำมันขึ้นลงทุกวันและพุ่งแรงได้จากเหตุการณ์ การล็อกราคาจะตรึงดัชนีไว้ 60 วัน ค่าธรรมเนียมประมาณ 3% ของค่าน้ำมันช่วงนั้น เหมาะตอนน้ำมันถูก</p></div></details>
 <details class="g"><summary>เงินกู้และการล้มละลาย</summary><div><p>กู้ได้ทีละ ฿50 ล้าน วงเงินขึ้นกับมูลค่าฝูงบิน ถ้าเงินสดติดลบต่อเนื่อง 30 วัน สายการบินล้มละลายและต้องเริ่มชะตาใหม่</p></div></details>
+<details class="g"><summary>🏆 ลีกจัดอันดับและความยากของคู่แข่ง</summary><div><ul><li>ทุก 7 วันคือ 1 สัปดาห์ลีก เกมจะเทียบว่าธุรกิจของคุณโตกี่เปอร์เซ็นต์ (มูลค่ากิจการ ผู้โดยสาร สินค้า ตู้เรือ ภารกิจ) กับคู่แข่งแต่ละเจ้า</li><li>โตเร็วกว่า = ชนะ · ช้ากว่า = แพ้ · ต่างกันไม่ถึง 0.3% = เสมอ ผลจะเพิ่มหรือลดคะแนนทักษะ (SR) เริ่มที่ 1000 ชนะคู่แข่งที่ SR สูงกว่าได้คะแนนมากกว่า</li><li>ระดับ: 🥉 ทองแดง · 🥈 เงิน 900 · 🥇 ทอง 1050 · 💠 แพลทินัม 1200 · 💎 เพชร 1350 · 👑 มาสเตอร์ 1500 · 🔥 ตำนาน 1700 · เลื่อนระดับได้โบนัส</li><li>ยิ่ง SR สูง คู่แข่งยิ่งเก่ง: โตเร็วขึ้น บุกเส้นทางบ่อยขึ้น ตัดราคาแรงขึ้น และถอนตัวยากขึ้น ถ้า SR ต่ำกว่า 1000 คู่แข่งจะผ่อนลง</li><li>ดูระดับ SR ผลสัปดาห์ก่อน และระดับความยากของคู่แข่งได้ในกล่อง 🏆 ที่หน้าภาพรวมและปุ่ม 🏆 บนแผนที่</li></ul></div></details>
 <details class="g"><summary>✨ ฟีเจอร์ที่ค่อยๆ ปลดล็อก</summary><div><p>เกมใหม่จะเริ่มแค่ ภาพรวม เส้นทาง และฝูงบิน ระบบอื่นจะเปิดทีละอย่าง (ไม่เกินวันละอย่าง) พร้อมกล่องแจ้งเตือน ✨ แยกจากภารกิจ:</p><ol>${FEATS.filter(f=>has(f.id)).map(f=>`<li><b>${f.n}</b></li>`).join("")}</ol>${FEATS.some(f=>!has(f.id))?`<p>🔒 ยังมีอีก ${FEATS.filter(f=>!has(f.id)).length} อย่าง · อย่างต่อไปจะเปิดเมื่อ: ${FEATS.filter(f=>!has(f.id)&&(f.after||[]).every(has)).map(f=>`<b>${f.need}</b>`).join(" หรือ ")}</p>`:""}<p class="small">ทุกการขยายกิจการต้องมีฐานที่มั่นคงก่อน คือกำไรเฉลี่ย 7 วันเป็นบวก สินค้าทางอากาศเริ่มจากพัสดุกับเครื่องลำเล็ก แล้วค่อยเปิดอาหาร เครื่องลำใหญ่ ชิ้นส่วน/รถ ส่วนเรือเริ่มจากเรือเล็กขนตู้พัสดุ แล้วค่อยเปิดเรือห้องเย็น เรือใหญ่ และเรือขนรถ</p><p class="muted small">เซฟเก่าก่อนมีระบบนี้เปิดครบทุกอย่างอยู่แล้ว</p></div></details>
 <details class="g"><summary>🧭 พิสัยบิน/แล่น 🔗 ต่อเครื่อง และถ่ายลำ</summary><div><ul><li>เครื่องบินทุกรุ่นมีระยะบินไกลสุด เครื่องโดยสารไกลสุด ${AIR_MAX_P.toLocaleString()} กม. เครื่องขนสินค้า ${AIR_MAX_C.toLocaleString()} กม. ปลายทางที่ไกลกว่านั้นเปิดเส้นทางบินตรงไม่ได้</li><li>เรือก็มีระยะแล่นไกลสุด เรือชายฝั่งและฟีดเดอร์วิ่งได้แค่ในภูมิภาค เส้นทางข้ามทวีปต้องใช้เรือใหญ่ ดูได้ที่ “แล่นได้ไกล” ในอู่ต่อเรือ</li><li>🔗 ต่อเครื่อง: ผู้โดยสาร (และสินค้า) ระหว่างสองเมืองที่เราไม่มีเที่ยวบินตรง จะต่อเครื่องที่<b>สาขา</b>ของเราได้สูงสุด 2 ครั้ง (3 เที่ยวบิน) ถ้าทางอ้อมไม่ไกลเกินไป เช่น กรุงเทพ → ดูไบ → เซาเปาโล</li><li>คนต่อเครื่องจะเพิ่มเข้าไปในทุกเส้นทางที่ใช้ จ่ายค่าตั๋วตามราคาของแต่ละช่วง ดูได้ที่กล่อง 🔗 ในหน้าเส้นทาง</li><li>🚢 ถ่ายลำ: เรือก็เหมือนกัน ตู้สินค้าระหว่างท่าที่ไม่มีเรือวิ่งตรง จะขนต่อกันที่<b>สาขาท่าเรือ</b>ได้สูงสุด 2 ครั้ง ดูได้ที่กล่อง 🔗 ในส่วนเส้นทางเรือ</li><li>อยากไปที่ไกลเกินบินตรง: เปิดสาขาที่เมืองกลางทาง แล้วเปิดเส้นทางทั้งสองช่วง หน้าเปิดเส้นทางจะแนะนำเมืองให้</li></ul></div></details>
 <details class="g"><summary>📥 ระบบสะสม (คนและสินค้าที่รอ)</summary><div><ul><li>ทันทีที่<b>เปิดเส้นทาง</b> ระบบสะสมของเส้นนั้นจะเริ่มทำงาน แม้ยังไม่มีเครื่องบินหรือเรือวิ่งเลยก็ตาม</li><li>ทุกสิ้นวัน คนหรือสินค้าที่ไม่มีใครขนไป ส่วนหนึ่งจะรอไว้: ผู้โดยสาร 35% (สะสมได้สูงสุดเท่ากับความต้องการ 3 วัน) · สินค้าทางอากาศ 60% (สูงสุด 6 วัน) · ตู้สินค้าทางเรือ 60% (สูงสุด 8 วัน)</li><li>เมื่อมีเครื่องบินหรือเรือที่มีที่ว่าง ของที่สะสมจะถูกขนไปเองและได้เงินเพิ่ม โดยจ่ายไม่เกินราคากลาง ตารางบินแบบปรับตามคนจะเพิ่มเที่ยวให้เองระหว่างที่ยังมีของสะสม</li><li>ดูยอดสะสมได้จากป้าย 📥 บนการ์ดเส้นทาง และในหน้ารายละเอียดเส้นทาง</li><li><b>ปิดเส้นทางเมื่อไร ของที่สะสมไว้จะหายไปทั้งหมด</b></li></ul></div></details>
