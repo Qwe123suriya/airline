@@ -444,13 +444,13 @@ function settleShips(T){
 function sailLeg(l,sh,m,lc,n){const bkk=shipK(sh,m),f=shipLoadF(m,bkk),ld=lc.loadK[bkk],arr=port(n%2===1?l.from:l.to),capT=m.teu*f;let teu=capT*ld*(.9+Math.random()*.2);
   if(l.bk&&l.bk[bkk]>0&&teu<capT){const tk=Math.min(capT-teu,l.bk[bkk]);l.bk[bkk]-=tk;teu+=tk}
   const o={srev:teu*TEU_RATE(lc.km)*SEA_RATE[bkk]*pk("cargo"),sfuel:lc.km*m.cpk*fuelNow()*pk("fuel"),sport:portFee(arr,m),teu,voy:1};
-  const net=o.srev-o.sfuel-o.sport;S.cash+=net;addT(S.today,o);l.today=l.today||{};addT(l.today,o);S.totTeu=(S.totTeu||0)+teu;
+  const net=o.srev-o.sfuel-o.sport;S.cash+=net;sh.tn=(sh.tn||0)+net;addT(S.today,o);l.today=l.today||{};addT(l.today,o);S.totTeu=(S.totTeu||0)+teu;
   if((tab==="home"||tab==="map")&&floaters.length<14)floaters.push({p:arr.c,v:net,t0:performance.now()})}
 function shipResale(sh){return shipM(sh.m).price*.6*Math.max(.5,1-sh.age/7300)}
 function shipFixed(){return S.ships.reduce((a,sh)=>a+shipM(sh.m).price*(sh.lane?.0004:.0002),0)}
 function buyShip(id){const m=shipM(id);if(S.cash<m.price)return null;S.cash-=m.price;
   const sh={id:S.nid++,m:id,reg:`${S.code}-M${String(S.ships.length+1).padStart(2,"0")}`,lane:null,off:Math.random(),age:0,down:0};
-  S.ships.push(sh);addNews(`🚢 รับมอบ${m.name} ชื่อ ${sh.reg}`);toast(`ซื้อ${m.name}แล้ว`);save();return sh}
+  S.ships.push(sh);buzz(18);addNews(`🚢 รับมอบ${m.name} ชื่อ ${sh.reg}`);toast(`ซื้อ${m.name}แล้ว`);save();return sh}
 const laneAvg=l=>l.h&&l.h.length>=3?l.h.reduce((a,x)=>a+x,0)/l.h.length:laneCalc(l).profit;
 const pbl=c=>(S.pbr&&S.pbr[c])||0;
 const pbList=()=>Object.keys(S.pbr||{});
@@ -708,10 +708,12 @@ function compShare(r,price,svc){if(!r.cmp||rkind(r)==="cargo")return 1;
 // Automatic fare: aims for ~90% full on the full schedule — rises when more people want to fly than there are seats, falls when they don't
 // Automatic fare = 60% of the way from "fill the seats" to the most profitable fare (cached per route per day; setting it yourself still earns more)
 const AUTO_SMART=.6;
-function autoPrice(r){const key=S.day+":"+r.planes.join(".")+":"+svcOf(r)+":"+(r.cmp?r.cmp.fare.toFixed(2):"-")+":"+S.rep.toFixed(0);
+function autoPrice(r,quick){const key=(quick?"q":"")+S.day+":"+r.planes.join(".")+":"+svcOf(r)+":"+(r.cmp?r.cmp.fare.toFixed(2):"-")+":"+S.rep.toFixed(0);
   if(r._apk===key)return r._apv;const p0=fillPrice(r);if(!r.planes.length){r._apk=key;r._apv=p0;return p0}
   const base=baseFare(dist(city(r.from),city(r.dest)));let best=p0,bp=calc(r,p0).profit;
-  for(let i=0;i<=24;i++){const pr=Math.round(base*(.7+1.3*i/24)/10)*10,pf=calc(r,pr).profit;if(pf>bp){bp=pf;best=pr}}
+  if(quick){let bi=-1;for(let i=0;i<=8;i++){const pr=Math.round(base*(.7+1.3*i/8)/10)*10,pf=calc(r,pr).profit;if(pf>bp){bp=pf;best=pr;bi=i}}
+    if(bi>=0)for(const j of [-.5,.5]){const pr=Math.round(base*(.7+1.3*(bi+j)/8)/10)*10,pf=calc(r,pr).profit;if(pf>bp){bp=pf;best=pr}}}
+  else for(let i=0;i<=24;i++){const pr=Math.round(base*(.7+1.3*i/24)/10)*10,pf=calc(r,pr).profit;if(pf>bp){bp=pf;best=pr}}
   const v=Math.round((p0+AUTO_SMART*(best-p0))/10)*10;r._apk=key;r._apv=v;return v}
 function fillPrice(r){const a=city(r.from),b=city(r.dest),d=dist(a,b),base=baseFare(d);
   const D0=(60*Math.sqrt(a.w*b.w)*distF(d)*evMult(r.dest)*evMult(r.from)*brBoost(r.from)*brBoost(r.dest)*compShare(r,r.price||base)+xferOf(r).pax)*(.6+S.rep/125)*SERVICE[svcOf(r)].f*mktMult()*starMult()*pk("pax");
@@ -858,7 +860,7 @@ function flyLeg(r,p,m,c,d,a,b,n){
 
   const o={tix:(pax-bp)*c.price+bp*Math.min(c.price,c.base),crev,...ck,fuelC:d*m.cpk*fuelNow()*pk("fuel"),feeC:(feeOf(a)+feeOf(b))/2*1000*(m.seats||m.cargo*3)/100,svc:pax*SERVICE[svcOf(r)].cost,pax,cargo,seats:m.seats,legs:1};
   const net=o.tix+o.crev-o.fuelC-o.feeC-o.svc;
-  S.cash+=net;addT(S.today,o);r.today=r.today||blankT();addT(r.today,o);
+  S.cash+=net;p.tn=(p.tn||0)+net;addT(S.today,o);r.today=r.today||blankT();addT(r.today,o);
   {const arr=(n%2===1?a:b).c,dep=(n%2===1?b:a).c;S.apT=S.apT||{};const A=S.apT[arr]=S.apT[arr]||{up:0,dn:0,cu:0,cd:0},D=S.apT[dep]=S.apT[dep]||{up:0,dn:0,cu:0,cd:0};D.up+=pax;A.dn+=pax;D.cu+=cargo;A.cd+=cargo}
   p.cond=clamp(p.cond-.035,0,100);S.totPax+=pax;S.totCargo+=cargo;
   if((tab==="home"||tab==="map")&&floaters.length<14)floaters.push({c:(n%2===1?a:b).c,v:net,t0:performance.now()})}
@@ -867,6 +869,7 @@ function rangeMigrate(){if(S.rngMig)return;S.rngMig=1;const off=[];
   if(off.length)addNews(`🧭 กฎพิสัยเรือใหม่: ${off.join(", ")} แล่นไม่ถึงปลายทาง ถูกเรียกกลับมาจอดว่าง ย้ายไปเส้นทางที่ใกล้กว่าได้`)}
 function simDay(){
   rangeMigrate();
+  for(const p of S.fleet){p.yn=p.tn||0;p.tn=0}for(const sh of S.ships||[]){sh.yn=sh.tn||0;sh.tn=0}
   S.apY=S.apT||{};S.apT={};
   S.day++;
   S.fuel=clamp(S.fuel+(Math.random()-.5)*.03+(1-S.fuel)*.01,.6,1.9);
@@ -960,6 +963,7 @@ function randomEvent(){
 }
 
 /* ---------- effects ---------- */
+const buzz=ms=>{try{if(S&&S.haptic!==false&&navigator.vibrate)navigator.vibrate(ms)}catch(e){}};
 function toast(t){const el=$("#toast");el.hidden=true;void el.offsetWidth;el.textContent=t;el.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>el.hidden=true,3200)}
 function floatCash(n){const host=$(".cash");if(!host||reduce)return;const now=performance.now();if(now-lastFloat<500)return;lastFloat=now;
   const f=document.createElement("span");f.className="float "+(n>=0?"good":"bad");f.textContent=(n>=0?"+":"")+money(n,true);host.appendChild(f);setTimeout(()=>f.remove(),1150)}
@@ -969,7 +973,7 @@ const updCelBtn=()=>{const l=$("#cellbl");if(l&&S)l.textContent=S.celOff?"ป๊
 function celebrate(k,t){if(afk){afk.log.unshift(`🏅 ${k}: ${t}`);return}if(S&&S.celOff)return;   // player turned the pop-ups off (news still records them)
   cel.push([k,t]);
   if(!celBusy){clearTimeout(celWait);celWait=setTimeout(nextCel,350)}}   // wait a moment so things unlocked together show as one card
-function nextCel(){if(!cel.length){celBusy=false;return}celBusy=true;
+function nextCel(){if(!cel.length){celBusy=false;return}celBusy=true;buzz([25,50,25]);
   const seen=new Set(),batch=cel.splice(0,6).filter(([k,t])=>!seen.has(k+t)&&seen.add(k+t)).slice(0,4),lab=k=>k.startsWith("!")?k.slice(1):"ปลดล็อก"+k,short=k=>k.startsWith("!")?k.slice(1).replace(/[!]/g,""):k;
   const d=document.createElement("div");d.className="unlock"+(batch.length>1?" multi":"");
   d.innerHTML=batch.length===1?`<div class="eyebrow">${esc(lab(batch[0][0]))}</div><b>${esc(batch[0][1])}</b>`
@@ -1011,6 +1015,7 @@ function renderApp(){
         <div class="muted small" id="hubl"></div>
         <button role="menuitem" id="themebtn"><span class="mi">${themeIcon()}</span><span id="themelbl">โหมดแสง</span></button>
         <button role="menuitem" id="celtg"><span class="mi">🎉</span><span id="cellbl"></span></button>
+        <button role="menuitem" id="haptg"><span class="mi">📳</span><span id="haplbl">${S.haptic===false?"สั่นเมื่อซื้อ/ได้รางวัล: ปิดอยู่":"สั่นเมื่อซื้อ/ได้รางวัล: เปิดอยู่"}</span></button>
         <button role="menuitem" id="help"><span class="mi">?</span>คู่มือระบบ</button>
         <button role="menuitem" id="fsbtn"><span class="mi">⛶</span><span id="fslbl">เต็มจอ (ซ่อนแถบเบราว์เซอร์)</span></button>
         <button role="menuitem" id="spotbtn"><span class="mi">🎵</span>เชื่อม Spotify</button>
@@ -1036,6 +1041,7 @@ function renderApp(){
   $("#afkbtn").onclick=()=>startAfk();
   $("#themebtn").onclick=cycleTheme;
   $("#celtg").onclick=()=>{S.celOff=!S.celOff;save();updCelBtn();toast(S.celOff?"ปิดป๊อปอัปปลดล็อกแล้ว (ยังดูได้ในข่าว)":"เปิดป๊อปอัปปลดล็อกแล้ว")};updCelBtn();
+  $("#haptg").onclick=()=>{S.haptic=S.haptic===false;save();$("#haplbl").textContent=S.haptic===false?"สั่นเมื่อซื้อ/ได้รางวัล: ปิดอยู่":"สั่นเมื่อซื้อ/ได้รางวัล: เปิดอยู่";if(S.haptic!==false)buzz(20)};
   $("#badge").onclick=()=>openSheet(liverySheet({}));
   $$("[data-sp]").forEach(b=>b.onclick=()=>{speed=+b.dataset.sp;paused=false;updateTop()});
   $$("[data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;renderView(true);window.scrollTo(0,0)});
@@ -1610,11 +1616,17 @@ function bindMap(){
   const rb=$("#rankbtn");if(rb)rb.onclick=()=>{S.ui_rank=!S.ui_rank;save();const rp=$("#rankpanel");rp.hidden=!S.ui_rank;if(S.ui_rank)rp.innerHTML=rankPanelHTML();rb.classList.toggle("on",S.ui_rank);rb.setAttribute("aria-expanded",S.ui_rank)}}
 function setCam(m,focus){camMode=m;camFocus=focus||null;$$("[data-cam]").forEach(b=>b.classList.toggle("on",b.dataset.cam===m))}
 function refreshAirports(){const el=$("#aplist");if(el)el.innerHTML=airportListHTML();const mi=$("#mapinfo");if(mi)mi.hidden=true;bindAirports()}
+// tiny inline chart of the last days' profit (green above zero, red below)
+function sparkSVG(h,w=64,ht=18){const v=(h||[]).slice(-14);if(v.length<2)return "";const mx=Math.max(...v,0),mn=Math.min(...v,0),sp=mx-mn||1,X=i=>(i/(v.length-1)*(w-2)+1).toFixed(1),Y=x=>(ht-1-(x-mn)/sp*(ht-2)).toFixed(1);
+  const pts=v.map((x,i)=>X(i)+","+Y(x)).join(" "),last=v[v.length-1],col=last>=0?"var(--good)":"var(--bad)";
+  return `<svg class="spk" width="${w}" height="${ht}" viewBox="0 0 ${w} ${ht}" aria-hidden="true">${mn<0&&mx>0?`<line x1="0" x2="${w}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)" stroke-dasharray="2 2"/>`:""}<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${X(v.length-1)}" cy="${Y(last)}" r="2" fill="${col}"/></svg>`}
+const earnTxt=v=>v==null?"":`<span class="${v>=0?"good":"bad"}">${v>=0?"+":""}${money(v,true)}</span> เมื่อวาน`;
 function trend(r){if(r.prevPax==null||!r.last)return "";const ch=(r.last.pax-r.prevPax)/Math.max(1,r.prevPax);
   if(Math.abs(ch)<.02)return '<span class="muted">●</span>';return ch>0?`<span class="good">▲${Math.round(ch*100)}%</span>`:`<span class="bad">▼${Math.round(-ch*100)}%</span>`}
 
 let cargoSeg="sea";
-function shipArt(m,lv){lv=lv||S.livery;const id="sa"+(artSeq++);
+function shipArt(m,lv){return artRef("s|"+m.id+"|"+lvKey(lv||S.livery),shipArt0(m,lv))}
+function shipArt0(m,lv){lv=lv||S.livery;const id="sa"+(artSeq++);
   const L=Math.min(190,70+m.len*.3),x0=(200-L)/2,x1=x0+L,wl=54,hh=6+Math.sqrt(m.teu)/32,deck=wl-hh,keel=wl+4.2;
   const rows=clamp(Math.round(Math.sqrt(m.teu)/32),1,5),ch=4.2,bw=6.2,edge="rgba(20,34,52,.45)";
   const light=m.reefer||m.roro,hullC=light?"#F1F4F7":"#1F2B3B",hullTxt=light?lv.tail:"#FFFFFF",geared=["cst","fdr","rfr","rfl","rfx"].includes(m.id);
@@ -1703,7 +1715,7 @@ function seaHTML(){const lp=S.lanes.reduce((a,l)=>a+laneAvg(l),0),tpd=S.lanes.re
   ${S.lanes.length?`<div class="strips">${S.lanes.map(l=>{const c={...laneCalc(l),profit:laneAvg(l)},a=port(l.from),b=port(l.to),ld=Math.max(c.load,c.loadr),
      days=c.km/40/24;return `<button class="strip ${!l.ships.length?"idle":c.profit<0?"loss":""}" data-lane="${l.id}" style="border-left-color:${!l.ships.length?"var(--muted)":c.profit<0?"var(--bad)":"var(--port)"}"><div class="fno">${laneNo(l)}<small>${l.ships.length} ลำ</small>${bkChip(bkSea(l),"ตู้")}</div>
       <div style="min-width:0"><div class="iata" style="font-size:15px">${a.n} → ${b.n}</div><div class="sub">${c.km.toLocaleString()} กม. ทางทะเล · ราว ${Math.round(days)} วัน${viaText(c.sp).length?" · ผ่าน"+viaText(c.sp)[0]:""}</div><div class="lf"><i style="width:${Math.round(ld*100)}%;background:var(--port)"></i></div></div>
-      <div class="right"><div class="num ${c.profit<0?"bad":"good"}">${money(c.profit,true)}</div><div class="sub">เฉลี่ย/วัน · เต็ม ${Math.round(ld*100)}%</div></div></button>`}).join("")}</div>`:`<div class="panel muted small">ยังไม่มีเส้นทางเรือ เปิดเส้นทางระหว่างท่าเรือสองแห่งในภูมิภาคที่ปลดล็อกแล้ว แล้วซื้อเรือใส่ เรือช้ากว่าเครื่องบินมาก แต่ขนตู้สินค้าได้ครั้งละหลายพันตู้</div>`}
+      <div class="right"><div class="num ${c.profit<0?"bad":"good"}">${money(c.profit,true)}</div>${sparkSVG(l.h)}<div class="sub">เฉลี่ย/วัน · เต็ม ${Math.round(ld*100)}%</div></div></button>`}).join("")}</div>`:`<div class="panel muted small">ยังไม่มีเส้นทางเรือ เปิดเส้นทางระหว่างท่าเรือสองแห่งในภูมิภาคที่ปลดล็อกแล้ว แล้วซื้อเรือใส่ เรือช้ากว่าเครื่องบินมาก แต่ขนตู้สินค้าได้ครั้งละหลายพันตู้</div>`}
   ${S.ships.length?`<h2>กองเรือของคุณ</h2><div class="hangar">${S.ships.map(sh=>{const m=shipM(sh.m),l=S.lanes.find(x=>x.id===sh.lane);
     return `<button class="pcard ${l?"":"idle"}" data-ship="${sh.id}" style="border-bottom-color:${l?"var(--port)":"var(--muted)"}">${shipArt(m)}<div class="row between"><b class="num">${sh.reg}</b><span class="small">${l?`${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:'<span class="muted">จอดว่าง</span>'}</span></div><div class="small muted">${m.name}</div></button>`}).join("")}</div>`:""}
   <h2>อู่ต่อเรือ <span class="muted num small">${SHIPS.length} รุ่น</span></h2>
@@ -1845,7 +1857,7 @@ function checkMissions(){if(!S)return;progCheck();if(!has("missions"))return;
 function claimMission(id,el){const m=S.missions.find(x=>x.id===id);if(!m||!m.done)return;
   S.cash+=m.reward;S.rep=clamp(S.rep+m.rep,0,100);S.mdone=(S.mdone||0)+1;S.missions=S.missions.filter(x=>x!==m);
   addNews(`🎯 ภารกิจสำเร็จ "${mTitle(m)}" ได้รางวัล ${money(m.reward)}`);if(el){const b=el.getBoundingClientRect();coinBurst(b.left+b.width/2,b.top+b.height/2)}
-  floatCash(m.reward);checkMissions();save();if(tab==="home")refreshHome()}
+  floatCash(m.reward);buzz([20,40,30]);checkMissions();save();if(tab==="home")refreshHome()}
 function missionsHTML(){if(!S.missions||!has("missions"))return "";const ready=S.missions.filter(m=>m.done).length;
   return `<div class="panel stack mpanel"><div class="row between"><span class="eyebrow">🎯 ภารกิจ${ready?` · <span style="color:var(--accent)">รับรางวัลได้ ${ready}</span>`:""}</span><span class="muted small">สำเร็จแล้ว ${S.mdone||0} ภารกิจ</span></div>
    ${S.missions.map(m=>{const pr=clamp(mProg(m)/m.target,0,1),left=m.until>1e8?"":` · เหลือ ${Math.max(0,m.until-S.day)} วัน`;
@@ -2207,7 +2219,7 @@ function routesHTML(){rseg=bm();const RL=S.routes.filter(r=>rkind(r)===rseg),np=
     return `<button class="strip ${cls}" data-route="${r.id}">
       <div class="fno">${fno(r)}<small>${r.planes.length} ลำ · ${c.legs} เที่ยว/วัน</small>${rkind(r)==="cargo"?bkChip(bkCargo(r),"ตัน"):bkChip(bkPax(r),"คน")}</div>
       <div style="min-width:0"><div class="iata">${r.from} → ${r.dest}</div>${r.cmp?`<div class="cmpchip cmpline">⚔️ ${esc(r.cmp.rv)} · คุณได้ ${Math.round((r.cmp.share??compShare(r,priceOf(r)))*100)}%</div>`:""}<div class="sub">${dc.n} · ${c.d.toLocaleString()} กม. · ${rkind(r)==="cargo"?(c.crate?crateText(c):""):money(c.price??r.price,true)}${r.pmode==="auto"&&rkind(r)!=="cargo"?' <span class="tagauto">อัตโนมัติ</span>':""}${c.ground?' · <span class="bad">งดบินพายุ</span>':""}${evMult(r.dest)>1?' · <span class="warn">เทศกาล</span>':""}</div><div class="lf"><i style="width:${Math.round((rkind(r)==="cargo"?(c.ccap?(c.cargo||0)/c.ccap:0):c.lf)*100)}%;${rkind(r)==="cargo"?"background:var(--cargo)":""}"></i></div></div>
-      <div class="right"><div class="num ${c.profit<0?"bad":"good"}">${c.profit>=0?"+":""}${money(c.profit,true)}</div><div class="sub">${rkind(r)==="cargo"?`${Math.round(c.cargo||0).toLocaleString()} ตัน`:`${(c.pax||0).toLocaleString()} คน ${trend(r)}`}</div></div>
+      <div class="right"><div class="num ${c.profit<0?"bad":"good"}">${c.profit>=0?"+":""}${money(c.profit,true)}</div>${sparkSVG(r.h)}<div class="sub">${rkind(r)==="cargo"?`${Math.round(c.cargo||0).toLocaleString()} ตัน`:`${(c.pax||0).toLocaleString()} คน ${trend(r)}`}</div></div>
     </button>`}).join("")}</div>`:`<div class="panel muted">${rseg==="cargo"?"ยังไม่มีเส้นทางขนสินค้า เปิดเส้นทางสินค้าจากสาขาไหนก็ได้ แล้วใส่เครื่องบินขนสินค้า":`ยังไม่มีเส้นทางผู้โดยสาร เส้นทางทุกเส้นออกจากสาขา เช่น ${city(S.hub).n} (${S.hub})`}</div>`}
   <div class="panel row between"><div><div class="eyebrow">สาขา</div><div class="small muted">${S.bases.join(" · ")}</div></div><button class="btn sm" id="gobranch">จัดการสาขา</button></div>${rseg==="cargo"&&has("sea")?`<div class="modesec"></div>${seaPart("lanes")}<div class="modesec"><span>🗓️ ฤดูสินค้าและสถิติ</span></div>${cargoCalHTML()}`:""}`;
 }
@@ -2222,7 +2234,15 @@ const tipOf=m=>TIPS[m.id]||(m.a&&m.a.prop?"none":"sharklet");
 const TITLE_FONTS={modern:["โมเดิร์น","Chakra Petch,Anuphan,sans-serif",700],classic:["คลาสสิก","Noto Serif Thai,Georgia,Times New Roman,serif",700],light:["บางเรียบหรู","Anuphan,sans-serif",400],italic:["เอียงเร็ว","Chakra Petch,Anuphan,sans-serif",700,"italic"]};
 const motif=(d,x,y,z,col,op)=>`<path d="${d}" transform="translate(${(x-z/2).toFixed(2)} ${(y-z/2).toFixed(2)}) scale(${(z/24).toFixed(4)})" fill="${col}"${op!=null?` opacity="${op}"`:""}/>`;
 // Side-view illustration, proportions scaled from each type's length and fuselage height
-function planeArt(m,lv,fly){lv=lv||S.livery;const A=m.a,id="pa"+(artSeq++);
+const artSym=new Map();let artSprite=null,artN=0;
+function artRef(key,svg){if(artSprite&&!artSprite.isConnected){artSprite=null;artSym.clear()}let sym=artSym.get(key);
+  if(!sym){const mt=/^<svg class="([^"]*)" viewBox="([^"]*)" role="img" aria-label="([^"]*)">([\s\S]*)<\/svg>$/.exec(svg);if(!mt)return svg;
+    if(!artSprite||!artSprite.isConnected){artSprite=document.createElementNS("http://www.w3.org/2000/svg","svg");artSprite.setAttribute("aria-hidden","true");artSprite.style.cssText="position:absolute;width:0;height:0;overflow:hidden";document.body.appendChild(artSprite);artSym.clear()}
+    sym={id:"art"+(artN++),cls:mt[1],vb:mt[2],lab:mt[3]};const t=document.createElementNS("http://www.w3.org/2000/svg","svg");t.innerHTML=`<symbol id="${sym.id}" overflow="visible">${mt[4]}</symbol>`;artSprite.appendChild(t.firstChild);artSym.set(key,sym)}
+  return `<svg class="${sym.cls}" viewBox="${sym.vb}" role="img" aria-label="${sym.lab}"><use href="#${sym.id}"/></svg>`}
+const lvKey=lv=>lv?JSON.stringify(lv):"";
+function planeArt(m,lv,fly){return artRef("p|"+m.id+"|"+(fly?1:0)+"|"+lvKey(lv||S.livery),planeArt0(m,lv,fly))}
+function planeArt0(m,lv,fly){lv=lv||S.livery;const A=m.a,id="pa"+(artSeq++);
   // side profile, nose to the left, standing on its gear (or gear up when fly is set); everything is sized from fuselage height H and length Lx
   const H=A.fh*(A.prop?.95:.9),Lx=Math.min(188,56+m.len*1.75),x0=(200-Lx)/2+(A.eng==="nose"?4:0),x1=x0+Lx;
   const G=72,gh=H*(A.hw?.36:.46)+1.5,bot=G-gh,cy=bot-H/2,top=cy-H/2,nt=cy+H*.14;
@@ -2372,7 +2392,7 @@ function fleetHTML(){
     const cc=p.cond<40?"low":p.cond<70?"mid":"";
     return `<button class="pcard ${shop?"shop":r?"":"idle"}" data-plane="${p.id}">${planeArt(m)}
       <div class="row between"><b class="num">${p.reg}</b><span class="small">${st}</span></div>
-      <div class="small muted">${m.name} · ${m.seats?m.seats+" ที่นั่ง":m.cargo+" ตัน"}</div>
+      <div class="small muted">${m.name} · ${m.seats?m.seats+" ที่นั่ง":m.cargo+" ตัน"}</div>${r&&p.yn!=null?`<div class="small">${earnTxt(p.yn)}</div>`:""}
       <div class="row" style="gap:8px"><div class="lf cond ${cc}" style="flex:1;margin:0;max-width:none"><i style="width:${p.cond}%"></i></div><span class="num small ${p.cond<40?"bad":"muted"}">${Math.round(p.cond)}%</span></div></button>`}).join("")}</div>`:""}).join(""):`<div class="panel muted">${KC?"ยังไม่มีเครื่องบินขนสินค้า ลำที่ถูกที่สุดคือ ATR 72-600F ราคา ฿75 ล้าน":"ยังไม่มีเครื่องบินโดยสาร"} · กดปุ่มซื้อด้านล่าง</div>`}
   ${S.fleet.length?`<label class="tg panel"><input type="checkbox" id="amx" ${S.autoMx?"checked":""}> ส่งซ่อมบำรุงอัตโนมัติเมื่อสภาพต่ำกว่า 50%</label>`:""}
   <div class="shopbar"><button class="btn primary" data-shop="air">🛒 ซื้อเครื่องบิน${KC?"ขนสินค้า":""}เพิ่ม</button><button class="btn" data-pick="air">🧭 ช่วยเลือกรุ่น</button></div>
@@ -2381,7 +2401,7 @@ function fleetHTML(){
 function shipsOwnedHTML(){
   return `<div class="row between"><h2>กองเรือของคุณ <span class="muted num small">${S.ships.length} ลำ</span></h2></div>
   ${S.ships.length?`<div class="hangar">${S.ships.map(sh=>{const m=shipM(sh.m),l=S.lanes.find(x=>x.id===sh.lane);
-    return `<button class="pcard ${l?"":"idle"}" data-ship="${sh.id}" style="border-bottom-color:${l?"var(--port)":"var(--muted)"}">${shipArt(m)}<div class="row between"><b class="num">${sh.reg}</b><span class="small">${l?`${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:'<span class="muted">จอดว่าง</span>'}</span></div><div class="small muted">${m.name}</div></button>`}).join("")}</div>`:`<div class="panel muted">ยังไม่มีเรือ · กดปุ่มซื้อด้านล่าง</div>`}
+    return `<button class="pcard ${l?"":"idle"}" data-ship="${sh.id}" style="border-bottom-color:${l?"var(--port)":"var(--muted)"}">${shipArt(m)}<div class="row between"><b class="num">${sh.reg}</b><span class="small">${l?`${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:'<span class="muted">จอดว่าง</span>'}</span></div><div class="small muted">${m.name}</div>${l&&sh.yn!=null?`<div class="small">${earnTxt(sh.yn)}</div>`:""}</button>`}).join("")}</div>`:`<div class="panel muted">ยังไม่มีเรือ · กดปุ่มซื้อด้านล่าง</div>`}
   <div class="shopbar"><button class="btn primary" data-shop="sea">🛒 ซื้อเรือเพิ่ม</button><button class="btn" data-pick="sea">🧭 ช่วยเลือกเรือ</button></div>`}
 function airMarketHTML(){const KC=bm()==="cargo";if(KC)mktCat="cargo";else if(mktCat==="cargo")mktCat="all";
   const list=MODELS.filter(m=>mOpen(m)&&(KC?!m.seats&&(ccls==="call"||cargoCls(m)===ccls):m.seats&&(mktCat==="all"||m.cat===mktCat))).sort((a,b)=>KC?a.price-b.price:0);
@@ -2528,7 +2548,7 @@ function bindView(rest){
 function buy(id){const m=model(id),pr=priceFor(m);if(S.cash<pr)return;
   S.cash-=pr;if(pr<m.price){S.deal=null;toast(`ใช้ดีลลดราคาแล้ว ประหยัด ${money(m.price-pr)}`)}const p={id:S.nid++,m:id,reg:"",route:null,down:0,cond:100,age:0};p.off=(p.id*.37)%1;
   const n=S.fleet.length;p.reg=`HS-${S.code}${"ABCDEFGHJKLMNPQRSTUVWXYZ"[n%24]}${n>=24?Math.floor(n/24):""}`;
-  S.fleet.push(p);addNews(`🛬 รับมอบ ${m.name} ทะเบียน ${p.reg}`);toast(`ซื้อ ${m.name} แล้ว · ไปแท็บเส้นทางเพื่อใช้งาน`);flyover();save();renderView();return p}
+  S.fleet.push(p);buzz(18);addNews(`🛬 รับมอบ ${m.name} ทะเบียน ${p.reg}`);toast(`ซื้อ ${m.name} แล้ว · ไปแท็บเส้นทางเพื่อใช้งาน`);flyover();save();renderView();return p}
 
 /* ---------- sheets ---------- */
 function openSheet(fn){sheetFn=fn;drawSheet(true)}
@@ -2545,7 +2565,7 @@ const head=(t,sub)=>`<div class="row between" style="align-items:flex-start"><di
    the player has idle — or, if none, can afford — for that city pair. Cached per day. */
 let fcCache={k:"",m:new Map()};
 function routeForecast(from,dest,kind){
-  const key=S.day+":"+S.fleet.length+":"+Math.round(S.cash/1e6)+":"+S.rep.toFixed(0);if(fcCache.k!==key)fcCache={k:key,m:new Map()};
+  const key=S.day+":"+S.fleet.length+":"+S.routes.length+":"+Math.round(Math.log2(Math.max(1,S.cash/1e6))*4)+":"+S.rep.toFixed(0)+":"+(S.prog||[]).length;if(fcCache.k!==key)fcCache={k:key,m:new Map()};
   const ck=from+">"+dest+":"+kind;if(fcCache.m.has(ck))return fcCache.m.get(ck);
   const a=city(from),b=city(dest),d=dist(a,b),KC=kind==="cargo",r={id:-9,kind,from,dest,price:baseFare(d),pmode:"auto",planes:[],h:[]};
   const c0=calc(r,baseFare(d)),tags=[];
@@ -2555,8 +2575,10 @@ function routeForecast(from,dest,kind){
   let cands=[...new Set(idle)].map(model).filter(m=>m.range*.95>=d),own=true;
   if(!cands.length){own=false;cands=MODELS.filter(m=>mOpen(m)&&(KC?!m.seats:!!m.seats)&&m.range*.95>=d&&priceFor(m)<=S.cash-3e6)}
   let best=null;
-  for(const m of cands){const fake={id:-77,m:m.id,route:null,down:0,cond:100,age:0};S.fleet.push(fake);r.planes=[-77];
-    try{const pr=KC?baseFare(d):autoPrice(r),f=calc(r,pr);if(!best||f.profit>best.profit)best={m,profit:f.profit,lf:f.lf,cap:KC?f.ccap:f.cap,pax:KC?f.cargo:f.pax}}finally{S.fleet.pop()}}
+  const tryM=(m,full)=>{const fake={id:-77,m:m.id,route:null,down:0,cond:100,age:0};S.fleet.push(fake);r.planes=[-77];r._apk=null;
+    try{const pr=KC?baseFare(d):full?autoPrice(r,true):fillPrice(r),f=calc(r,pr);return {m,profit:f.profit,lf:f.lf,cap:KC?f.ccap:f.cap,pax:KC?f.cargo:f.pax}}finally{S.fleet.pop();r._apk=null}};
+  const pre=cands.map(m=>tryM(m,false)).sort((x,y)=>y.profit-x.profit);
+  for(const o of KC?pre.slice(0,1):pre.slice(0,3).map(o=>tryM(o.m,true)))if(!best||o.profit>best.profit)best=o;
   // aircraft size that fits: seats (or tonnes) per flight if a typical jet of that class flew its full daily schedule
   const ref=model(KC?"738f":"a320")||MODELS.find(m=>KC?!m.seats:m.seats),legs=legsFor(ref,d),per=(KC?c0.cdem:c0.demand)/Math.max(1,legs);
   const size=KC?(per<4?["small","ลำเล็ก (ATR/Cessna)"]:per<25?["mid","ลำตัวแคบ (737/A321)"]:["big","ลำตัวกว้าง (767/777)"]):(per<70?["small","ใบพัด (ATR/Dash 8)"]:per<190?["mid","ลำตัวแคบ (A320/737)"]:["big","ลำตัวกว้าง (787/A350)"]);
