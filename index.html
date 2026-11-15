@@ -631,6 +631,7 @@ body:not(.nf-regions) .wishbtn{bottom:50px}
 .mw-top{flex-direction:column;align-items:flex-start!important;gap:1px}.mw-top b{font-size:13px}.mw-top span{font-size:10.5px;line-height:1.3}
 body:not(.nf-regions) .wishpanel{bottom:92px}
 .wishpanel[hidden]{display:none!important}
+.mw-seg{display:flex;flex-wrap:wrap;gap:3px}.mw-seg button{flex:1;padding:3px 6px;font-size:11.5px;white-space:nowrap}
 .mw-br{display:flex;flex-direction:column;gap:2px;border-top:1px solid var(--line);padding-top:4px}
 .mw-h{font-size:12px;color:var(--muted)}.mw-h b{color:var(--ink)}
 .mw-row{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center;font-size:12.5px;line-height:1.25}
@@ -1941,7 +1942,7 @@ function mapTabHTML(){return `<div class="mapbox full" id="mapfull"><canvas id="
    <div class="rankpanel" id="rankpanel" ${S.ui_rank?"":"hidden"}>${rankPanelHTML()}</div>
    <div class="mapinfo" id="mapinfo" ${selCity?"":"hidden"}>${apInfoHTML()}</div>
    <div class="maphud" id="maphud">${mapHudHTML()}</div>
-   ${bm()==="pax"?`<button class="wishbtn ${S.ui_wish?"on":""}" id="wishbtn" aria-expanded="${!!S.ui_wish}">💭 อยากไปไหน${S.ui_wish?" ▾":" ▴"}</button><div class="wishpanel" id="wishpanel" ${S.ui_wish?"":"hidden"}>${mapWishHTML()}</div>`:""}
+   <button class="wishbtn ${S.ui_wish?"on":""}" id="wishbtn" aria-expanded="${!!S.ui_wish}">${wishLbl()}</button><div class="wishpanel" id="wishpanel" ${S.ui_wish?"":"hidden"}>${mapWishHTML()}</div>
    ${modeHTML()}<button class="mapunlock" id="regbtn">🔓 ปลดล็อกแผนที่ <span class="num">${S.unlocked.length}/${REGIONS.length}</span></button></div>`}
 function applyBarMin(){const on=!!(S&&S.ui_barmin);document.body.classList.toggle("barmin",on);const b=$("#barmin");if(b){b.setAttribute("aria-expanded",!on);b.setAttribute("aria-label",on?"ขยายแถบด้านบน":"ย่อแถบด้านบน")}
   if($("#mapfull")){sizeFullMap();if(typeof renderPop==="function"&&pop)renderPop()}}
@@ -1950,7 +1951,34 @@ function refreshMapTab(){if(!$("#mapfull")){renderView();return}{const wp=$("#wi
   $("#regbtn").innerHTML=`🔓 ปลดล็อกแผนที่ <span class="num">${S.unlocked.length}/${REGIONS.length}</span>`;refreshAirports();if(pop)renderPop()}
 // map tab: where the people at each of your airports want to fly (top wishes per branch)
 function wantsOf(code,n){wishesOf(code);return (wishCache.all.get(code)||[]).filter(w=>isOpen(w.c.c)&&w.d<=AIR_MAX("pax")&&!S.routes.some(x=>rkind(x)==="pax"&&((x.from===code&&x.dest===w.c.c)||(x.dest===code&&x.from===w.c.c)))).slice(0,n)}
-function mapWishHTML(){const rows=S.bases.filter(c=>aptTakes(c,"pax")).map(code=>{const ws=wantsOf(code,3),c=city(code);
+/* Freight version of the box (cargo mode): where freight from each branch wants to go and we don't carry it yet.
+   Switch air / sea and the cargo kind to look at. Cached per day. */
+let cwCache={k:null,m:new Map()};
+function cargoWants(code,sea){const key=S.day+":"+S.routes.length+":"+S.lanes.length+":"+S.unlocked.join()+":"+(S.prog||[]).length;if(cwCache.k!==key)cwCache={k:key,m:new Map()};
+  const ck=(sea?"s:":"a:")+code;if(cwCache.m.has(ck))return cwCache.m.get(ck);let out=[];
+  if(!sea){const a=city(code);
+    for(const b of CITIES){if(b.c===code||!isOpen(b.c)||!aptTakes(b.c,"cargo"))continue;const d=dist(a,b);if(d<300||d>AIR_MAX("cargo"))continue;
+      if(S.routes.some(x=>rkind(x)==="cargo"&&((x.from===code&&x.dest===b.c)||(x.dest===code&&x.from===b.c))))continue;
+      const c=calc({id:-9,kind:"cargo",from:code,dest:b.c,price:0,pmode:"auto",cmode:"auto",planes:[],h:[]});
+      out.push({to:b.c,n:b.n,d,k:{all:c.cK.pcl.dem+c.cK.fd.dem+c.cK.pt.dem,pcl:c.cK.pcl.dem,fd:c.cK.fd.dem,pt:c.cK.pt.dem}})}}
+  else{const a=port(code);
+    for(const b of PORTS){if(b.c===code||!portOpen(b.c))continue;const km=seaPath(code,b.c).km;if(km>SHIP_MAX)continue;
+      if(S.lanes.some(l=>(l.from===code&&l.to===b.c)||(l.to===code&&l.from===b.c)))continue;
+      const D=seaOwn(a,b,km)*pBoost(code)*pBoost(b.c);
+      out.push({to:b.c,n:b.n,d:km,k:{all:D+(skOpen("r")?D*.22:0)+(skOpen("o")?D*.3:0),pcl:D,fd:skOpen("r")?D*.22:0,pt:skOpen("o")?D*.3:0}})}}
+  cwCache.m.set(ck,out);return out}
+const wishLbl=()=>(bm()==="cargo"?"📦 สินค้าไปไหน":"💭 อยากไปไหน")+(S.ui_wish?" ▾":" ▴");
+function cargoWishHTML(){const sea=S.ui_cwm==="sea"&&has("sea"),K=S.ui_cwk&&S.ui_cwk!=="all"&&(sea?skOpen(SEA_K[S.ui_cwk]):ckOpen(S.ui_cwk))?S.ui_cwk:"all";
+  const kinds=["all",...CK.filter(t=>sea?skOpen(SEA_K[t]):ckOpen(t))],u=sea?"TEU":"ตัน";
+  const froms=sea?pbList().filter(portOpen):S.bases.filter(c=>aptTakes(c,"cargo"));
+  const rows=froms.map(code=>{const ws=cargoWants(code,sea).filter(w=>w.k[K]>=.5).sort((a,b)=>b.k[K]-a.k[K]).slice(0,3),nm=sea?port(code).n:city(code).n;
+    return `<div class="mw-br"><div class="mw-h">${sea?"⚓":`<b class="num">${code}</b>`} ${nm}</div>
+      ${ws.length?ws.map(w=>`<div class="mw-row"><span class="mw-to">${sea?"":`<b class="num">${w.to}</b> `}${w.n}</span><b class="num mw-n">${Math.round(w.k[K]).toLocaleString()}</b><button class="btn sm primary" ${sea?`data-lwish="${code}>${w.to}"`:`data-cwish="${code}>${w.to}"`}>เปิด</button></div>`).join(""):`<div class="muted small">เปิดเส้นทางไปครบแล้ว</div>`}</div>`}).join("");
+  return `<div class="row between mw-top"><b>📦 สินค้าอยากไปไหน</b><span class="muted">ที่ที่สินค้าอยากไปแต่ยังไม่มีเส้นทาง · ${u}/วัน${kinds.length>2?" · 📦 พัสดุ 🍎 อาหาร 🚗 ชิ้นส่วน/รถ":""}</span></div>
+    ${has("sea")?`<div class="seg mw-seg"><button data-cwm="air" class="${!sea?"on":""}">✈ ทางอากาศ</button><button data-cwm="sea" class="${sea?"on":""}">🚢 ทางเรือ</button></div>`:""}
+    ${kinds.length>2?`<div class="seg mw-seg">${kinds.map(t=>`<button data-cwk="${t}" class="${K===t?"on":""}" title="${t==="all"?"ทั้งหมด":CK_N[t]}">${t==="all"?"ทั้งหมด":CK_E[t]}</button>`).join("")}</div>`:""}
+    ${rows||`<div class="muted small">${sea?"ยังไม่มีสาขาท่าเรือ":"ยังไม่มีสาขาที่รับสินค้า"}</div>`}`}
+function mapWishHTML(){if(bm()==="cargo")return cargoWishHTML();const rows=S.bases.filter(c=>aptTakes(c,"pax")).map(code=>{const ws=wantsOf(code,3),c=city(code);
     return `<div class="mw-br"><div class="mw-h"><b class="num">${code}</b> ${c.n}${code===S.hub?' <span class="muted">· ฐานหลัก</span>':""}</div>
       ${ws.length?ws.map(w=>`<div class="mw-row"><span class="mw-to"><b class="num">${w.c.c}</b> ${w.c.n}</span><b class="num mw-n">${Math.round(w.dem).toLocaleString()}</b><button class="btn sm primary" data-wish="${code}>${w.c.c}">เปิด</button></div>`).join(""):`<div class="muted small">เปิดเส้นทางไปที่คนอยากไปครบแล้ว</div>`}</div>`}).join("");
   return `<div class="row between mw-top"><b>💭 อยากไปไหน</b><span class="muted">ที่ที่คนอยากไปแต่ยังไม่มีเที่ยวบิน · คน/วัน</span></div>${rows||'<div class="muted small">ยังไม่มีสาขาที่รับผู้โดยสาร</div>'}`}
@@ -2346,7 +2374,7 @@ function bindMap(){
   $("#regbtn").onclick=()=>openSheet(regionSheet({}));
   $$("[data-night]").forEach(b=>b.onclick=()=>{S.night=S.night===false;save();$$("[data-night]").forEach(x=>{x.classList.toggle("on",S.night);x.setAttribute("aria-pressed",S.night);x.setAttribute("aria-label",(S.night?"ปิด":"เปิด")+"เงากลางวันกลางคืน")});toast(S.night?"🌙 เปิดกลางวัน-กลางคืนบนแผนที่":"☀️ ปิดเงากลางคืนแล้ว · เวลาในเกมยังเดินตามปกติ")});
   $$("[data-vm]").forEach(b=>b.onclick=()=>setMode(b.dataset.vm));
-  const wb=$("#wishbtn");if(wb)wb.onclick=()=>{S.ui_wish=!S.ui_wish;save();const wp=$("#wishpanel");wp.hidden=!S.ui_wish;if(S.ui_wish){wp.innerHTML=mapWishHTML();bindWishes()}wb.classList.toggle("on",S.ui_wish);wb.setAttribute("aria-expanded",S.ui_wish);wb.textContent="💭 อยากไปไหน"+(S.ui_wish?" ▾":" ▴")};
+  const wb=$("#wishbtn");if(wb)wb.onclick=()=>{S.ui_wish=!S.ui_wish;save();const wp=$("#wishpanel");wp.hidden=!S.ui_wish;if(S.ui_wish){wp.innerHTML=mapWishHTML();bindWishes()}wb.classList.toggle("on",S.ui_wish);wb.setAttribute("aria-expanded",S.ui_wish);wb.textContent=wishLbl()};
   const rb=$("#rankbtn");if(rb)rb.onclick=()=>{S.ui_rank=!S.ui_rank;save();const rp=$("#rankpanel");rp.hidden=!S.ui_rank;if(S.ui_rank)rp.innerHTML=rankPanelHTML();rb.classList.toggle("on",S.ui_rank);rb.setAttribute("aria-expanded",S.ui_rank)}}
 function setCam(m,focus){camMode=m;camFocus=focus||null;$$("[data-cam]").forEach(b=>b.classList.toggle("on",b.dataset.cam===m))}
 function refreshAirports(){const el=$("#aplist");if(el)el.innerHTML=airportListHTML();const mi=$("#mapinfo");if(mi)mi.hidden=true;bindAirports()}
@@ -2895,7 +2923,12 @@ function oppsHTML(){if(rseg!=="pax")return "";const L=oppsList().slice(0,5);if(!
 function bindWishes(){
   $$("[data-wish]").forEach(b=>b.onclick=e=>{e.stopPropagation();const [f,t]=b.dataset.wish.split(">");openSheet(newRouteSheet({from:f,kind:"pax",dest:t}))});
   $$("[data-wunlock]").forEach(b=>b.onclick=e=>{e.stopPropagation();openSheet(regionSheet({id:b.dataset.wunlock}))});
-  $$("[data-wroute]").forEach(b=>b.onclick=e=>{e.stopPropagation();openSheet(routeSheet(+b.dataset.wroute,{}))})}
+  $$("[data-wroute]").forEach(b=>b.onclick=e=>{e.stopPropagation();openSheet(routeSheet(+b.dataset.wroute,{}))});
+  $$("[data-cwish]").forEach(b=>b.onclick=e=>{e.stopPropagation();const [f,t]=b.dataset.cwish.split(">");openSheet(newRouteSheet({from:f,kind:"cargo",dest:t}))});
+  $$("[data-lwish]").forEach(b=>b.onclick=e=>{e.stopPropagation();const [f,t]=b.dataset.lwish.split(">");openSheet(newLaneSheet({from:f,to:t}))});
+  const rw=()=>{const wp=$("#wishpanel");if(wp){wp.innerHTML=mapWishHTML();bindWishes()}};
+  $$("[data-cwm]").forEach(b=>b.onclick=e=>{e.stopPropagation();S.ui_cwm=b.dataset.cwm;save();rw()});
+  $$("[data-cwk]").forEach(b=>b.onclick=e=>{e.stopPropagation();S.ui_cwk=b.dataset.cwk;save();rw()})}
 function airBranchHTML(){
   const mine=S.bases.map(code=>{const c=city(code),rs=S.routes.filter(r=>r.from===code),pf=rs.reduce((a,r)=>a+(r.last?r.last.profit:0),0),pl=rs.reduce((a,r)=>a+r.planes.length,0),lv=blv(code);
     return `<div class="brcard ${code===S.hub?"hub":""}"><div class="row between" style="align-items:flex-start"><div style="min-width:0"><div class="row" style="gap:8px"><span class="iata" style="font-family:var(--f-display);font-weight:700;font-size:20px">${code}</span><span class="stars">${"★".repeat(lv)}${"☆".repeat(BR_MAX-lv)}</span></div>
