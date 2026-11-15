@@ -364,6 +364,7 @@ details.more[open] summary{margin-bottom:8px}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn.sm{padding:6px 10px;font-size:13.5px;border-radius:8px}
 
+.fsq{display:inline-flex;align-items:center;justify-content:center}.fsq.on{color:var(--accent);border-color:var(--accent)}
 .shopbar{display:flex;gap:8px}.shopbar .btn{flex:1;padding:12px}.shopbar .btn:last-child{flex:.7}
 .models{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
 .model{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px;min-width:0}
@@ -1774,7 +1775,7 @@ function renderApp(){
      <button class="barminb" id="barmin" aria-label="ย่อแถบด้านบน" aria-expanded="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
    </div><div class="wrap row2">
      ${bmHTML()}
-     <div class="clock"><button id="pp" aria-label="หยุด/เล่น"></button>${SPEEDS.map(s=>`<button data-sp="${s}">${s}×</button>`).join("")}<button class="spdc" id="spdc" aria-label="เปลี่ยนความเร็ว"></button><button class="qbtn afkb" id="afkbtn" aria-label="โหมด AFK" title="โหมด AFK">💤</button>
+     <div class="clock"><button id="pp" aria-label="หยุด/เล่น"></button>${SPEEDS.map(s=>`<button data-sp="${s}">${s}×</button>`).join("")}<button class="spdc" id="spdc" aria-label="เปลี่ยนความเร็ว"></button><button class="qbtn afkb" id="afkbtn" aria-label="โหมด AFK" title="โหมด AFK">💤</button><button class="qbtn fsq" id="fsq" aria-label="เต็มจอ" title="เต็มจอ"></button>
       <div class="moreb"><button class="qbtn" id="morebtn" aria-label="เมนูเพิ่มเติม" aria-expanded="false" aria-haspopup="true">⋯</button>
        <div class="moremenu" id="moremenu" hidden role="menu">
         <div class="muted small" id="hubl"></div>
@@ -1799,8 +1800,9 @@ function renderApp(){
   $("#barmin").onclick=()=>{S.ui_barmin=!S.ui_barmin;save();applyBarMin()};applyBarMin();
   $("#restart").onclick=()=>{closeMore();openSheet(resetSheet)};
   $("#spotbtn").onclick=()=>{closeMore();openSheet(spotifySheet())};
-  $("#fsbtn").onclick=()=>{closeMore();if(fsEl())fsExit();else if(!fsEnter())toast("เบราว์เซอร์นี้ไม่รองรับโหมดเต็มจอ")};
-  if(!window._fsl){window._fsl=1;const up=()=>{const l=$("#fslbl");if(l)l.textContent=fsEl()?"ออกจากเต็มจอ":"เต็มจอ (ซ่อนแถบเบราว์เซอร์)";setTimeout(()=>{if($("#mapfull"))sizeFullMap()},250)};document.addEventListener("fullscreenchange",up);document.addEventListener("webkitfullscreenchange",up)}
+  const fsToggle=()=>{if(fsEl())fsExit();else if(!fsEnter())toast("เบราว์เซอร์นี้เปิดเต็มจอไม่ได้ · ลองกด “เพิ่มไปยังหน้าจอหลัก” ในเมนูเบราว์เซอร์ แล้วเปิดเกมจากไอคอนนั้น")};
+  $("#fsbtn").onclick=()=>{closeMore();fsToggle()};$("#fsq").onclick=fsToggle;updFsq();
+  if(!window._fsl){window._fsl=1;const up=()=>{const l=$("#fslbl");if(l)l.textContent=fsEl()?"ออกจากเต็มจอ":"เต็มจอ (ซ่อนแถบเบราว์เซอร์)";updFsq();setTimeout(()=>{if($("#mapfull"))sizeFullMap()},250)};document.addEventListener("fullscreenchange",up);document.addEventListener("webkitfullscreenchange",up)}
   $("#afkbtn").onclick=()=>startAfk();
   $("#themebtn").onclick=cycleTheme;
   $("#celtg").onclick=()=>{S.celOff=!S.celOff;save();updCelBtn();toast(S.celOff?"ปิดป๊อปอัปปลดล็อกแล้ว (ยังดูได้ในข่าว)":"เปิดป๊อปอัปปลดล็อกแล้ว")};updCelBtn();
@@ -2658,6 +2660,7 @@ const awayRate=on=>on?{dph:24,cap:12}:{dph:12,cap:8};   // game-days of profit p
 async function wakeOn(){try{if(navigator.wakeLock&&!document.hidden)wakeLock=await navigator.wakeLock.request("screen")}catch(e){}}
 function wakeOff(){try{wakeLock&&wakeLock.release()}catch(e){}wakeLock=null}
 const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement;
+function updFsq(){const b=$("#fsq");if(!b)return;const on=!!fsEl();b.innerHTML=on?'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>':'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';b.classList.toggle("on",on);b.setAttribute("aria-label",on?"ออกจากเต็มจอ":"เต็มจอ");b.title=on?"ออกจากเต็มจอ":"เต็มจอ"}
 function fsEnter(){const el=document.documentElement,f=el.requestFullscreen||el.webkitRequestFullscreen;if(!f||fsEl())return false;try{const r=f.call(el,{navigationUI:"hide"});if(r&&r.catch)r.catch(()=>{})}catch(e){return false}return true}
 function fsExit(){const f=document.exitFullscreen||document.webkitExitFullscreen;if(f&&fsEl()){try{const r=f.call(document);if(r&&r.catch)r.catch(()=>{})}catch(e){}}}
 function startAfk(){if(!S||S.over)return;const fsMine=!fsEl()&&S.ui_fsafk!==false&&fsEnter();closePop&&closePop();if(sheetFn){sheetFn=null;$("#sheet").innerHTML=""}
