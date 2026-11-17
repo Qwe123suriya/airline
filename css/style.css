@@ -789,3 +789,6 @@ h1,h2,h3,.eyebrow{letter-spacing:0}
 .cbox{display:flex;flex-direction:column;gap:2px}
 .cbox>b{font-family:var(--f-display);font-size:22px;line-height:1.2}.cbox>b small{font-size:13px;color:var(--muted)}
 .cmt.sug{grid-template-columns:auto 1fr auto;align-items:center}
+
+/* what an owned freighter / ship carries */
+.carry{display:inline-flex;align-items:center;gap:4px;vertical-align:middle}.carry small{font-size:11.5px;color:var(--muted)}

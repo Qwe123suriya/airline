@@ -1893,7 +1893,7 @@ function newLaneSheet(st){
 function laneSheet(lid,st){
   const fn=()=>{const l=S.lanes.find(x=>x.id===lid);if(!l)return head("ไม่พบเส้นทางเรือ");const c=laneCalc(l),a=port(l.from),b=port(l.to),v=viaText(c.sp);
     const idle=S.ships.filter(sh=>!sh.lane);
-    const row=(sh,act)=>{const m=shipM(sh.m),ok=canDock(m,l),Ld=legDaysS(m,c.km);return `<button data-${act}="${sh.id}" ${act==="sadd"&&!ok?"disabled":""} class="${ok?"":"noreach"}"><span class="mini">${shipArt(m)}</span><span>${sh.reg} · ${m.name}<br><span class="muted" style="font-size:12.5px">${ok?`ไป ${Math.round(sailDays(m,c.km))} วัน + เทียบท่า ${Math.round(portH(m))} ชม. · ${m.teu.toLocaleString()} TEU`:`<b class="bad">${dockWhy(m,l)}</b>`}</span></span><span class="small" style="font-weight:600;color:${act==="srem"?"var(--muted)":ok?"var(--accent)":"var(--bad)"}">${act==="srem"?"ถอดออก":ok?"+ ใส่":"ใช้ไม่ได้"}</span></button>`};
+    const row=(sh,act)=>{const m=shipM(sh.m),ok=canDock(m,l),Ld=legDaysS(m,c.km);return `<button data-${act}="${sh.id}" ${act==="sadd"&&!ok?"disabled":""} class="${ok?"":"noreach"}"><span class="mini">${shipArt(m)}</span><span>${sh.reg} · ${m.name} ${carryShip(sh)}<br><span class="muted" style="font-size:12.5px">${ok?`ไป ${Math.round(sailDays(m,c.km))} วัน + เทียบท่า ${Math.round(portH(m))} ชม. · ${m.teu.toLocaleString()} TEU`:`<b class="bad">${dockWhy(m,l)}</b>`}</span></span><span class="small" style="font-weight:600;color:${act==="srem"?"var(--muted)":ok?"var(--accent)":"var(--bad)"}">${act==="srem"?"ถอดออก":ok?"+ ใส่":"ใช้ไม่ได้"}</span></button>`};
     return head(`${laneNo(l)} · ${a.n} → ${b.n}`,`${c.km.toLocaleString()} กม. ทางทะเล${v.length?" · ผ่าน "+v.join(" · "):""}`)+
      `<div class="kv"><div><div class="k">ตู้ที่ต้องการ/วัน</div><div class="v">${Math.round(c.D).toLocaleString()} TEU</div></div><div><div class="k">ความจุเรือ/วัน</div><div class="v">${Math.round(c.cap+c.capr).toLocaleString()} TEU</div></div>
       <div><div class="k">ตู้เต็ม</div><div class="v">${Math.round(Math.max(c.load,c.loadr)*100)}%</div></div><div><div class="k">กำไร/วัน (เฉลี่ย)</div><div class="v ${laneAvg(l)<0?"bad":"good"}">${money(laneAvg(l),true)}</div></div></div>
@@ -2541,7 +2541,7 @@ function fleetHTML(){
     const cc=p.cond<40?"low":p.cond<70?"mid":"";
     return `<button class="pcard ${shop?"shop":r?"":"idle"}" data-plane="${p.id}">${planeArt(m)}
       <div class="row between"><b class="num">${p.reg}</b><span class="small">${st}</span></div>
-      <div class="small muted">${m.name} · ${m.seats?m.seats+" ที่นั่ง":m.cargo+" ตัน"}</div>${r&&p.yn!=null?`<div class="small">${earnTxt(p.yn)}</div>`:""}
+      <div class="small muted">${m.name} · ${m.seats?m.seats+" ที่นั่ง":m.cargo+" ตัน"}</div>${m.seats?"":`<div>${carryPlane(p)}</div>`}${r&&p.yn!=null?`<div class="small">${earnTxt(p.yn)}</div>`:""}
       <div class="row" style="gap:8px"><div class="lf cond ${cc}" style="flex:1;margin:0;max-width:none"><i style="width:${p.cond}%"></i></div><span class="num small ${p.cond<40?"bad":"muted"}">${Math.round(p.cond)}%</span></div></button>`}).join("")}</div>`:""}).join(""):`<div class="panel muted">${KC?"ยังไม่มีเครื่องบินขนสินค้า ลำที่ถูกที่สุดคือ ATR 72-600F ราคา ฿75 ล้าน":"ยังไม่มีเครื่องบินโดยสาร"} · กดปุ่มซื้อด้านล่าง</div>`}
   ${S.fleet.length?`<label class="tg panel"><input type="checkbox" id="amx" ${S.autoMx?"checked":""}> ส่งซ่อมบำรุงอัตโนมัติเมื่อสภาพต่ำกว่า 50%</label>`:""}
   <div class="shopbar"><button class="btn primary" data-shop="air">🛒 ซื้อเครื่องบิน${KC?"ขนสินค้า":""}เพิ่ม</button><button class="btn" data-pick="air">🧭 ช่วยเลือกรุ่น</button></div>
@@ -2550,7 +2550,7 @@ function fleetHTML(){
 function shipsOwnedHTML(){
   return `<div class="row between"><h2>กองเรือของคุณ <span class="muted num small">${S.ships.length} ลำ</span></h2></div>
   ${S.ships.length?`<div class="hangar">${S.ships.map(sh=>{const m=shipM(sh.m),l=S.lanes.find(x=>x.id===sh.lane);
-    return `<button class="pcard ${l?"":"idle"}" data-ship="${sh.id}" style="border-bottom-color:${l?"var(--port)":"var(--muted)"}">${shipArt(m)}<div class="row between"><b class="num">${sh.reg}</b><span class="small">${l?`${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:'<span class="muted">จอดว่าง</span>'}</span></div><div class="small muted">${m.name}</div>${l&&sh.yn!=null?`<div class="small">${earnTxt(sh.yn)}</div>`:""}</button>`}).join("")}</div>`:`<div class="panel muted">ยังไม่มีเรือ · กดปุ่มซื้อด้านล่าง</div>`}
+    return `<button class="pcard ${l?"":"idle"}" data-ship="${sh.id}" style="border-bottom-color:${l?"var(--port)":"var(--muted)"}">${shipArt(m)}<div class="row between"><b class="num">${sh.reg}</b><span class="small">${l?`${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:'<span class="muted">จอดว่าง</span>'}</span></div><div class="small muted">${m.name}</div><div>${carryShip(sh)}</div>${l&&sh.yn!=null?`<div class="small">${earnTxt(sh.yn)}</div>`:""}</button>`}).join("")}</div>`:`<div class="panel muted">ยังไม่มีเรือ · กดปุ่มซื้อด้านล่าง</div>`}
   <div class="shopbar"><button class="btn primary" data-shop="sea">🛒 ซื้อเรือเพิ่ม</button><button class="btn" data-pick="sea">🧭 ช่วยเลือกเรือ</button></div>`}
 function airMarketHTML(){const KC=bm()==="cargo";if(KC)mktCat="cargo";else if(mktCat==="cargo")mktCat="all";
   const list=MODELS.filter(m=>mOpen(m)&&(KC?!m.seats&&(ccls==="call"||cargoCls(m)===ccls):m.seats&&(mktCat==="all"||m.cat===mktCat))).sort((a,b)=>KC?a.price-b.price:0);
@@ -2772,6 +2772,9 @@ function seaBuys(l,f){const o=[];
     o.push({id:m.id+"|"+(bk||ks[0]||""),mid:m.id,m,ck:bk||ks[0],price:m.price,v:best})}
   return {opts:o,bd:rankBuys(o)}}
 // "carries X" chip for a buy option (air kinds pcl/fd/pt, sea kinds d/r/o; auto = picked daily)
+// what an owned freighter / ship carries right now (auto ones show the kind picked today)
+const carryShip=sh=>{const m=shipM(sh.m),k=shipK(sh,m),auto=!shipSpec(m)&&(!sh.ck||sh.ck==="auto");return `<span class="carry">${kindChip(SEA_KN[k])}${shipSpec(m)?'<small>เรือเฉพาะ</small>':auto?'<small>🤖 อัตโนมัติ</small>':""}</span>`};
+const carryPlane=p=>{const m=model(p.m);if(m.seats)return "";const k=planeK(p),auto=!isSpecAir(m)&&(!p.ck||p.ck==="auto");return `<span class="carry">${kindChip(k)}${isSpecAir(m)?'<small>เครื่องเฉพาะ</small>':auto?'<small>🤖 อัตโนมัติ</small>':""}</span>`};
 const buyKindChip=(ck,sea)=>!ck?"":ck==="auto"?`<span class="kchip">🤖 อัตโนมัติ</span>`:kindChip(sea?SEA_KN[ck]:ck);
 // filter tabs above a cargo buy list
 function buyKindSeg(attr,cur,sea){const ks=sea?["d","r","o"].filter(skOpen):CK.filter(ckOpen);if(ks.length<2&&!sea)return "";
@@ -2903,7 +2906,7 @@ function routeSheet(rid,st){
       <div class="muted small">ค่าระวางถูก สินค้ามาเยอะ ค่าระวางแพง สินค้าน้อยลง แบบอัตโนมัติจะตั้งให้ระวางเต็มราว 90%</div></div>`:""}
      ${r.h.length>1?`<div><div class="row between"><span class="eyebrow">กำไรรายวัน ${r.h.length} วันล่าสุด</span></div><canvas class="spark" id="sp"></canvas></div>`:""}
      <div><div class="row between" style="margin-bottom:6px"><span class="eyebrow">เครื่องบินในเส้นทาง ${r.planes.length} ลำ</span><span class="muted small">${c.legs} เที่ยว/วัน รวม</span></div><div class="pick">
-      ${r.planes.map(id=>{const p=plane(id),m=model(p.m);return `<button data-un="${id}"><span class="num" style="font-size:13px">${p.reg}</span><span>${m.name}<br><span class="muted" style="font-size:12.5px">${c.plan.get(id)||legsFor(m,c.d)} จาก ${legsFor(m,c.d)} เที่ยว/วัน · ${m.seats?m.seats+" ที่นั่ง":m.cargo+" ตัน"} · สภาพ ${Math.round(p.cond)}%</span><br>${rangeBar(m.range,c.d)}</span><span class="muted" style="font-size:13px">ถอดออก</span></button>`}).join("")||'<div class="muted" style="font-size:14px">ยังไม่มีเครื่องบิน เส้นทางนี้ยังไม่ทำเงิน</div>'}
+      ${r.planes.map(id=>{const p=plane(id),m=model(p.m);return `<button data-un="${id}"><span class="num" style="font-size:13px">${p.reg}</span><span>${m.name} ${carryPlane(p)}<br><span class="muted" style="font-size:12.5px">${c.plan.get(id)||legsFor(m,c.d)} จาก ${legsFor(m,c.d)} เที่ยว/วัน · ${m.seats?m.seats+" ที่นั่ง":m.cargo+" ตัน"} · สภาพ ${Math.round(p.cond)}%</span><br>${rangeBar(m.range,c.d)}</span><span class="muted" style="font-size:13px">ถอดออก</span></button>`}).join("")||'<div class="muted" style="font-size:14px">ยังไม่มีเครื่องบิน เส้นทางนี้ยังไม่ทำเงิน</div>'}
       ${idle.length?`<div class="eyebrow" style="margin-top:6px">เครื่องที่จอดว่าง</div>`:""}
       ${idle.map(p=>{const m=model(p.m),ok=m.range>=c.d;return `<button data-as="${p.id}" ${ok?"":"disabled"} class="${ok?"":"noreach"}"><span class="num" style="font-size:13px">${p.reg}</span><span>${m.name}<br><span class="muted" style="font-size:12.5px">${ok?`จอดว่าง · ${legsFor(m,c.d)} เที่ยว/วัน`:`<b class="bad">ไม่สามารถบินได้</b> · ขาดอีก ${(c.d-m.range).toLocaleString()} กม.`}</span><br>${rangeBar(m.range,c.d)}</span><span style="color:${ok?"var(--accent)":"var(--bad)"};font-weight:600;font-size:13px">${ok?"+ ใส่":"บินไม่ถึง"}</span></button>`}).join("")}
      </div></div>
