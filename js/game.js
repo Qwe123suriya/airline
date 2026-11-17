@@ -851,8 +851,18 @@ let floaters=[];
 /* Departure spacing: with spacing on (default) the aircraft (or ships) of one route are spread evenly over the
    out-and-back cycle, so they leave one after another instead of together; half start from the far end.
    Offsets are in legs (0..2). Changing them re-anchors the leg counter, so nothing is paid twice or skipped. */
-function syncSpread(r){const on=r.spread!==false,sig=(on?"s":"x")+r.planes.join(",");if(r._sg===sig)return;r._sg=sig;
-  const ps=r.planes.map(plane).filter(Boolean);ps.forEach((p,i)=>{p.off=on?2*i/ps.length:(p.id*.37)%1;p.lk=null})}
+/* Each aircraft has its own continuous flight clock (in legs). Its schedule (legs per day L) can change at midnight when
+   demand changes; instead of recomputing the position from scratch (which made every plane jump), the clock is re-anchored
+   so the plane carries on from where it is: mid-flight stays at the same point of the flight, on the ground stays on the ground. */
+function legPhase(p,L,fly,T){
+  if(p.at==null||p.aL==null||!isFinite(p.ax)){p.ax=T*L+(p.off||0);p.at=T;p.aL=L;p.afly=fly;return p.ax}
+  if(p.aL!==L||Math.abs((p.afly||0)-fly)>1e-9){const xo=p.ax+(T-p.at)*p.aL,leg=Math.floor(xo),f=xo-leg,af=p.afly||fly;
+    const f2=f<af?f/af*fly:fly+(f-af)/((1-af)||1)*(1-fly);p.ax=leg+f2;p.at=T;p.aL=L;p.afly=fly;return p.ax}
+  return p.ax+(T-p.at)*L}
+function syncSpread(r){const on=r.spread!==false,sig="v2"+(on?"s":"x")+r.planes.join(",");if(r._sg===sig)return;r._sg=sig;
+  // each route gets its own timing offset, so routes do not all depart together at midnight
+  const ro=(r.id*.6180339)%1*2/Math.max(1,r.planes.length);
+  const ps=r.planes.map(plane).filter(Boolean);ps.forEach((p,i)=>{p.off=on?2*i/ps.length+ro:(p.id*.37)%1;p.lk=null;p.at=null})}
 function syncLaneSpread(l){const on=l.spread!==false,sig=(on?"s":"x")+l.ships.join(",");if(l._sg===sig)return;l._sg=sig;
   const ss=l.ships.map(shipById).filter(Boolean);ss.forEach((sh,i)=>{if(sh.off0==null)sh.off0=sh.off||0;sh.off=on?2*i/ss.length:sh.off0;sh.lk=null})}
 // hours between departures from the home end
@@ -864,7 +874,7 @@ function settleFlights(T){
   for(const r of S.routes){syncSpread(r);
     const a=city(r.from),b=city(r.dest),d=dist(a,b),ground=grounded(r.from)||grounded(r.dest),c=calc(r);
     for(const id of r.planes){const p=plane(id);if(!p)continue;const m=model(p.m),L=c.plan.get(p.id)||legsFor(m,d),fly=flyFrac(m,d,L);
-      const key=r.id+":"+L,N=Math.floor(T*L+(p.off||0)-fly);
+      const key=String(r.id),N=Math.floor(legPhase(p,L,fly,T)-fly);
       if(p.lk!==key){p.lk=key;p.ld=N;continue}
       if(N<=p.ld)continue;const n0=p.ld;p.ld=N;
       if(ground||p.down>S.day)continue;
@@ -1298,7 +1308,7 @@ const todayNet=T=>T.tix+T.crev+(T.srev||0)-T.fuelC-T.feeC-T.svc-(T.sfuel||0)-(T.
 /* Every aircraft of the current mode with its next event (landing or departure), soonest first */
 function liveFlights(){const T=S.day+acc/DAY_MS,out=[];
   for(const r of visRoutes()){if(!r.planes.length)continue;const a=city(r.from),b=city(r.dest),d=dist(a,b),c=calc(r),gr=grounded(r.from)||grounded(r.dest);
-    r.planes.forEach((id,i)=>{const p=plane(id);if(!p)return;const m=model(p.m),L=c.plan.get(p.id)||legsFor(m,d),fly=flyFrac(m,d,L),x=T*L+(p.off||0),k=Math.floor(x),f=x-k;
+    r.planes.forEach((id,i)=>{const p=plane(id);if(!p)return;const m=model(p.m),L=c.plan.get(p.id)||legsFor(m,d),fly=flyFrac(m,d,L),x=legPhase(p,L,fly,T),k=Math.floor(x),f=x-k;
       const shop=p.down>S.day,air=!shop&&!gr&&f<fly,nk=air?k:k+1,to=nk%2===1?a:b,from=nk%2===1?b:a;
       out.push({no:fno(r)+(r.planes.length>1?String.fromCharCode(65+i%26):""),from:from.c,to:to.c,ton:to.n,air,shop,gr,pr:air?f/fly:0,eta:(air?fly-f:1-f)/L*1440,rid:r.id})})}
   return out.sort((p,q)=>((p.shop||p.gr)-(q.shop||q.gr))||(p.eta-q.eta))}
@@ -3257,8 +3267,7 @@ function drawMap(){
   const parked=new Map();airborne=0;
   for(const {r} of (vmode()==='sea'?[]:routes)){if(grounded(r.dest)||grounded(r.from))continue;const d=rd(r),ar=arcs.get(r.id),plan=calc(r).plan;
     r.planes.forEach(id=>{const pl=plane(id);if(!pl||pl.down>S.day)return;const m=model(pl.m),L=plan.get(pl.id)||legsFor(m,d);
-      const t0=animDay*L+(pl.off||0),leg=Math.floor(t0),f=t0-leg,back=leg%2===1;
-      const fly=flyFrac(m,d,L),kind=aircraftKind(m);
+      const fly=flyFrac(m,d,L),kind=aircraftKind(m),t0=legPhase(pl,L,fly,animDay),leg=Math.floor(t0),f=t0-leg,back=leg%2===1;
       if(f>fly){const at=back?r.from:r.dest;parked.set(at,(parked.get(at)||[]).concat([[kind,m]]));return}
       const e=f/fly,R=.1,vm=1/(1-R),s=e<R?vm*e*e/(2*R):e>1-R?1-vm*(1-e)*(1-e)/(2*R):vm*(e-R/2),path=back?ar.back:ar.out;
       const pos=onPath(path,s),a0=onPath(path,Math.max(0,Math.min(s,.985)-.012)),a1=onPath(path,Math.min(1,Math.max(s,.015)+.012)),ang=Math.atan2(a1[1]-a0[1],a1[0]-a0[0]);
