@@ -626,7 +626,7 @@ const SEA_K={pcl:"d",fd:"r",pt:"o"},K_SEA={d:"pcl",r:"fd",o:"pt"},SEA_RATE={d:1,
 let SEA_LOAD={d:1,r:.45,o:.35},SPEC_RATE=1.3;
 // waiting for cargo: share of a food cargo's value lost per unit of waiting on a combined ship (spoilage)
 // and slower service: shippers pay up to LATE less when ships wait (no extra for food on reefers)
-const SPOIL=.35,LATE=.15,WAITS=[[0,"⏱ ออกตามตาราง"],[.5,"รอเต็ม 50%"],[.75,"รอเต็ม 75%"],[.95,"รอเต็ม 95%"]];
+const SPOIL=.35,LATE=.15,AIR_SPOIL=.25,WAITS=[[0,"⏱ ออกตามตาราง"],[.5,"รอเต็ม 50%"],[.75,"รอเต็ม 75%"],[.95,"รอเต็ม 95%"]];
 const specX=m=>shipSpec(m)?SPEC_RATE:1;
 // share of each kind in a city pair's air freight: food-heavy in SE Asia, Oceania and South America, parts in East Asia, Europe, North America
 function ckShare(r){const s={pcl:.5,fd:.28,pt:.22},RG=[regionOf(r.from).id,regionOf(r.dest).id];
@@ -797,6 +797,13 @@ function calc(r,price,crate,svc){
   const kx=rkind(r)==="cargo"?CARGO_KIND_X:1,sh=ckShare(r),dk={pcl:cdem*sh.pcl*kx,fd:cdem*sh.fd*kx,pt:cdem*sh.pt*kx};autoAssign(r,dk,d);const B=cbkObj(r);
   const kinds=new Set(ps.flatMap(p=>planeK(p)==="mix"?CK:[planeK(p)])),cdemC=[...kinds].reduce((a,t)=>a+dk[t]+(B[t]||0),0);
   const plan=legPlan(r,demand+(r.bk||0),cdemC,d);const capK={pcl:0,fd:0,pt:0};
+  /* wait for cargo (freight routes): freighters stay on the ground until they are w full, so each one flies only the share
+     of its flights that the freight fills; slower service pays less (LATE) and food loses freshness (AIR_SPOIL) */
+  const wt=rkind(r)==="cargo"?(r.wait||0):0,sK={pcl:1,fd:1,pt:1},wpen={pcl:1,fd:1,pt:1};
+  if(wt>0&&!ground){const capOf=()=>{const o={pcl:0,fd:0,pt:0};for(const p of ps){const m=model(p.m),tk=planeK(p);if(m.seats||tk==="mix"||p.down>S.day)continue;o[tk]+=plan.get(p.id)*m.cargo*CK_LOAD[tk]}return o};
+    const c0K=capOf(),tgt={};for(const t of CK){const ld0=c0K[t]?Math.min(1,(dk[t]+(B[t]||0))/c0K[t]):0;tgt[t]=ld0>0&&ld0<wt?ld0/wt:1}
+    for(const p of ps){const m=model(p.m),tk=planeK(p);if(m.seats||tk==="mix"||tgt[tk]>=1)continue;plan.set(p.id,Math.max(1,Math.round(plan.get(p.id)*tgt[tk])))}
+    const c1K=capOf();for(const t of CK){sK[t]=c0K[t]?Math.min(1,c1K[t]/c0K[t]):1;wpen[t]=1-(LATE+(t==="fd"?AIR_SPOIL:0))*(1-sK[t])}}
   let cap=0,ccap=0,fuelC=0,feeC=0,fixed=0,legs=0;
   for(const p of ps){const m=model(p.m);fixed+=m.price*FIX_RATE;
     if(ground||p.down>S.day)continue;
@@ -806,11 +813,11 @@ function calc(r,price,crate,svc){
   const pax0=Math.floor(Math.min(demand,cap)),bkp=Math.max(0,Math.floor(Math.min(r.bk||0,cap-pax0))),pax=pax0+bkp;
   let cargo0=0,bkc=0,crev=0;const cK={};
   for(const t of CK){const c0=Math.min(dk[t],capK[t]),b0=Math.max(0,Math.min(B[t]||0,capK[t]-c0));cargo0+=c0;bkc+=b0;
-    crev+=(c0*crate+b0*Math.min(crate,1))*d*CARGO_RATE*pk("cargo")*CK_RATE[t];cK[t]={dem:dk[t],cap:capK[t],carry:c0+b0,bk:B[t]||0}}
+    crev+=(c0*crate+b0*Math.min(crate,1))*d*CARGO_RATE*pk("cargo")*CK_RATE[t]*wpen[t];cK[t]={dem:dk[t],cap:capK[t],carry:c0+b0,bk:B[t]||0}}
   const cargo=cargo0+bkc;
   const tix=pax0*price+bkp*Math.min(price,base),rev=tix+crev,svcC=pax*SERVICE[svc].cost,cost=fuelC+feeC+fixed+svcC;
   const xpax=demand>0?Math.round(Math.min(demand,cap)*xd/demand):0,xcargo=cdem>0?Math.min(cdem,ccap)*xc/cdem:0;
-  return {price,crate,svcLv:svc,plan,bkp,bkc,d,base,cap,ccap,legs,xd,xc,xpax,xcargo,demand:Math.round(demand),cdem,cK,kinds,pax,cargo,tix,crev,rev,fuelC,feeC,fly:fuelC+feeC,fixed,svc:svcC,cost,profit:rev-cost,lf:cap?pax/cap:0,ground};
+  return {price,crate,svcLv:svc,plan,wt,sK,wpen,bkp,bkc,d,base,cap,ccap,legs,xd,xc,xpax,xcargo,demand:Math.round(demand),cdem,cK,kinds,pax,cargo,tix,crev,rev,fuelC,feeC,fly:fuelC+feeC,fixed,svc:svcC,cost,profit:rev-cost,lf:cap?pax/cap:0,ground};
 }
 // How many legs each aircraft flies: full schedule, or trimmed so flights run about 85% full
 function legPlan(r,demand,cdem,d){const ps=r.planes.map(plane).filter(Boolean),mp=new Map();let cap=0,fcap=0;
@@ -872,7 +879,7 @@ function flyLeg(r,p,m,c,d,a,b,n){
   const tk=planeK(p),shr=tk==="mix"?ckShare(r):null,mixAvg=shr?CK.reduce((x,k)=>x+shr[k]*CK_RATE[k],0):1,   // belly cargo: mixed kinds at the old average rate; premiums are for freighters
   parts=tk==="mix"?CK.map(k=>[k,m.cargo*shr[k]]):[[tk,m.cargo*CK_LOAD[tk]]],rnd=.9+Math.random()*.2,ck={};let cargo=0,bp=0,bc=0,crev=0;
   {const B=cbkObj(r);for(const [k,pl] of parts){const q=c.cK&&c.cK[k],cl=q&&q.cap?Math.min(1,q.dem/q.cap):0;let x=pl*cl*rnd,b0=0;if(B[k]>0&&x<pl){b0=Math.min(pl-x,B[k]);B[k]-=b0}
-    crev+=(x*c.crate+b0*Math.min(c.crate,1))*d*CARGO_RATE*pk("cargo")*CK_RATE[k]/(shr?mixAvg:1);ck["ck_"+k]=x+b0;cargo+=x+b0;bc+=b0}}
+    crev+=(x*c.crate+b0*Math.min(c.crate,1))*d*CARGO_RATE*pk("cargo")*CK_RATE[k]/(shr?mixAvg:1)*(c.wpen?c.wpen[k]:1);ck["ck_"+k]=x+b0;cargo+=x+b0;bc+=b0}}
   if(r.bk>=1&&pax<m.seats){bp=Math.min(m.seats-pax,Math.floor(r.bk));r.bk-=bp;pax+=bp}
 
   const o={tix:(pax-bp)*c.price+bp*Math.min(c.price,c.base),crev,...ck,fuelC:d*m.cpk*fuelNow()*pk("fuel"),feeC:(feeOf(a)+feeOf(b))/2*1000*(m.seats||m.cargo*3)/100,svc:pax*SERVICE[svcOf(r)].cost,pax,cargo,seats:m.seats,legs:1};
@@ -2805,6 +2812,7 @@ function routeSheet(rid,st){
         return r.spread!==false?`เครื่อง ${r.planes.length} ลำออกจาก ${r.from} สลับกันทุก ~${gh<1?Math.round(gh*60)+" นาที":gh.toFixed(1)+" ชม."} ครึ่งหนึ่งรอที่ ${r.dest} ไม่ออกพร้อมกัน · จำนวนเที่ยวและรายได้เท่าเดิม`:"แต่ละลำออกตามเวลาของตัวเอง อาจออกติดๆ กันได้ · จำนวนเที่ยวและรายได้เท่าเดิม"})()}</div></div>
      <div class="stack" style="gap:6px"><span class="eyebrow">ตารางบิน</span><div class="seg"><button data-freq="auto" class="${r.freq!=="max"?"on":""}">${cg?"ปรับตามสินค้า":"ปรับตามผู้โดยสาร"}</button><button data-freq="max" class="${r.freq==="max"?"on":""}">บินเต็มตาราง</button></div>
       <div class="muted small">${r.freq==="max"?"เครื่องบินทุกลำบินจำนวนเที่ยวสูงสุดทุกวัน แม้ที่นั่งจะว่าง":"ลดจำนวนเที่ยวลงเมื่อคนน้อย ให้แต่ละเที่ยวเต็มประมาณ 85% ประหยัดน้ำมันและค่าสนามบิน"}</div></div>
+     ${cg?airWaitHTML(r,c):""}
      ${cg?"":`<div class="kv" id="kv">${kvHTML(c)}</div>`}
      <div id="bd">${breakdownHTML(c)}</div>
      ${cg||c.ccap?`<div class="panel stack cargo"><div class="row between"><span class="eyebrow">ขนส่งสินค้าทางอากาศ</span>${(()=>{const ss=[...cargoSeasons(r.from),...cargoSeasons(r.dest)];return ss.length?`<span class="chips">${[...new Set(ss.map(x=>x[0]))].map(n=>`<span class="chip got">${n}</span>`).join("")}</span>`:""})()}</div>
@@ -2845,6 +2853,7 @@ function routeSheet(rid,st){
       else if(a.act.buy){st.buy=1;if(a.act.ck)st.bk=a.act.ck;drawSheet();const bh=$("#buyhere");if(bh){bh.open=true;bh.scrollIntoView({block:"start"})}}}}
     $$("[data-pck]").forEach(sl=>sl.onchange=()=>{const p=plane(+sl.dataset.pck);if(!p)return;p.ck=sl.value;r.last=null;save();toast(`${p.reg} ขน ${sl.options[sl.selectedIndex].text}`);drawSheet()});
     $$("[data-spread]").forEach(b=>b.onclick=()=>{r.spread=b.dataset.spread==="1";syncSpread(r);save();toast(r.spread?"เว้นระยะการออกเดินทางแล้ว":"ให้ออกตามสะดวกแล้ว");drawSheet()});
+    $$("[data-rwait]").forEach(b=>b.onclick=()=>{r.wait=+b.dataset.rwait;r.last=null;save();toast(r.wait?`เครื่องจะรอจนระวางเต็ม ${Math.round(r.wait*100)}% ก่อนบิน`:"เครื่องบินตามตารางแล้ว");drawSheet()});
     $$("[data-cmode]").forEach(b=>b.onclick=()=>{if(b.dataset.cmode==="manual"){r.crate=crateOf(r);r.cmode="manual"}else r.cmode="auto";r.last=null;save();drawSheet()});
     const crs=$("#crs");if(crs){crs.oninput=()=>{const c=calc(r,st.price??priceOf(r),+crs.value);$("#crv").textContent=crateText(c);$("#ckv").innerHTML=cargoKV(c);const kv=$("#kv");if(kv)kv.innerHTML=kvHTML(c);$("#bd").innerHTML=breakdownHTML(c);$("#fc").innerHTML=forecastHTML(r,c)};
       crs.onchange=()=>{r.crate=+crs.value;r.cmode="manual";r.last=null;save();drawSheet()}}
@@ -2857,6 +2866,12 @@ function routeSheet(rid,st){
       r.planes.forEach(id=>plane(id).route=null);S.routes=S.routes.filter(x=>x!==r);addNews(`ปิดเส้นทาง ${r.from} → ${r.dest}`);save();closeSheet()};
     if($("#sp"))spark($("#sp"),r.h)};
   return fn}
+function airWaitHTML(r,c){if(!r.planes.some(id=>{const p=plane(id);return p&&!model(p.m).seats}))return "";
+  const cur=r.wait||0,opts=WAITS.map(([w,n])=>({w,n:w?n:"✈ บินตามตาราง",c:w===cur?c:calc({...r,wait:w})})),best=opts.reduce((a,b)=>b.c.profit>a.c.profit+1?b:a),c0=opts[0].c;
+  const saved=c0.fuelC+c0.feeC-(c.fuelC+c.feeC),lost=c0.crev-c.crev;
+  return `<div class="stack" style="gap:6px"><span class="eyebrow">⏳ รอสินค้าก่อนออกบิน</span>
+    <div class="seg waitseg">${opts.map(o=>`<button data-rwait="${o.w}" class="${cur===o.w?"on":""}">${o.n}${o===best&&best.w!==cur?" ⭐":""}<br><span class="num ${o.c.profit<0?"bad":"good"}" style="font-size:12px;font-weight:700">${o.c.profit>=0?"+":""}${money(o.c.profit,true)}</span></button>`).join("")}</div>
+    <div class="muted small">${cur>0?(saved>1?`เครื่องจะรอที่สนามบินจนระวางเต็ม ${Math.round(cur*100)}% แล้วค่อยบิน: บินน้อยลง ${c0.legs-c.legs} เที่ยว/วัน ประหยัดน้ำมันและค่าสนามบิน ~${money(saved,true)}/วัน · แต่ส่งช้าลง ลูกค้าจ่ายน้อยลง${(c.sK&&c.sK.fd<1)?" และอาหารเสียความสด":""} −${money(Math.max(0,lost),true)}/วัน`:`ตอนนี้ระวางเต็มเกิน ${Math.round(cur*100)}% อยู่แล้ว เครื่องไม่ต้องรอ`):"เครื่องบินตามตารางบินด้านบนเสมอ · เลือก “รอเต็ม” ถ้าสินค้าน้อยกว่าที่เครื่องขนได้ จะบินน้อยลงแต่เต็มขึ้น"} · ตัวเลขใต้ปุ่มคือกำไร/วันถ้าเลือกแบบนั้น${best.w!==cur?" · ⭐ คือแบบที่กำไรดีสุดตอนนี้":""}</div></div>`}
 function demandChart(cv,r,cur){if(!cv)return;const dpr=devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;cv.width=W*dpr;cv.height=H*dpr;const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);
   const base=baseFare(rd(r)),pts=[];for(let i=0;i<=40;i++){const pr=base*(.5+1.5*i/40),c=calc(r,pr);pts.push({pr,dem:c.demand,cap:c.cap,pax:c.pax,pf:c.profit})}
   const pl=34,prr=8,pt=8,pb=18,ymax=Math.max(1,...pts.map(q=>Math.max(q.dem,q.cap)))*1.08,pmin=Math.min(0,...pts.map(q=>q.pf)),pmax=Math.max(1,...pts.map(q=>q.pf));
@@ -2971,6 +2986,7 @@ function guideSheet(){return head("คู่มือระบบ","ทุกร
 <details class="g"><summary>ชื่อเสียงและระดับบริการ</summary><div><p>ชื่อเสียงจะค่อย ๆ เคลื่อนเข้าหาค่าเป้าหมายของระดับบริการ ประหยัด 35 มาตรฐาน 60 พรีเมียม 85 คลิปไวรัลและแคมเปญใหญ่ช่วยดันขึ้น เครื่องเสียกลางทางทำให้ลดลง</p></div></details>
 <details class="g"><summary>การตลาดและล็อกราคาน้ำมัน</summary><div><p>แคมเปญการตลาดเพิ่มคนบินทุกเส้นทางชั่วคราว เปิดได้ทีละแคมเปญ</p><p>ดัชนีน้ำมันขึ้นลงทุกวันและพุ่งแรงได้จากเหตุการณ์ การล็อกราคาจะตรึงดัชนีไว้ 60 วัน ค่าธรรมเนียมประมาณ 3% ของค่าน้ำมันช่วงนั้น เหมาะตอนน้ำมันถูก</p></div></details>
 <details class="g"><summary>เงินกู้และการล้มละลาย</summary><div><p>กู้ได้ทีละ ฿50 ล้าน วงเงินขึ้นกับมูลค่าฝูงบิน ถ้าเงินสดติดลบต่อเนื่อง 30 วัน สายการบินล้มละลายและต้องเริ่มชะตาใหม่</p></div></details>
+<details class="g"><summary>✈ รอสินค้าก่อนออกบิน (เครื่องบินขนสินค้า)</summary><div><ul><li>ตั้งในหน้าเส้นทางขนสินค้า: บินตามตาราง หรือรอจนระวางเต็ม 50 / 75 / 95% ก่อนบิน</li><li>บินน้อยลงแต่เต็มขึ้น ประหยัดน้ำมันและค่าสนามบิน แต่ส่งช้าลง ลูกค้าจ่ายน้อยลงสูงสุด ${Math.round(LATE*100)}% และอาหารเสียความสดอีกสูงสุด ${Math.round(AIR_SPOIL*100)}%</li><li>ใช้ร่วมกับ “ตารางบิน” ได้: ถ้าตั้งบินเต็มตาราง การรอจะช่วยมาก ถ้าตั้งปรับตามสินค้า (เต็มราว 85% อยู่แล้ว) การรอจะช่วยน้อย</li></ul></div></details>
 <details class="g"><summary>🚢 เรือเฉพาะ และ ⏳ รอสินค้าก่อนออกเรือ</summary><div><ul><li>เรือห้องเย็นและเรือขนรถขนได้อย่างเดียวแต่เต็มลำ ได้ค่าระวางมากกว่า ${Math.round((SPEC_RATE-1)*100)}% และอาหารไม่เสียความสดตอนรอ</li><li>เรือรวมขนได้ทุกอย่างทีละประเภท แต่ใช้พื้นที่ขนอาหารได้แค่ ${Math.round(SEA_LOAD.r*100)}% และขนรถได้แค่ ${Math.round(SEA_LOAD.o*100)}% ของความจุ</li><li>⏳ รอสินค้า: ตั้งในหน้าเส้นทางเรือ ให้เรือรอที่ท่าจนตู้เต็ม 50 / 75 / 95% ก่อนออก ออกเรือน้อยลงจึงประหยัดน้ำมันและค่าท่า แต่ส่งช้าลง ลูกค้าจ่ายน้อยลงสูงสุด ${Math.round(LATE*100)}% และอาหารบนเรือรวมเสียความสดเพิ่มอีก</li><li>ตัวเลขใต้ปุ่มบอกกำไร/วันของแต่ละแบบ ⭐ คือแบบที่ดีที่สุดตอนนั้น เหมาะกับเส้นทางที่เรือใหญ่เกินสินค้า</li></ul></div></details>
 <details class="g"><summary>🏆 ลีกจัดอันดับและความยากของคู่แข่ง</summary><div><ul><li>ทุก 7 วันคือ 1 สัปดาห์ลีก เกมจะเทียบว่าธุรกิจของคุณโตกี่เปอร์เซ็นต์ (มูลค่ากิจการ ผู้โดยสาร สินค้า ตู้เรือ ภารกิจ) กับคู่แข่งแต่ละเจ้า</li><li>โตเร็วกว่า = ชนะ · ช้ากว่า = แพ้ · ต่างกันไม่ถึง 0.3% = เสมอ ผลจะเพิ่มหรือลดคะแนนทักษะ (SR) เริ่มที่ 1000 ชนะคู่แข่งที่ SR สูงกว่าได้คะแนนมากกว่า</li><li>ระดับ: 🥉 ทองแดง · 🥈 เงิน 900 · 🥇 ทอง 1050 · 💠 แพลทินัม 1200 · 💎 เพชร 1350 · 👑 มาสเตอร์ 1500 · 🔥 ตำนาน 1700 · เลื่อนระดับได้โบนัส</li><li>ยิ่ง SR สูง คู่แข่งยิ่งเก่ง: โตเร็วขึ้น บุกเส้นทางบ่อยขึ้น ตัดราคาแรงขึ้น และถอนตัวยากขึ้น ถ้า SR ต่ำกว่า 1000 คู่แข่งจะผ่อนลง</li><li>ดูระดับ SR ผลสัปดาห์ก่อน และระดับความยากของคู่แข่งได้ในกล่อง 🏆 ที่หน้าภาพรวมและปุ่ม 🏆 บนแผนที่</li></ul></div></details>
 <details class="g"><summary>✨ ฟีเจอร์ที่ค่อยๆ ปลดล็อก</summary><div><p>เกมใหม่จะเริ่มแค่ ภาพรวม เส้นทาง และฝูงบิน ระบบอื่นจะเปิดทีละอย่าง (ไม่เกินวันละอย่าง) พร้อมกล่องแจ้งเตือน ✨ แยกจากภารกิจ:</p><ol>${FEATS.filter(f=>has(f.id)).map(f=>`<li><b>${f.n}</b></li>`).join("")}</ol>${FEATS.some(f=>!has(f.id))?`<p>🔒 ยังมีอีก ${FEATS.filter(f=>!has(f.id)).length} อย่าง · อย่างต่อไปจะเปิดเมื่อ: ${FEATS.filter(f=>!has(f.id)&&(f.after||[]).every(has)).map(f=>`<b>${f.need}</b>`).join(" หรือ ")}</p>`:""}<p class="small">ทุกการขยายกิจการต้องมีฐานที่มั่นคงก่อน คือกำไรเฉลี่ย 7 วันเป็นบวก สินค้าทางอากาศเริ่มจากพัสดุกับเครื่องลำเล็ก แล้วค่อยเปิดอาหาร เครื่องลำใหญ่ ชิ้นส่วน/รถ ส่วนเรือเริ่มจากเรือเล็กขนตู้พัสดุ แล้วค่อยเปิดเรือห้องเย็น เรือใหญ่ และเรือขนรถ</p><p class="muted small">เซฟเก่าก่อนมีระบบนี้เปิดครบทุกอย่างอยู่แล้ว</p></div></details>
