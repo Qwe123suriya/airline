@@ -2,9 +2,9 @@
 :root{
   --sky:#E8EDF2; --paper:#F8FAFC; --ink:#132235; --muted:#5A6A7D; --line:#CBD5E0;
   --accent:#D47A22; --accent-ink:#FFFFFF; --route:#2A5B9C; --good:#257A4B; --bad:#B93A33; --warn:#B8860B; --grid:#C9D6E3; --sea:#C7DFF3; --land:#F7F5EC; --border:#B9C5D2; --night:rgba(14,28,52,.17); --port:#0E7C86; --cargo:#7B4FD6; --fog:rgba(176,189,204,.55); --plane:#FFFFFF;
-  --f-display:"Chakra Petch","Anuphan",system-ui,sans-serif;
-  --f-body:"Anuphan","Noto Sans Thai",system-ui,sans-serif;
-  --f-num:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --f-display:"Prompt","IBM Plex Sans Thai",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans Thai","Noto Sans Thai",system-ui,sans-serif;
+  --f-num:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --sky:#0F1825; --paper:#16233A; --ink:#E5ECF5; --muted:#8D9CB1; --line:#28394F;
@@ -753,3 +753,8 @@ body:not(.nf-regions) .wishpanel{bottom:92px}
 .lg-tier{font-family:var(--f-display);font-weight:700;font-size:16px}
 .lg-bar{height:6px;margin:0}
 .lg-res{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12.5px}
+
+/* typography polish */
+body{font-feature-settings:"kern";-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;letter-spacing:.005em}
+h1,h2,h3,.eyebrow{letter-spacing:0}
+.num{font-variant-numeric:tabular-nums}

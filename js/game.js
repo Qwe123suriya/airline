@@ -3144,7 +3144,7 @@ function drawMap(){
       x.globalAlpha=.92;x.fillStyle=paper;x.beginPath();if(x.roundRect)x.roundRect(bx,by,tw,15,7);else x.rect(bx,by,tw,15);x.fill();x.globalAlpha=1;
       x.strokeStyle=it.k==="cargo"?cargoCol:it.isB?acc:routeCol;x.lineWidth=1;x.stroke();x.fillStyle=ink;x.fillText(it.lab,bx+5,by+8)}}
   // locked regions: a label per region, nudged up/down so none overlap; if there is no room it shrinks to a small lock pin
-  x.font=`600 ${W<520?11:12}px Anuphan, sans-serif`;x.textBaseline="middle";
+  x.font=`600 ${W<520?11:12}px 'IBM Plex Sans Thai', sans-serif`;x.textBaseline="middle";
   {const placed=[],hit=(a)=>placed.some(o=>a[0]<o[2]&&a[2]>o[0]&&a[1]<o[3]&&a[3]>o[1]);
   const regs=REGIONS.filter(R=>!S.unlocked.includes(R.id)).map(R=>{const [px,py]=PX(vlon(R.lab[0]),R.lab[1]);return {R,px,py}}).filter(o=>o.px>-60&&o.px<W+60&&o.py>-20&&o.py<H+20).sort((a,b)=>regionCost(a.R)-regionCost(b.R));
   for(const {R,px,py} of regs){
@@ -3207,7 +3207,7 @@ function drawMap(){
   const hit=selCity&&mapHits.find(h=>h.c===selCity);
   if(hit){const t=(performance.now()/900)%1;x.strokeStyle=acc;x.lineWidth=2;x.globalAlpha=1-t;x.beginPath();x.arc(hit.px,hit.py,8+t*14,0,7);x.stroke();x.globalAlpha=1;
     x.beginPath();x.arc(hit.px,hit.py,9,0,7);x.stroke();
-    const c=city(selCity),lab=`${c.c} ${c.n}`;x.font="600 12px Anuphan, sans-serif";const tw=x.measureText(lab).width+14;
+    const c=city(selCity),lab=`${c.c} ${c.n}`;x.font="600 12px 'IBM Plex Sans Thai', sans-serif";const tw=x.measureText(lab).width+14;
     let lx=clamp(hit.px-tw/2,4,W-tw-4),ly=hit.py-34;if(ly<4)ly=hit.py+16;
     x.fillStyle=ink;x.beginPath();if(x.roundRect)x.roundRect(lx,ly,tw,22,6);else x.rect(lx,ly,tw,22);x.fill();
     x.fillStyle=paper;x.textBaseline="middle";x.fillText(lab,lx+7,ly+11.5)}
@@ -3215,7 +3215,7 @@ function drawMap(){
 function drawChart(){
   const cv=$("#chart");if(!cv)return;const dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;
   cv.width=W*dpr;cv.height=H*dpr;const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);
-  const d=S.hist.slice(-180);if(d.length<2){x.fillStyle=cssv("--muted");x.font="13px Anuphan, sans-serif";x.fillText("กราฟจะขึ้นเมื่อผ่านไปสองสามวัน",8,H/2);return}
+  const d=S.hist.slice(-180);if(d.length<2){x.fillStyle=cssv("--muted");x.font="13px 'IBM Plex Sans Thai', sans-serif";x.fillText("กราฟจะขึ้นเมื่อผ่านไปสองสามวัน",8,H/2);return}
   let mn=Math.min(0,...d.map(p=>p.c)),mx=Math.max(...d.map(p=>p.c));if(mx===mn)mx=mn+1;
   const pl=46,pr=6,pt=8,pb=18,X=i=>pl+i/(d.length-1)*(W-pl-pr),Y=v=>pt+(mx-v)/(mx-mn)*(H-pt-pb);
   x.font="11px 'IBM Plex Mono', monospace";x.fillStyle=cssv("--muted");x.strokeStyle=cssv("--grid");x.lineWidth=1;x.textBaseline="middle";
