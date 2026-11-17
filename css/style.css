@@ -400,7 +400,7 @@ canvas.spark{display:block;width:100%;height:60px}
 /* bottom nav */
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--paper);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
 nav.tabs .wrap{display:flex;justify-content:center}
-nav.tabs .wrap>button{flex:0 1 calc(100% / 6);min-width:0}   /* same width as with all 6 tabs; fewer tabs sit in the middle */
+nav.tabs .wrap>button{flex:0 1 calc(100% / 7);min-width:0}   /* same width as with all 6 tabs; fewer tabs sit in the middle */
 nav.tabs button{font-size:11px!important;padding-inline:1px!important}
 nav.tabs button svg{width:20px!important;height:20px!important}
 nav.tabs button{border:0;background:none;padding:10px 4px 9px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12.5px;color:var(--muted);position:relative}
@@ -765,3 +765,21 @@ h1,h2,h3,.eyebrow{letter-spacing:0}
 
 /* wait-for-cargo choice on sea lanes */
 .waitseg button{font-size:12.5px;line-height:1.35;padding:6px 4px}
+
+/* section headings: one topic per section */
+.sec{display:flex;align-items:center;gap:8px;margin:10px 2px -4px}
+.sec h3{font-family:var(--f-display);font-size:17px;font-weight:600;margin:0}
+.sec .sec-e{font-size:18px}
+.sec{flex-wrap:wrap}.sec .muted{flex-basis:100%;margin:-2px 0 0 26px}
+/* company tab */
+.cohead{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.cohead>div{flex:1 1 160px}.cohead #livery{margin-left:auto}
+.cohead h2{margin:0;font-size:20px}
+.cobadge{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;flex:none}
+.cmts{display:flex;flex-direction:column;gap:8px}
+.cmt{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:flex-start;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.cav{font-size:22px;line-height:1;width:36px;height:36px;border-radius:50%;background:var(--sky);display:grid;place-items:center}
+.goals{display:flex;flex-wrap:wrap;gap:6px}
+.goals span{font-size:12.5px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.goals span.done{color:var(--good);border-color:color-mix(in srgb,var(--good) 40%,var(--line))}
+.goals span.now{color:var(--accent);border-color:var(--accent);font-weight:600}
+.cogo{width:100%;text-align:left;cursor:pointer}
