@@ -984,40 +984,26 @@ const lgMe=()=>Math.max(1,myScoreParts().filter(x=>x[0]!=="เรตติ้ง
 const TIERS=[[0,"🥉 ทองแดง","#B4532A"],[900,"🥈 เงิน","#7C8A99"],[1050,"🥇 ทอง","#D4A017"],[1200,"💠 แพลทินัม","#2A9D8F"],[1350,"💎 เพชร","#3A7BC8"],[1500,"👑 มาสเตอร์","#8E44AD"],[1700,"🔥 ตำนาน","#D9482B"]];
 const mySR=()=>S.sr??1000;
 const tierOf=sr=>{let t=TIERS[0],i=0;TIERS.forEach((x,k)=>{if(sr>=x[0]){t=x;i=k}});return {i,n:t[1],col:t[2],lo:t[0],hi:TIERS[i+1]?TIERS[i+1][0]:null}};
-// bot difficulty from your rating: -0.6 (easy) .. 0 (normal at 1000) .. +1.6 (legend)
-const botLv=()=>has("rank")?clamp((mySR()-1000)/500,-.6,1.6):0;
+/* Rival difficulty follows the ranking table: the further ahead of #2 you are, the harder rivals play (faster growth,
+   more route attacks, deeper price cuts, slower to give up); when you are behind the leader they ease off.
+   It moves gradually (a little each day) so it never jumps. -0.6 easy .. 0 normal .. +1.6 hardest */
+const botLv=()=>has("rank")?clamp(S.dlv||0,-.6,1.6):0;
+function leadInfo(){const B=standings(),me=B.findIndex(x=>x.me),my=B[me].sc;
+  if(me===0){const second=B[1]?B[1].sc:my;return {rank:1,pct:Math.round((my/Math.max(1,second)-1)*100),vs:B[1]?B[1].n:""}}
+  return {rank:me+1,pct:Math.round((my/Math.max(1,B[0].sc)-1)*100),vs:B[0].n}}
+const diffTarget=()=>{const L=leadInfo();return L.rank===1?clamp(L.pct/100*1.5,0,1.6):clamp(L.pct/100*1.2,-.6,0)};
 const botLvTxt=()=>{const d=botLv();return d<-.3?"ง่าย":d<.15?"ปกติ":d<.5?"ยากขึ้น":d<.9?"ยาก":d<1.3?"ยากมาก":"โหดสุด"};
-function leagueTick(){if(!has("rank")||!S.rivals||!S.rivals.length)return;
-  const snap=()=>({start:S.day,my:lgMe(),rv:Object.fromEntries(S.rivals.map(rv=>[rv.n,lgRv(rv)])),m:1});
-  if(!S.lg||!S.lg.m){S.lg=snap();S.lgHist=S.lgHist||[];return}
-  if(S.day-S.lg.start<LG_WEEK)return;
-  const g=(a,b)=>(b-a)/Math.max(1,a)*100,myG=g(S.lg.my,lgMe()),res=[];let dSR=0;
-  for(const rv of S.rivals){rv.sr=rv.sr??1000;const rg=g(S.lg.rv[rv.n]??lgRv(rv),lgRv(rv)),out=myG>rg+.3?1:myG<rg-.3?0:.5;
-    const E=1/(1+Math.pow(10,(rv.sr-mySR())/400)),d=LG_K*(out-E);dSR+=d;rv.sr=Math.round(rv.sr-d);res.push({n:rv.n,out,myG,rg})}
-  const before=mySR(),tb=tierOf(before);S.sr=Math.max(100,Math.round(before+dSR));const ta=tierOf(S.sr);
-  const w=res.filter(x=>x.out===1).length,l=res.filter(x=>x.out===0).length,dr=res.length-w-l;
-  S.lgHist=[{d:S.day,w,l,dr,sr:S.sr,ch:S.sr-before,myG:+myG.toFixed(1),res:res.map(x=>({n:x.n,o:x.out,g:+x.rg.toFixed(1)}))},...(S.lgHist||[])].slice(0,60);
-  addNews(`📊 จบสัปดาห์ลีก: ชนะ ${w} เสมอ ${dr} แพ้ ${l} · คุณโต ${myG.toFixed(1)}% · SR ${S.sr} (${S.sr>=before?"+":""}${S.sr-before}) · ${ta.n}`);
-  if(ta.i>tb.i){celebrate("!⬆️ เลื่อนระดับลีก",`${ta.n} · คู่แข่งจะเล่นเก่งขึ้น (${botLvTxt()})`);S.cash+=Math.round(S.startCap*.02*ta.i/1e5)*1e5}
-  else if(ta.i<tb.i)addNews(`⬇️ ตกระดับลีกเป็น ${ta.n} · คู่แข่งผ่อนลงเป็นระดับ “${botLvTxt()}”`);
-  S.lg=snap()}
-// the competition has two different measures; show them side by side and say plainly what each one is
-function competeHTML(){const sr=mySR(),t=tierOf(sr),n=S.rivals.length+1,L=(S.lgHist||[])[0];
-  return `<div class="cmp2"><div class="panel cbox"><span class="eyebrow">📋 อันดับในตาราง</span><b class="num">#${rank()}<small> / ${n}</small></b><span class="small muted">วัดจาก <b>ขนาด</b> บริษัท: มูลค่า ผู้โดยสาร สินค้า เรตติ้ง ภารกิจ (สะสมตลอดเกม)</span></div>
-    <div class="panel cbox"><span class="eyebrow">🏅 ลีกรายสัปดาห์</span><b style="color:${t.col}">${t.n}</b><span class="small muted">วัดจาก <b>ความเร็วในการโต</b> ทุก 7 วัน · SR ${sr}${L?` · สัปดาห์ก่อน ชนะ ${L.w} แพ้ ${L.l}`:""}</span></div></div>
-   <details class="more panel"><summary>สองอย่างนี้ต่างกันยังไง ▾</summary><ul class="small">
-     <li><b>ตารางอันดับ</b> เหมือนตารางคะแนนสะสม บริษัทใหญ่กว่าอยู่สูงกว่า ยิ่งเล่นนานยิ่งขึ้น ไม่มีลง</li>
-     <li><b>ลีกรายสัปดาห์</b> (ทองแดง → เงิน → ทอง → แพลทินัม → เพชร → มาสเตอร์ → ตำนาน) ทุก 7 วันเทียบว่าสัปดาห์นี้คุณโตกี่ % กับคู่แข่งแต่ละเจ้า โตเร็วกว่า = ชนะ ได้ SR เพิ่ม · ช้ากว่า = แพ้ SR ลด</li>
-     <li>ลีกมีไว้ปรับความยาก: ระดับสูง คู่แข่งเก่งขึ้น ระดับต่ำ คู่แข่งผ่อนลง · ตอนนี้คู่แข่งเล่นระดับ <b>${botLvTxt()}</b></li>
-     <li>ใหญ่ที่สุดแต่หยุดโต ก็อาจอยู่ #1 ในตาราง แต่ตกลีกได้</li></ul></details>
-   <div class="panel"><div class="eyebrow" style="margin-bottom:4px">🏅 ลีกรายสัปดาห์ · วัดจากความเร็วในการโต</div>${leagueHTML()}</div>`}
-function leagueHTML(compact){if(!has("rank"))return "";const sr=mySR(),t=tierOf(sr),L=S.lgHist||[],last=L[0],left=S.lg?Math.max(0,LG_WEEK-(S.day-S.lg.start)):LG_WEEK;
-  const pc=t.hi?clamp((sr-t.lo)/(t.hi-t.lo),0,1)*100:100;
-  return `<div class="league"><div class="row between"><span class="lg-tier" style="color:${t.col}">${t.n}</span><span class="num"><b>SR ${sr}</b>${last?` <span class="${last.ch>=0?"good":"bad"} small">${last.ch>=0?"▲":"▼"}${Math.abs(last.ch)}</span>`:""}</span></div>
-    <div class="bar lg-bar"><i style="width:${pc}%;background:${t.col}"></i></div>
-    <div class="row between small muted"><span>${t.hi?`อีก ${t.hi-sr} SR ถึง ${tierOf(t.hi).n}`:"ระดับสูงสุดแล้ว"}</span><span>คู่แข่ง: <b style="color:var(--ink)">${botLvTxt()}</b></span></div>
-    <div class="small muted">สัปดาห์นี้เหลือ ${left} วัน · โตเร็วกว่าคู่แข่งเจ้าไหน = ชนะเจ้านั้น${last?` · สัปดาห์ก่อน ชนะ ${last.w} เสมอ ${last.dr} แพ้ ${last.l}`:""}</div>
-    ${!compact&&last?`<details class="more"><summary class="small">ผลสัปดาห์ก่อนกับคู่แข่งแต่ละเจ้า (คุณโต ${last.myG}%) ▾</summary><div class="lg-res">${last.res.map(x=>`<span class="${x.o===1?"good":x.o===0?"bad":"muted"}">${x.o===1?"ชนะ":x.o===0?"แพ้":"เสมอ"} ${esc(x.n)} <small class="num">(เขาโต ${x.g>=0?"+":""}${x.g}%)</small></span>`).join("")}</div></details>`:""}</div>`}
+function leagueTick(){if(!has("rank")||!S.rivals||!S.rivals.length)return;if(S.dlv==null)S.dlv=S.sr!=null?clamp((S.sr-1000)/500,-.6,1.6):0;
+  const before=botLvTxt();S.dlv=(S.dlv||0)+(diffTarget()-(S.dlv||0))*.12;const after=botLvTxt();
+  if(after!==before){const L=leadInfo();addNews(L.rank===1?`⚔️ คู่แข่งปรับตัวเป็นระดับ “${after}” เพราะคุณนำอันดับ 2 อยู่ ${L.pct}%`:`🙂 คู่แข่งผ่อนลงเป็นระดับ “${after}” คุณตามหลังอันดับ 1 อยู่ ${Math.abs(L.pct)}%`)}}
+function competeHTML(){const L=leadInfo(),n=S.rivals.length+1,d=botLv(),pc=clamp((d+.6)/2.2,0,1)*100;
+  return `<div class="panel stack"><div class="row between"><div><span class="eyebrow">📋 อันดับของเรา</span><div class="cbig num">#${L.rank}<small> / ${n}</small></div></div>
+     <div style="text-align:right"><span class="eyebrow">⚔️ คู่แข่งเล่นระดับ</span><div class="cbig">${botLvTxt()}</div></div></div>
+    <div class="diffbar"><i style="left:${pc}%"></i></div><div class="row between small muted"><span>ง่าย</span><span>ปกติ</span><span>โหดสุด</span></div>
+    <div class="small">${L.rank===1?`คุณนำ <b>${esc(L.vs)}</b> (อันดับ 2) อยู่ <b>${L.pct}%</b>`:`คุณตามหลัง <b>${esc(L.vs)}</b> (อันดับ 1) อยู่ <b>${Math.abs(L.pct)}%</b>`} · ยิ่งนำห่าง คู่แข่งยิ่งเก่งขึ้น: โตเร็วขึ้น บุกเส้นทางบ่อยขึ้น ตัดราคาแรงขึ้น · ถ้าตามหลัง คู่แข่งจะผ่อนลง</div>
+    <div class="small muted">คะแนนอันดับมาจากขนาดบริษัท: มูลค่ากิจการ ผู้โดยสาร สินค้า ตู้เรือ เรตติ้ง และภารกิจ สะสมตลอดเกม ขยายกิจการแล้วคะแนนขึ้นเสมอ</div></div>`}
+function leagueHTML(){if(!has("rank"))return "";const L=leadInfo();
+  return `<div class="league small"><b>⚔️ คู่แข่งเล่นระดับ ${botLvTxt()}</b><span class="muted">${L.rank===1?`เพราะคุณนำอันดับ 2 อยู่ ${L.pct}%`:`คุณตามหลังอันดับ 1 อยู่ ${Math.abs(L.pct)}%`}</span></div>`}
 function partners(){const out=[];
   for(const rv of S.rivals)out.push({id:"rv:"+rv.n,e:"✈️",n:rv.n,sub:"สายการบินคู่แข่ง",kind:"rv"});
   for(const [k,[e,n,sub]] of Object.entries(ORGS)){if(k==="log"&&!has("cargo"))continue;out.push({id:k,e,n,sub,kind:k})}
@@ -1027,6 +1013,7 @@ function partners(){const out=[];
   return out}
 const partnerOf=id=>partners().find(x=>x.id===id)||{id,e:"🤝",n:id,sub:"",kind:id.split(":")[0]};
 const relOf=id=>{S.rel=S.rel||{};if(S.rel[id]==null){let v=50;if(id.startsWith("rv:")){const n=id.slice(3);v-=8*S.routes.filter(r=>r.cmp&&r.cmp.rv===n).length}S.rel[id]=clamp(v,5,95)}return S.rel[id]};
+const relTxt=id=>{const v=Math.round(relOf(id));return `${v}/100 · ${v>=75?"สนิทมาก 😊":v>=55?"ดี 🙂":v>=35?"ปกติ 😐":"ไม่ค่อยดี 😠"}`};
 const relAdd=(id,d)=>{S.rel=S.rel||{};S.rel[id]=clamp(relOf(id)+d,0,100)};
 // what a deal costs now (scales with the business so it stays meaningful)
 function dealCost(k,pid){const dp=Math.max(2e6,avgDailyProfit()),L=S.last||{};
@@ -1060,19 +1047,22 @@ function answerReq(id,a){const q=(S.req||[]).find(x=>x.id===id);if(!q)return;con
   S.req=S.req.filter(x=>x!==q);save();renderView()}
 function dealsHTML(){if(!has("deals"))return "";const reqs=(S.req||[]).filter(q=>q.until>S.day),act=dealsOn();
   return secHead("🤝","ความร่วมมือ","ขอความร่วมมือกับคนอื่น หรือรับคำขอจากเขา")+
-   (reqs.length?`<div class="panel stack"><span class="eyebrow">📨 คำขอที่เข้ามา</span>${reqs.map(q=>{const p=partnerOf(q.p),d=DEALS[q.k];return `<div class="dreq"><div class="row" style="gap:8px"><span class="cav">${p.e}</span><div style="min-width:0;flex:1"><b class="small">${esc(p.n)}</b> <span class="muted small">· ${p.sub}</span><div class="small">ขอทำ <b>${d.e} ${d.n}</b> ${d.days} วัน: ${d.fx}</div><div class="small ${q.bonus?"good":""}">${q.bonus?`เขาจ่ายให้เรา ${money(q.bonus,true)}`:`ราคาพิเศษ ${money(q.cost,true)}`} · เหลือเวลาตอบ ${q.until-S.day} วัน</div></div></div>
-      <div class="row" style="gap:6px"><button class="btn sm primary" data-req="${q.id}:yes" ${S.cash<q.cost?"disabled":""}>ตกลง</button><button class="btn sm" data-req="${q.id}:counter" title="ขอเงื่อนไขที่ดีกว่า: ถูกลงและนานขึ้น">↩ ต่อรองกลับ (${Math.round(dealChance(q.k,q.p,.15)*100)}%)</button><button class="btn sm" data-req="${q.id}:no">ปฏิเสธ</button></div></div>`}).join("")}</div>`:"")+
+   (reqs.length?`<div class="panel stack"><span class="eyebrow">📨 คำขอที่เข้ามา · เขาอยากร่วมมือกับเรา</span>${reqs.map(q=>{const p=partnerOf(q.p),d=DEALS[q.k],full=dealCost(q.k,q.p),ch=Math.round(dealChance(q.k,q.p,.15)*100);return `<div class="dreq"><div class="row" style="gap:8px"><span class="cav">${p.e}</span><div style="min-width:0;flex:1"><b>${esc(p.n)}</b> <span class="muted small">· ${p.sub}</span><div class="small">เสนอ <b>${d.e} ${d.n}</b></div></div></div>
+      <div class="dterms small"><span>ได้อะไร</span><b>${d.fx}</b><span>นานเท่าไร</span><b>${d.days} วัน</b><span>${q.bonus?"เงิน":"เราจ่าย"}</span><b class="${q.bonus?"good":""}">${q.bonus?`เขาจ่ายให้เรา ${money(q.bonus,true)} (เราไม่ต้องจ่าย)`:`${money(q.cost,true)} <span class="muted">(ถ้าเราไปขอเองต้องจ่าย ${money(full,true)})</span>`}</b><span>ตอบภายใน</span><b>${q.until-S.day} วัน</b><span>ความสัมพันธ์</span><b>${relTxt(q.p)}</b></div>
+      <div class="row" style="gap:6px"><button class="btn sm primary" data-req="${q.id}:yes" ${S.cash<q.cost?"disabled":""}>✓ ตกลง</button><button class="btn sm" data-req="${q.id}:counter">↩ ต่อรอง</button><button class="btn sm" data-req="${q.id}:no">✕ ปฏิเสธ</button></div>
+      <div class="muted small">↩ ต่อรอง = ขอให้ถูกลงอีก 20% และนานขึ้น 50% · โอกาสเขายอม ${ch}% · ถ้าไม่ยอม คำขอจะหายและความสัมพันธ์ลด · ✕ ปฏิเสธ = ความสัมพันธ์ลดเล็กน้อย</div></div>`}).join("")}</div>`:"")+
    `<div class="panel stack"><div class="row between"><span class="eyebrow">✅ ดีลที่ใช้อยู่ ${act.length}</span><button class="btn sm primary" id="dealnew">+ ขอความร่วมมือ</button></div>
      ${act.length?act.map(d=>{const p=partnerOf(d.p),D=DEALS[d.k];return `<div class="dact"><span>${D.e}</span><div style="min-width:0;flex:1"><b class="small">${D.n}</b> <span class="muted small">กับ ${esc(p.n)}</span><div class="small muted">${D.fx}</div></div><span class="num small">${d.until-S.day} วัน</span></div>`}).join(""):`<div class="muted small">ยังไม่มีดีล กด “ขอความร่วมมือ” เพื่อเลือกพันธมิตรและข้อเสนอ</div>`}</div>`}
 function dealSheet(st){const fn=()=>{const ps=partners();st.p=st.p&&ps.some(x=>x.id===st.p)?st.p:null;
-   let h=head("🤝 ขอความร่วมมือ","เลือกพันธมิตร แล้วเลือกข้อเสนอ · โอกาสตอบตกลงขึ้นกับความสัมพันธ์ เรตติ้ง และชื่อเสียง");
+   let h=head("🤝 ขอความร่วมมือ","1) เลือกพันธมิตร 2) เลือกข้อเสนอที่ด้านล่าง · เปอร์เซ็นต์บนปุ่มคือโอกาสที่เขาจะตกลง ขึ้นกับความสัมพันธ์ เรตติ้ง และชื่อเสียง");
+   h+=`<div class="muted small">แถบสีด้านขวาคือ <b>ความสัมพันธ์</b> กับแต่ละราย: เขียว = ดี · เหลือง = ปกติ · แดง = ไม่ค่อยดี · ตกลงกันได้ความสัมพันธ์เพิ่ม ถูกปฏิเสธหรือแย่งเส้นทางกันความสัมพันธ์ลด</div>`;
    const groups=[["rv","✈️ สายการบินคู่แข่ง"],["co","🏢 บริษัท"],["tour","🏝️ เมืองท่องเที่ยว"],["apt","🛫 สนามบินสาขา"]];
    for(const [g,gn] of groups){const L=ps.filter(p=>g==="co"?ORGS[p.kind]:p.kind===g);if(!L.length)continue;
-     h+=`<div class="eyebrow" style="margin-top:8px">${gn}</div><div class="pick">${L.map(p=>{const rel=relOf(p.id),cool=(S.dcool||{})[p.id]>S.day,on=dealsOn().filter(d=>d.p===p.id);return `<button data-dp="${p.id}" class="${st.p===p.id?"sel":""}"><span class="cav">${p.e}</span><span style="min-width:0"><b>${esc(p.n)}</b><br><span class="small muted">${p.sub}${on.length?` · ✅ มีดีลอยู่`:""}${cool?" · ⏳ รอคุยใหม่":""}</span></span><span class="relbar" title="ความสัมพันธ์"><i style="width:${rel}%;background:${rel>=60?"var(--good)":rel>=35?"var(--warn)":"var(--bad)"}"></i><small class="num">${Math.round(rel)}</small></span></button>`}).join("")}</div>`}
+     h+=`<div class="eyebrow" style="margin-top:8px">${gn}</div><div class="pick">${L.map(p=>{const rel=relOf(p.id),cool=(S.dcool||{})[p.id]>S.day,on=dealsOn().filter(d=>d.p===p.id);return `<button data-dp="${p.id}" class="${st.p===p.id?"sel":""}"><span class="cav">${p.e}</span><span style="min-width:0"><b>${esc(p.n)}</b><br><span class="small muted">${p.sub}${on.length?` · ✅ มีดีลอยู่`:""}${cool?" · ⏳ รอคุยใหม่":""}</span></span><span class="relbar"><small>ความสัมพันธ์</small><span class="relt"><i style="width:${rel}%;background:${rel>=55?"var(--good)":rel>=35?"var(--warn)":"var(--bad)"}"></i></span><small class="num">${relTxt(p.id)}</small></span></button>`}).join("")}</div>`}
    if(st.p){const p=partnerOf(st.p);h+=`<div class="panel stack" style="position:sticky;bottom:-20px"><b>${p.e} ${esc(p.n)}</b>${dealKindsFor(p).map(k=>{const D=DEALS[k],c=dealCost(k,p.id),ch=dealChance(k,p.id),on=dealOn(k,p.id);
-       return `<div class="dopt"><div style="min-width:0;flex:1"><b class="small">${D.e} ${D.n}</b> <span class="muted small">${D.days} วัน</span><div class="small muted">${D.fx}</div></div><button class="btn sm primary" data-dk="${k}" ${on||S.cash<c?"disabled":""}>${on?"มีอยู่แล้ว":`เสนอ ${money(c,true)} · ${Math.round(ch*100)}%`}</button></div>`}).join("")}</div>`}
+       return `<div class="dopt"><div style="min-width:0;flex:1"><b class="small">${D.e} ${D.n}</b> <span class="muted small">${D.days} วัน</span><div class="small muted">${D.fx}</div></div><button class="btn sm primary" data-dk="${k}" ${on||S.cash<c?"disabled":""}>${on?"มีอยู่แล้ว":`เสนอ ${money(c,true)} · โอกาสตกลง ${Math.round(ch*100)}%`}</button></div>`}).join("")}</div>`}
    return h};
- fn.bind=()=>{$$("[data-dp]").forEach(b=>b.onclick=()=>{st.p=b.dataset.dp;drawSheet();const s2=$(".sheet");s2.scrollTop=s2.scrollHeight});
+ fn.bind=()=>{$$("[data-dp]").forEach(b=>b.onclick=()=>{st.p=b.dataset.dp;drawSheet()});
    $$("[data-dk]").forEach(b=>b.onclick=()=>{proposeDeal(b.dataset.dk,st.p);drawSheet()})};
  return fn}
 /* World bulletin: what is going on in the world right now, written out (fuel, festivals, storms, seasons, sea routes,
@@ -1092,7 +1082,7 @@ function worldHTML(){const items=[],fu=S.fuel,today=dateOf(S.day);
   for(const n of seas)items.push(["🗓️",n,"ช่วงนี้สินค้าทางอากาศเพิ่มขึ้น"]);
   if(S.mkt&&S.mkt.until>S.day)items.push(["📣","แคมเปญการตลาดของเรา",`คนอยากบินเพิ่ม · อีก ${S.mkt.until-S.day} วัน`]);
   const fights=S.routes.filter(r=>r.cmp);if(fights.length)items.push(["⚔️",`คู่แข่งบุก ${fights.length} เส้นทาง`,fights.slice(0,3).map(r=>`${r.from}→${r.dest} (${r.cmp.rv})`).join(" · ")]);
-  if(has("rank")){const B=standings(),top=B[0];items.push(["🏆",top.me?"เราเป็นอันดับหนึ่ง":`${top.n} นำอยู่`,`เราอยู่อันดับ ${rank()} · ลีก ${tierOf(mySR()).n} · คู่แข่งเล่นระดับ${botLvTxt()}`])}
+  if(has("rank")){const B=standings(),top=B[0];items.push(["🏆",top.me?"เราเป็นอันดับหนึ่ง":`${top.n} นำอยู่`,`เราอยู่อันดับ ${rank()} · คู่แข่งเล่นระดับ${botLvTxt()}`])}
   for(const d of dealsOn())items.push([DEALS[d.k].e,`${DEALS[d.k].n} กับ ${partnerOf(d.p).n}`,`อีก ${d.until-S.day} วัน`]);
   const req=(S.req||[]).filter(q=>q.until>S.day).length;if(req)items.push(["📨",`มีคำขอความร่วมมือ ${req} เรื่อง`,"ตอบได้ในแท็บบริษัท"]);
   const good=ev.filter(e=>e.type==="fest"||e.type==="cboost").length,bad=ev.filter(e=>e.type==="storm"||e.type==="comp").length;
@@ -1557,7 +1547,7 @@ function companyHTML(){
    ${has("rank")?secHead("⭐","เรตติ้งและความคิดเห็น","ลูกค้า ลูกเรือ และสื่อพูดถึงเรา")+ratingHTML()+commentsHTML():secHead("💬","ความคิดเห็น")+commentsHTML()}
    ${suggestHTML()}
    ${dealsHTML()}
-   ${has("rank")?secHead("🏆","การแข่งขัน")+competeHTML()+`<div class="panel"><div class="eyebrow" style="margin-bottom:4px">📋 ตารางอันดับ · วัดจากขนาดบริษัท</div><div class="board">${board.map((b,i)=>`<div class="r ${b.me?"me":""}"><span class="num muted">#${i+1}</span><span class="nm" style="min-width:0">${esc(b.n)}<br>${starsHTML(b.st||0,11)} <span class="num muted" style="font-size:11px">${(b.st||0).toFixed(1)}</span></span><span class="num">${b.sc.toLocaleString()}<span class="muted small"> คะแนน</span></span></div>`).join("")}</div></div>`:""}
+   ${has("rank")?secHead("🏆","การแข่งขัน")+competeHTML()+`<div class="panel"><div class="eyebrow" style="margin-bottom:4px">📋 ตารางอันดับ</div><div class="board">${board.map((b,i)=>`<div class="r ${b.me?"me":""}"><span class="num muted">#${i+1}</span><span class="nm" style="min-width:0">${esc(b.n)}<br>${starsHTML(b.st||0,11)} <span class="num muted" style="font-size:11px">${(b.st||0).toFixed(1)}</span></span><span class="num">${b.sc.toLocaleString()}<span class="muted small"> คะแนน</span></span></div>`).join("")}</div></div>`:""}
    ${secHead("🎯","เป้าหมายบริษัท")}<div class="panel stack" style="gap:8px"><div class="row between"><div><div class="eyebrow">เป้าหมายถัดไป</div><b>${S.goal>=GOALS.length?"พิชิตครบทุกระดับแล้ว":g[1]}</b></div><span class="num muted small">${money(v,true)} / ${money(g[0],true)}</span></div><div class="bar"><i style="width:${gp}%"></i></div>
      <div class="goals">${GOALS.map((x,i)=>`<span class="${i<S.goal?"done":i===S.goal?"now":""}">${i<S.goal?"✓":i+1} ${x[1]}</span>`).join("")}</div></div>
    ${has("perks")?secHead("🔬","ศูนย์พัฒนา","อัปเกรดถาวร")+perksHTML():""}
@@ -1990,7 +1980,7 @@ function newLaneSheet(st){
     return out};
   fn.bind=()=>{const gp=$("#gopbr");if(gp){gp.onclick=()=>{sheetFn=null;$("#sheet").innerHTML="";tab="branch";brSeg="sea";renderView(true)};return}
     $("#lf").onchange=e=>{st.from=e.target.value;st.to=null;drawSheet()};
-    $$("[data-lto]").forEach(b=>b.onclick=()=>{st.to=b.dataset.lto;drawSheet();const s2=$(".sheet");s2.scrollTop=s2.scrollHeight});
+    $$("[data-lto]").forEach(b=>b.onclick=()=>{st.to=b.dataset.lto;drawSheet()});
     const o=$("#openl");if(o)o.onclick=()=>{if(seaPath(st.from,st.to).km>SHIP_MAX||S.cash<20e6)return;S.cash-=20e6;const l={id:S.nid++,from:st.from,to:st.to,ships:[],h:[]};S.lanes.push(l);addNews(`🚢 เปิดเส้นทางเรือ ${port(l.from).n} → ${port(l.to).n}`);if(bm()!=="cargo")setBM("cargo");save();if(tab!=="map"&&tab!=="home")tab="routes";renderView();openSheet(laneSheet(l.id,{buy:1}))}};
   return fn}
 function laneSheet(lid,st){
@@ -2941,9 +2931,9 @@ function newRouteSheet(st){
        <button class="btn primary block" id="openr" ${S.cash<3e6||!aptTakes(st.from,st.kind)?"disabled":""}>เปิดเส้นทาง ฿3 ล้าน</button></div>`}
     return out};
   fn.bind=()=>{$$("[data-rk]").forEach(b=>b.onclick=()=>{st.kind=b.dataset.rk;st.dest=null;drawSheet()});const gu=$("#gounlock");if(gu)gu.onclick=()=>openSheet(regionSheet({}));$$("[data-from]").forEach(b=>b.onclick=()=>{st.from=b.dataset.from;st.dest=null;drawSheet()});
-    $$("[data-dest]").forEach(b=>b.onclick=()=>{st.dest=b.dataset.dest;drawSheet();const s=$(".sheet");s.scrollTop=s.scrollHeight});
+    $$("[data-dest]").forEach(b=>b.onclick=()=>{st.dest=b.dataset.dest;drawSheet()});
     $$("[data-sort]").forEach(b=>b.onclick=()=>{st.sort=b.dataset.sort;drawSheet()});
-    $$("[data-vfrom]").forEach(b=>b.onclick=()=>{st.from=b.dataset.vfrom;st.dest=b.dataset.vto;drawSheet();const s=$(".sheet");s.scrollTop=s.scrollHeight});
+    $$("[data-vfrom]").forEach(b=>b.onclick=()=>{st.from=b.dataset.vfrom;st.dest=b.dataset.vto;drawSheet()});
     const vb=$("#vbranch");if(vb)vb.onclick=()=>{sheetFn=null;$("#sheet").innerHTML="";tab="branch";brSeg="air";renderView(true);toast(`เปิดสาขาที่ ${city(vb.dataset.vc).n} ได้ในหน้าสาขา`)};
     const o=$("#openr");if(o)o.onclick=()=>{const d=dist(city(st.from),city(st.dest));if(d>AIR_MAX(st.kind||"pax"))return;
       const r={id:S.nid++,kind:st.kind||"pax",from:st.from,dest:st.dest,price:baseFare(d),pmode:"auto",planes:[],h:[]};S.cash-=3e6;S.routes.push(r);rseg=r.kind;if(bm()!==r.kind){S.bmode=r.kind;S.ui_fk=r.kind;$$("[data-bm]").forEach(b=>{const on=b.dataset.bm===r.kind;b.classList.toggle("on",on);b.classList.toggle("cg",on&&r.kind==="cargo")})}
@@ -3177,8 +3167,8 @@ function guideSheet(){return head("คู่มือระบบ","ทุกร
 <details class="g"><summary>✈ รอสินค้าก่อนออกบิน (เครื่องบินขนสินค้า)</summary><div><ul><li>ตั้งในหน้าเส้นทางขนสินค้า: บินตามตาราง หรือรอจนระวางเต็ม 50 / 75 / 95% ก่อนบิน</li><li>บินน้อยลงแต่เต็มขึ้น ประหยัดน้ำมันและค่าสนามบิน แต่ส่งช้าลง ลูกค้าจ่ายน้อยลงสูงสุด ${Math.round(LATE*100)}% และอาหารเสียความสดอีกสูงสุด ${Math.round(AIR_SPOIL*100)}%</li><li>ใช้ร่วมกับ “ตารางบิน” ได้: ถ้าตั้งบินเต็มตาราง การรอจะช่วยมาก ถ้าตั้งปรับตามสินค้า (เต็มราว 85% อยู่แล้ว) การรอจะช่วยน้อย</li></ul></div></details>
 <details class="g"><summary>🚢 เรือเฉพาะ และ ⏳ รอสินค้าก่อนออกเรือ</summary><div><ul><li>เรือห้องเย็นและเรือขนรถขนได้อย่างเดียวแต่เต็มลำ ได้ค่าระวางมากกว่า ${Math.round((SPEC_RATE-1)*100)}% และอาหารไม่เสียความสดตอนรอ</li><li>เรือรวมขนได้ทุกอย่างทีละประเภท แต่ใช้พื้นที่ขนอาหารได้แค่ ${Math.round(SEA_LOAD.r*100)}% และขนรถได้แค่ ${Math.round(SEA_LOAD.o*100)}% ของความจุ</li><li>⏳ รอสินค้า: ตั้งในหน้าเส้นทางเรือ ให้เรือรอที่ท่าจนตู้เต็ม 50 / 75 / 95% ก่อนออก ออกเรือน้อยลงจึงประหยัดน้ำมันและค่าท่า แต่ส่งช้าลง ลูกค้าจ่ายน้อยลงสูงสุด ${Math.round(LATE*100)}% และอาหารบนเรือรวมเสียความสดเพิ่มอีก</li><li>ตัวเลขใต้ปุ่มบอกกำไร/วันของแต่ละแบบ ⭐ คือแบบที่ดีที่สุดตอนนั้น เหมาะกับเส้นทางที่เรือใหญ่เกินสินค้า</li></ul></div></details>
 <details class="g"><summary>🤝 ความร่วมมือ และ 🌐 จดหมายเหตุโลก</summary><div><ul><li>แท็บบริษัท → ความร่วมมือ: กด “ขอความร่วมมือ” เลือกพันธมิตร (สายการบินคู่แข่ง บริษัทน้ำมัน บริษัทขนส่ง ผู้ผลิตเครื่องบิน การท่องเที่ยวเมืองต่างๆ สนามบินสาขา) แล้วเลือกข้อเสนอ เกมบอกราคา ผล และโอกาสที่เขาจะตกลง</li><li>ข้อเสนอ: โค้ดแชร์ (คน +8%) · สงบศึกราคา (คู่แข่งถอนตัว) · โปรโมทท่องเที่ยว (เมืองนั้น +35%) · สัญญาน้ำมัน (−10%) · สัญญาขนส่งสินค้า (+25%) · ส่วนลดเครื่องบิน (−12%) · พันธมิตรสนามบิน (ค่าธรรมเนียม −25%)</li><li>อีกฝ่ายก็ขอความร่วมมือเราได้ (📨 คำขอที่เข้ามา) ตอบได้ 3 แบบ: ตกลง · ต่อรองกลับ (ขอถูกลง 20% และนานขึ้น 50% ถ้าเขาไม่ยอมคำขอจะยกเลิก) · ปฏิเสธ</li><li>แต่ละพันธมิตรมีความสัมพันธ์ 0–100 ตกลงกันได้ความสัมพันธ์เพิ่ม ถูกปฏิเสธหรือแย่งเส้นทางกันความสัมพันธ์ลด ความสัมพันธ์ เรตติ้ง และชื่อเสียงสูง เขาจะตกลงง่ายขึ้น</li><li>🌐 แผนที่ → ปุ่มสถานการณ์โลก: สรุปสั้นๆ ว่าโลกตอนนี้เป็นอย่างไร น้ำมัน เทศกาล พายุ ฤดูสินค้า คลองสุเอซ คู่แข่ง และดีลของเรา</li></ul></div></details>
-<details class="g"><summary>📋 แต่ละแท็บมีอะไร</summary><div><ul><li><b>ภาพรวม</b> สิ่งที่เกิดขึ้นตอนนี้: แผนที่ เงินวันนี้ เที่ยวบินสด ภารกิจ ข่าว</li><li><b>แผนที่</b> แผนที่เต็มจอ</li><li><b>เส้นทาง</b> เส้นทางบินและเส้นทางเรือ</li><li><b>สาขา</b> สนามบินและท่าเรือของเรา</li><li><b>ฝูงบิน</b> เครื่องบินและเรือที่เรามี ปุ่มซื้อเพิ่ม</li><li><b>การเงิน</b> รายได้ ต้นทุน เงินกู้</li><li><b>บริษัท</b> ตัวตนของสายการบิน: เรตติ้ง ความคิดเห็นลูกค้า การแข่งขันและลีก เป้าหมาย ศูนย์พัฒนา สถิติ ความสำเร็จ</li></ul></div></details>
-<details class="g"><summary>🏆 ลีกจัดอันดับและความยากของคู่แข่ง</summary><div><ul><li>ทุก 7 วันคือ 1 สัปดาห์ลีก เกมจะเทียบว่าธุรกิจของคุณโตกี่เปอร์เซ็นต์ (มูลค่ากิจการ ผู้โดยสาร สินค้า ตู้เรือ ภารกิจ) กับคู่แข่งแต่ละเจ้า</li><li>โตเร็วกว่า = ชนะ · ช้ากว่า = แพ้ · ต่างกันไม่ถึง 0.3% = เสมอ ผลจะเพิ่มหรือลดคะแนนทักษะ (SR) เริ่มที่ 1000 ชนะคู่แข่งที่ SR สูงกว่าได้คะแนนมากกว่า</li><li>ระดับ: 🥉 ทองแดง · 🥈 เงิน 900 · 🥇 ทอง 1050 · 💠 แพลทินัม 1200 · 💎 เพชร 1350 · 👑 มาสเตอร์ 1500 · 🔥 ตำนาน 1700 · เลื่อนระดับได้โบนัส</li><li>ยิ่ง SR สูง คู่แข่งยิ่งเก่ง: โตเร็วขึ้น บุกเส้นทางบ่อยขึ้น ตัดราคาแรงขึ้น และถอนตัวยากขึ้น ถ้า SR ต่ำกว่า 1000 คู่แข่งจะผ่อนลง</li><li>ดูระดับ SR ผลสัปดาห์ก่อน และระดับความยากของคู่แข่งได้ในแท็บบริษัท และปุ่ม 🏆 บนแผนที่</li></ul></div></details>
+<details class="g"><summary>📋 แต่ละแท็บมีอะไร</summary><div><ul><li><b>ภาพรวม</b> สิ่งที่เกิดขึ้นตอนนี้: แผนที่ เงินวันนี้ เที่ยวบินสด ภารกิจ ข่าว</li><li><b>แผนที่</b> แผนที่เต็มจอ</li><li><b>เส้นทาง</b> เส้นทางบินและเส้นทางเรือ</li><li><b>สาขา</b> สนามบินและท่าเรือของเรา</li><li><b>ฝูงบิน</b> เครื่องบินและเรือที่เรามี ปุ่มซื้อเพิ่ม</li><li><b>การเงิน</b> รายได้ ต้นทุน เงินกู้</li><li><b>บริษัท</b> ตัวตนของสายการบิน: เรตติ้ง ความคิดเห็นลูกค้า การแข่งขัน เป้าหมาย ศูนย์พัฒนา สถิติ ความสำเร็จ</li></ul></div></details>
+<details class="g"><summary>🏆 อันดับและความยากของคู่แข่ง</summary><div><ul><li>มีระบบเดียว: ตารางอันดับ คะแนนมาจากขนาดบริษัท (มูลค่ากิจการ ผู้โดยสาร สินค้า ตู้เรือ เรตติ้ง ภารกิจ) สะสมตลอดเกม ขยายกิจการแล้วคะแนนขึ้นเสมอ</li><li>ความยากของคู่แข่งปรับตามอันดับ: ยิ่งนำอันดับ 2 ห่าง คู่แข่งยิ่งเก่งขึ้น (โตเร็วขึ้น บุกเส้นทางบ่อยขึ้น ตัดราคาแรงขึ้น ถอนตัวยากขึ้น) ถ้าเราตามหลัง คู่แข่งจะผ่อนลง ค่อยๆ ปรับวันละนิด ไม่กระโดด</li><li>ดูได้ในแท็บบริษัท และปุ่ม 🏆 บนแผนที่</li></ul></div></details>
 <details class="g"><summary>✨ ฟีเจอร์ที่ค่อยๆ ปลดล็อก</summary><div><p>เกมใหม่จะเริ่มแค่ ภาพรวม เส้นทาง และฝูงบิน ระบบอื่นจะเปิดทีละอย่าง (ไม่เกินวันละอย่าง) พร้อมกล่องแจ้งเตือน ✨ แยกจากภารกิจ:</p><ol>${FEATS.filter(f=>has(f.id)).map(f=>`<li><b>${f.n}</b></li>`).join("")}</ol>${FEATS.some(f=>!has(f.id))?`<p>🔒 ยังมีอีก ${FEATS.filter(f=>!has(f.id)).length} อย่าง · อย่างต่อไปจะเปิดเมื่อ: ${FEATS.filter(f=>!has(f.id)&&(f.after||[]).every(has)).map(f=>`<b>${f.need}</b>`).join(" หรือ ")}</p>`:""}<p class="small">ทุกการขยายกิจการต้องมีฐานที่มั่นคงก่อน คือกำไรเฉลี่ย 7 วันเป็นบวก สินค้าทางอากาศเริ่มจากพัสดุกับเครื่องลำเล็ก แล้วค่อยเปิดอาหาร เครื่องลำใหญ่ ชิ้นส่วน/รถ ส่วนเรือเริ่มจากเรือเล็กขนตู้พัสดุ แล้วค่อยเปิดเรือห้องเย็น เรือใหญ่ และเรือขนรถ</p><p class="muted small">เซฟเก่าก่อนมีระบบนี้เปิดครบทุกอย่างอยู่แล้ว</p></div></details>
 <details class="g"><summary>🧭 พิสัยบิน/แล่น 🔗 ต่อเครื่อง และถ่ายลำ</summary><div><ul><li>เครื่องบินทุกรุ่นมีระยะบินไกลสุด เครื่องโดยสารไกลสุด ${AIR_MAX_P.toLocaleString()} กม. เครื่องขนสินค้า ${AIR_MAX_C.toLocaleString()} กม. ปลายทางที่ไกลกว่านั้นเปิดเส้นทางบินตรงไม่ได้</li><li>เรือก็มีระยะแล่นไกลสุด เรือชายฝั่งและฟีดเดอร์วิ่งได้แค่ในภูมิภาค เส้นทางข้ามทวีปต้องใช้เรือใหญ่ ดูได้ที่ “แล่นได้ไกล” ในอู่ต่อเรือ</li><li>🔗 ต่อเครื่อง: ผู้โดยสาร (และสินค้า) ระหว่างสองเมืองที่เราไม่มีเที่ยวบินตรง จะต่อเครื่องที่<b>สาขา</b>ของเราได้สูงสุด 2 ครั้ง (3 เที่ยวบิน) ถ้าทางอ้อมไม่ไกลเกินไป เช่น กรุงเทพ → ดูไบ → เซาเปาโล</li><li>คนต่อเครื่องจะเพิ่มเข้าไปในทุกเส้นทางที่ใช้ จ่ายค่าตั๋วตามราคาของแต่ละช่วง ดูได้ที่กล่อง 🔗 ในหน้าเส้นทาง</li><li>🚢 ถ่ายลำ: เรือก็เหมือนกัน ตู้สินค้าระหว่างท่าที่ไม่มีเรือวิ่งตรง จะขนต่อกันที่<b>สาขาท่าเรือ</b>ได้สูงสุด 2 ครั้ง ดูได้ที่กล่อง 🔗 ในส่วนเส้นทางเรือ</li><li>อยากไปที่ไกลเกินบินตรง: เปิดสาขาที่เมืองกลางทาง แล้วเปิดเส้นทางทั้งสองช่วง หน้าเปิดเส้นทางจะแนะนำเมืองให้</li></ul></div></details>
 <details class="g"><summary>📥 ระบบสะสม (คนและสินค้าที่รอ)</summary><div><ul><li>ทันทีที่<b>เปิดเส้นทาง</b> ระบบสะสมของเส้นนั้นจะเริ่มทำงาน แม้ยังไม่มีเครื่องบินหรือเรือวิ่งเลยก็ตาม</li><li>ทุกสิ้นวัน คนหรือสินค้าที่ไม่มีใครขนไป ส่วนหนึ่งจะรอไว้: ผู้โดยสาร 35% (สะสมได้สูงสุดเท่ากับความต้องการ 3 วัน) · สินค้าทางอากาศ 60% (สูงสุด 6 วัน) · ตู้สินค้าทางเรือ 60% (สูงสุด 8 วัน)</li><li>เมื่อมีเครื่องบินหรือเรือที่มีที่ว่าง ของที่สะสมจะถูกขนไปเองและได้เงินเพิ่ม โดยจ่ายไม่เกินราคากลาง ตารางบินแบบปรับตามคนจะเพิ่มเที่ยวให้เองระหว่างที่ยังมีของสะสม</li><li>ดูยอดสะสมได้จากป้าย 📥 บนการ์ดเส้นทาง และในหน้ารายละเอียดเส้นทาง</li><li><b>ปิดเส้นทางเมื่อไร ของที่สะสมไว้จะหายไปทั้งหมด</b></li></ul></div></details>
