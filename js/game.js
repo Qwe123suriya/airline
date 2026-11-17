@@ -985,13 +985,23 @@ function leagueTick(){if(!has("rank")||!S.rivals||!S.rivals.length)return;
   if(ta.i>tb.i){celebrate("!⬆️ เลื่อนระดับลีก",`${ta.n} · คู่แข่งจะเล่นเก่งขึ้น (${botLvTxt()})`);S.cash+=Math.round(S.startCap*.02*ta.i/1e5)*1e5}
   else if(ta.i<tb.i)addNews(`⬇️ ตกระดับลีกเป็น ${ta.n} · คู่แข่งผ่อนลงเป็นระดับ “${botLvTxt()}”`);
   S.lg=snap()}
+// the competition has two different measures; show them side by side and say plainly what each one is
+function competeHTML(){const sr=mySR(),t=tierOf(sr),n=S.rivals.length+1,L=(S.lgHist||[])[0];
+  return `<div class="cmp2"><div class="panel cbox"><span class="eyebrow">📋 อันดับในตาราง</span><b class="num">#${rank()}<small> / ${n}</small></b><span class="small muted">วัดจาก <b>ขนาด</b> บริษัท: มูลค่า ผู้โดยสาร สินค้า เรตติ้ง ภารกิจ (สะสมตลอดเกม)</span></div>
+    <div class="panel cbox"><span class="eyebrow">🏅 ลีกรายสัปดาห์</span><b style="color:${t.col}">${t.n}</b><span class="small muted">วัดจาก <b>ความเร็วในการโต</b> ทุก 7 วัน · SR ${sr}${L?` · สัปดาห์ก่อน ชนะ ${L.w} แพ้ ${L.l}`:""}</span></div></div>
+   <details class="more panel"><summary>สองอย่างนี้ต่างกันยังไง ▾</summary><ul class="small">
+     <li><b>ตารางอันดับ</b> เหมือนตารางคะแนนสะสม บริษัทใหญ่กว่าอยู่สูงกว่า ยิ่งเล่นนานยิ่งขึ้น ไม่มีลง</li>
+     <li><b>ลีกรายสัปดาห์</b> (ทองแดง → เงิน → ทอง → แพลทินัม → เพชร → มาสเตอร์ → ตำนาน) ทุก 7 วันเทียบว่าสัปดาห์นี้คุณโตกี่ % กับคู่แข่งแต่ละเจ้า โตเร็วกว่า = ชนะ ได้ SR เพิ่ม · ช้ากว่า = แพ้ SR ลด</li>
+     <li>ลีกมีไว้ปรับความยาก: ระดับสูง คู่แข่งเก่งขึ้น ระดับต่ำ คู่แข่งผ่อนลง · ตอนนี้คู่แข่งเล่นระดับ <b>${botLvTxt()}</b></li>
+     <li>ใหญ่ที่สุดแต่หยุดโต ก็อาจอยู่ #1 ในตาราง แต่ตกลีกได้</li></ul></details>
+   <div class="panel"><div class="eyebrow" style="margin-bottom:4px">🏅 ลีกรายสัปดาห์ · วัดจากความเร็วในการโต</div>${leagueHTML()}</div>`}
 function leagueHTML(compact){if(!has("rank"))return "";const sr=mySR(),t=tierOf(sr),L=S.lgHist||[],last=L[0],left=S.lg?Math.max(0,LG_WEEK-(S.day-S.lg.start)):LG_WEEK;
   const pc=t.hi?clamp((sr-t.lo)/(t.hi-t.lo),0,1)*100:100;
   return `<div class="league"><div class="row between"><span class="lg-tier" style="color:${t.col}">${t.n}</span><span class="num"><b>SR ${sr}</b>${last?` <span class="${last.ch>=0?"good":"bad"} small">${last.ch>=0?"▲":"▼"}${Math.abs(last.ch)}</span>`:""}</span></div>
     <div class="bar lg-bar"><i style="width:${pc}%;background:${t.col}"></i></div>
     <div class="row between small muted"><span>${t.hi?`อีก ${t.hi-sr} SR ถึง ${tierOf(t.hi).n}`:"ระดับสูงสุดแล้ว"}</span><span>คู่แข่ง: <b style="color:var(--ink)">${botLvTxt()}</b></span></div>
-    <div class="small muted">สัปดาห์ลีกนี้เหลือ ${left} วัน · ชนะคู่แข่งที่คะแนนโตช้ากว่าคุณ${last?` · สัปดาห์ก่อน ชนะ ${last.w} เสมอ ${last.dr} แพ้ ${last.l}`:""}</div>
-    ${!compact&&last?`<div class="lg-res">${last.res.map(x=>`<span class="${x.o===1?"good":x.o===0?"bad":"muted"}">${x.o===1?"ชนะ":x.o===0?"แพ้":"เสมอ"} ${esc(x.n)} <small class="num">(${x.g>=0?"+":""}${x.g}%)</small></span>`).join("")}</div>`:""}</div>`}
+    <div class="small muted">สัปดาห์นี้เหลือ ${left} วัน · โตเร็วกว่าคู่แข่งเจ้าไหน = ชนะเจ้านั้น${last?` · สัปดาห์ก่อน ชนะ ${last.w} เสมอ ${last.dr} แพ้ ${last.l}`:""}</div>
+    ${!compact&&last?`<details class="more"><summary class="small">ผลสัปดาห์ก่อนกับคู่แข่งแต่ละเจ้า (คุณโต ${last.myG}%) ▾</summary><div class="lg-res">${last.res.map(x=>`<span class="${x.o===1?"good":x.o===0?"bad":"muted"}">${x.o===1?"ชนะ":x.o===0?"แพ้":"เสมอ"} ${esc(x.n)} <small class="num">(เขาโต ${x.g>=0?"+":""}${x.g}%)</small></span>`).join("")}</div></details>`:""}</div>`}
 function rivalTurn(){
   const myV=valuation(),pax=S.routes.filter(r=>rkind(r)==="pax"&&r.planes.length&&r.last);
   const contested=pax.filter(r=>r.cmp).length,lead=rank()===1;
@@ -1410,6 +1420,24 @@ function commentsList(){const L=S.last||{},out=[],R=S.rating;
   const fights=S.routes.filter(r=>r.cmp).length;
   if(has("rank")&&S.day>10)say("ข่าวการบิน","📰",fights>3?3:rank()===1?4.8:3.8,fights>3?`${S.name} กำลังโดนคู่แข่งบุกหลายเส้นทางพร้อมกัน`:rank()===1?`${S.name} ขึ้นเป็นสายการบินอันดับหนึ่งของภูมิภาค`:`${S.name} อยู่อันดับ ${rank()} และกำลังไล่ตามผู้นำ`);
   return out}
+function suggestList(){const out=[],served=new Set([...S.bases,...S.routes.map(r=>r.dest),...S.routes.map(r=>r.from)]);
+  // a city that wants a branch: big, open, not a branch yet, with many unserved cities within reach of a narrow-body
+  if(has("branch")){const cand=CITIES.filter(c=>!S.bases.includes(c.c)&&isOpen(c.c)&&aptTakes(c.c,"pax")&&c.w>=5).map(c=>{const near=CITIES.filter(x=>x.c!==c.c&&isOpen(x.c)&&aptTakes(x.c,"pax")&&!served.has(x.c)&&dist(c,x)<3000).sort((a,b)=>b.w-a.w);return {c,near,sc:c.w+near.length*.6}}).sort((a,b)=>b.sc-a.sc).slice(0,2);
+    for(const {c,near} of cand)if(near.length>=2)out.push({av:"🏙️",who:`ชาว${c.n}`,t:`อยากให้มาตั้งสาขาที่${c.n} จะได้บินตรงไป ${near.slice(0,3).map(x=>x.n).join(" ")} ได้`,btn:`ตั้งสาขา ${money(branchCost(c),true)}`,attr:`data-brnew="${c.c}"`,dis:S.cash<branchCost(c)})}
+  // the most wanted passenger route
+  const op=oppsList().find(o=>o.profit>0);if(op)out.push({av:"🧳",who:`คน${city(op.from).n}`,t:`อยากบินไป${op.w.c.n} วันละ ~${Math.round(op.w.dem).toLocaleString()} คน แต่เรายังไม่มีเที่ยวบิน`,btn:"เปิดเส้นทาง",attr:`data-wish="${op.from}>${op.w.c.c}"`});
+  // freight
+  if(has("cargo")){let best=null;for(const code of S.bases.filter(c=>aptTakes(c,"cargo")))for(const w of cargoWants(code,false))if(!best||w.k.all>best.w.k.all)best={code,w};
+    if(best&&best.w.k.all>=10)out.push({av:"📦",who:"ผู้ส่งสินค้า",t:`อยากส่งของจาก${city(best.code).n}ไป${best.w.n} วันละ ~${Math.round(best.w.k.all).toLocaleString()} ตัน`,btn:"เปิดเส้นทางสินค้า",attr:`data-cwish="${best.code}>${best.w.to}"`})}
+  // sea
+  if(has("sea")){if(!pbList().length){const pt=PORTS.filter(x=>portOpen(x.c)).sort((a,b)=>b.w-a.w)[0];if(pt)out.push({av:"⚓",who:"บริษัทขนส่งทางเรือ",t:`อยากให้เปิดสาขาท่าเรือที่${pt.n} จะได้ส่งตู้สินค้าทางเรือกับเรา`,btn:"ไปหน้าสาขาท่าเรือ",attr:`data-brgo="sea"`})}
+    else{let best=null;for(const code of pbList().filter(portOpen))for(const w of cargoWants(code,true))if(!best||w.k.all>best.w.k.all)best={code,w};
+      if(best&&best.w.k.all>=20)out.push({av:"🚢",who:"บริษัทขนส่งทางเรือ",t:`อยากส่งตู้จาก${port(best.code).n}ไป${best.w.n} วันละ ~${Math.round(best.w.k.all).toLocaleString()} TEU`,btn:"เปิดเส้นทางเรือ",attr:`data-lwish="${best.code}>${best.w.to}"`})}}
+  // worn aircraft
+  const worn=S.fleet.filter(p=>p.cond<45&&p.down<=S.day);if(worn.length)out.push({av:"🔧",who:"ช่างซ่อมบำรุง",t:`เครื่อง ${worn.slice(0,3).map(p=>p.reg).join(", ")} สภาพต่ำกว่า 45% ควรส่งซ่อมก่อนเสียกลางทาง`,btn:"ไปฝูงบิน",attr:`data-go="fleet"`});
+  return out.slice(0,6)}
+function suggestHTML(){const L=suggestList();if(!L.length)return "";
+  return secHead("💡","ลูกค้าอยากให้ทำอะไร","กดปุ่มเพื่อทำตามคำขอได้เลย")+`<div class="cmts">${L.map(x=>`<div class="cmt sug"><span class="cav">${x.av}</span><div style="min-width:0"><b class="small">${x.who}</b><div class="small">“${esc(x.t)}”</div></div><button class="btn sm primary" ${x.attr} ${x.dis?"disabled":""}>${x.btn}</button></div>`).join("")}</div>`}
 function commentsHTML(){const C=commentsList();if(!C.length)return `<div class="panel muted small">ยังไม่มีความคิดเห็น เริ่มบินหรือเดินเรือแล้วลูกค้าจะเริ่มพูดถึงบริษัท</div>`;
   return `<div class="cmts">${C.map(c=>`<div class="cmt"><span class="cav">${c.av}</span><div style="min-width:0"><div class="row between"><b class="small">${c.who}</b>${starsHTML(c.st,11)}</div><div class="small">“${esc(c.t)}”</div></div></div>`).join("")}</div>`}
 /* Company tab: the airline itself — who you are, how people rate you, how you stand, where you are going */
@@ -1426,7 +1454,8 @@ function companyHTML(){
      <div><div class="k">เส้นทาง</div><div class="v num">${S.routes.length+(S.lanes||[]).length}</div></div>
      <div><div class="k">สาขา</div><div class="v num">${S.bases.length+pbList().length}</div></div></div>
    ${has("rank")?secHead("⭐","เรตติ้งและความคิดเห็น","ลูกค้า ลูกเรือ และสื่อพูดถึงเรา")+ratingHTML()+commentsHTML():secHead("💬","ความคิดเห็น")+commentsHTML()}
-   ${has("rank")?secHead("🏆","การแข่งขันและลีก")+`<div class="panel">${leagueHTML()}<div class="board">${board.map((b,i)=>`<div class="r ${b.me?"me":""}"><span class="num muted">#${i+1}</span><span class="nm" style="min-width:0">${esc(b.n)}<br>${starsHTML(b.st||0,11)} <span class="num muted" style="font-size:11px">${(b.st||0).toFixed(1)}</span></span><span class="num">${b.sc.toLocaleString()}<span class="muted small"> คะแนน</span></span></div>`).join("")}</div></div>`:""}
+   ${suggestHTML()}
+   ${has("rank")?secHead("🏆","การแข่งขัน")+competeHTML()+`<div class="panel"><div class="eyebrow" style="margin-bottom:4px">📋 ตารางอันดับ · วัดจากขนาดบริษัท</div><div class="board">${board.map((b,i)=>`<div class="r ${b.me?"me":""}"><span class="num muted">#${i+1}</span><span class="nm" style="min-width:0">${esc(b.n)}<br>${starsHTML(b.st||0,11)} <span class="num muted" style="font-size:11px">${(b.st||0).toFixed(1)}</span></span><span class="num">${b.sc.toLocaleString()}<span class="muted small"> คะแนน</span></span></div>`).join("")}</div></div>`:""}
    ${secHead("🎯","เป้าหมายบริษัท")}<div class="panel stack" style="gap:8px"><div class="row between"><div><div class="eyebrow">เป้าหมายถัดไป</div><b>${S.goal>=GOALS.length?"พิชิตครบทุกระดับแล้ว":g[1]}</b></div><span class="num muted small">${money(v,true)} / ${money(g[0],true)}</span></div><div class="bar"><i style="width:${gp}%"></i></div>
      <div class="goals">${GOALS.map((x,i)=>`<span class="${i<S.goal?"done":i===S.goal?"now":""}">${i<S.goal?"✓":i+1} ${x[1]}</span>`).join("")}</div></div>
    ${has("perks")?secHead("🔬","ศูนย์พัฒนา","อัปเกรดถาวร")+perksHTML():""}
@@ -2287,6 +2316,8 @@ function bindWishes(){
   $$("[data-wish]").forEach(b=>b.onclick=e=>{e.stopPropagation();const [f,t]=b.dataset.wish.split(">");openSheet(newRouteSheet({from:f,kind:"pax",dest:t}))});
   $$("[data-wunlock]").forEach(b=>b.onclick=e=>{e.stopPropagation();openSheet(regionSheet({id:b.dataset.wunlock}))});
   $$("[data-wroute]").forEach(b=>b.onclick=e=>{e.stopPropagation();openSheet(routeSheet(+b.dataset.wroute,{}))});
+  $$("[data-brnew]").forEach(b=>b.onclick=e=>{e.stopPropagation();const c=b.dataset.brnew;openBranch(c);if(S.bases.includes(c)){toast(`ตั้งสาขาที่${city(c).n}แล้ว เปิดเส้นทางจากที่นี่ได้เลย`);renderView()}});
+  $$("[data-brgo]").forEach(b=>b.onclick=e=>{e.stopPropagation();tab="branch";brSeg=b.dataset.brgo;renderView(true);window.scrollTo(0,0)});
   $$("[data-cwish]").forEach(b=>b.onclick=e=>{e.stopPropagation();const [f,t]=b.dataset.cwish.split(">");openSheet(newRouteSheet({from:f,kind:"cargo",dest:t}))});
   $$("[data-lwish]").forEach(b=>b.onclick=e=>{e.stopPropagation();const [f,t]=b.dataset.lwish.split(">");openSheet(newLaneSheet({from:f,to:t}))});
   const rw=()=>{const wp=$("#wishpanel");if(wp){wp.innerHTML=mapWishHTML();bindWishes()}};

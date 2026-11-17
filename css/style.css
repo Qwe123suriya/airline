@@ -783,3 +783,9 @@ h1,h2,h3,.eyebrow{letter-spacing:0}
 .goals span.done{color:var(--good);border-color:color-mix(in srgb,var(--good) 40%,var(--line))}
 .goals span.now{color:var(--accent);border-color:var(--accent);font-weight:600}
 .cogo{width:100%;text-align:left;cursor:pointer}
+
+/* competition: two measures side by side */
+.cmp2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cbox{display:flex;flex-direction:column;gap:2px}
+.cbox>b{font-family:var(--f-display);font-size:22px;line-height:1.2}.cbox>b small{font-size:13px;color:var(--muted)}
+.cmt.sug{grid-template-columns:auto 1fr auto;align-items:center}
