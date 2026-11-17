@@ -758,3 +758,7 @@ body:not(.nf-regions) .wishpanel{bottom:92px}
 body{font-feature-settings:"kern";-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;letter-spacing:.005em}
 h1,h2,h3,.eyebrow{letter-spacing:0}
 .num{font-variant-numeric:tabular-nums}
+
+/* kind filter above cargo buy lists */
+.kseg{margin:6px 0 2px}
+.kseg button{font-size:13px}
