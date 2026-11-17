@@ -249,7 +249,7 @@ const aptChip=c=>{const k=aptKind(c),[i,t]=APT_LABEL[k];return `<span class="apt
 // Branches (สาขา): every airport where you base aircraft. Routes start from a branch. Levels 1–3.
 const BR_MAX=3;
 const blv=c=>S.bases.includes(c)?(S.blv&&S.blv[c])||1:0;
-const feeOf=c=>c.fee*(1-.15*Math.max(0,blv(c.c)-1))*pk("fee");
+const feeOf=c=>c.fee*(1-.15*Math.max(0,blv(c.c)-1))*pk("fee")*(S.deals&&dealOn("airport","apt:"+c.c)?.75:1);
 const brBoost=c=>1+.08*Math.max(0,blv(c)-1);
 function branchCost(c){c=typeof c==="string"?city(c):c;return Math.round((30e6+c.w*8e6)*(1+.3*(S.bases.length-1))/5e6)*5e6}
 function branchUpCost(code){const c=city(code);return Math.round((20e6+c.w*6e6)*blv(code)/5e6)*5e6}
@@ -422,7 +422,7 @@ function seaNet(){let sig=S.day*1e6+pbList().length*7919+S.lanes.length;for(cons
   out.its.sort((a,b)=>b.dem-a.dem);xsCache=out;return out}
 const xsOf=l=>l.id>0?(seaNet().leg.get(l.id)||0):0;
 function laneCalc(l){const a=port(l.from),b=port(l.to),sp=seaPath(l.from,l.to),km=sp.km,ev=evShip(l.from)*evShip(l.to);
-  const XS=xsOf(l),D=seaOwn(a,b,km)*ev*pBoost(l.from)*pBoost(l.to)+XS,Dr=skOpen("r")?D*.22:0,Do=skOpen("o")?D*.3:0;
+  const XS=xsOf(l),D=seaOwn(a,b,km)*ev*pBoost(l.from)*pBoost(l.to)*dealCargo()+XS,Dr=skOpen("r")?D*.22:0,Do=skOpen("o")?D*.3:0;
   const DK={d:D,r:Dr,o:Do};laneAutoAssign(l,DK,km);
   const capK={d:0,r:0,o:0};let fixed=0;
   for(const id of l.ships){const sh=shipById(id);if(!sh)continue;const m=shipM(sh.m);fixed+=m.price*.0004;if(sh.down>S.day)continue;const k=shipK(sh,m);capK[k]+=m.teu*shipLoadF(m,k)/legDaysS(m,km)}
@@ -600,8 +600,24 @@ const PERKS=[["fuel","⛽","เครื่องยนต์ประหยั�
  ["fee","🤝","ดีลสนามบินและท่าเรือ","ค่าธรรมเนียมสนามบินและท่าเรือ",-.04,40e6,"ค่าลงจอด"]];
 const PERK_MAX=5,pkDef=id=>PERKS.find(x=>x[0]===id),pkLv=id=>(S&&S.perk&&S.perk[id])||0,pk=id=>1+pkDef(id)[4]*pkLv(id),pkCost=id=>Math.round(pkDef(id)[5]*Math.pow(2.1,pkLv(id))/1e6)*1e6;
 const pkPips=id=>`<span class="pkd">${Array.from({length:PERK_MAX},(_,i)=>`<i class="${i<pkLv(id)?"on":""}"></i>`).join("")}</span>`;
-const fuelNow=()=>S.hedge&&S.hedge.until>S.day?S.hedge.price:S.fuel;
+const fuelNow=()=>(S.hedge&&S.hedge.until>S.day?S.hedge.price:S.fuel)*(S.deals&&dealOn("fuel")?.9:1);
 const mktMult=()=>S.mkt&&S.mkt.until>S.day?S.mkt.mult:1;
+/* ---------- partnerships (🤝) ----------
+   Partners: rival airlines, a fuel company, a logistics company, an aircraft maker, tourism boards of cities we fly to,
+   and airports where we have a branch. Each has a relationship score (0–100). Deals run for a number of days. */
+const ORGS={oil:["⛽","ปิโตรสยาม","บริษัทน้ำมัน"],log:["📦","เอเชียโลจิสติกส์","บริษัทขนส่งสินค้า"],mfr:["🏭","สกายเวิร์คส์","ผู้ผลิตเครื่องบิน"]};
+const DEALS={
+ codeshare:{n:"เที่ยวบินร่วม (โค้ดแชร์)",e:"🤝",who:"rv",days:45,fx:"ผู้โดยสารทุกเส้นทาง +8% และสายการบินนี้จะไม่บุกเส้นทางของเรา"},
+ truce:{n:"สงบศึกราคา",e:"🕊️",who:"rv",days:60,fx:"สายการบินนี้ถอนตัวจากทุกเส้นทางที่แข่งกับเรา และไม่บุกใหม่"},
+ tourism:{n:"โปรโมทการท่องเที่ยวร่วมกัน",e:"🏝️",who:"tour",days:30,fx:"คนบินไป-กลับเมืองนี้ +35%"},
+ fuel:{n:"สัญญาน้ำมันระยะยาว",e:"⛽",who:"oil",days:60,fx:"ค่าน้ำมันเครื่องบินและเรือ −10%"},
+ freight:{n:"สัญญาขนส่งสินค้า",e:"📦",who:"log",days:30,fx:"สินค้าทางอากาศและทางเรือ +25%"},
+ fleetdeal:{n:"ส่วนลดซื้อเครื่องบินจำนวนมาก",e:"🏭",who:"mfr",days:20,fx:"ซื้อเครื่องบินทุกรุ่นลด 12%"},
+ airport:{n:"พันธมิตรสนามบิน",e:"🛫",who:"apt",days:60,fx:"ค่าธรรมเนียมที่สนามบินนี้ −25%"}};
+const dealsOn=()=>(S.deals||[]).filter(d=>d.until>S.day);
+const dealOn=(k,p)=>dealsOn().some(d=>d.k===k&&(p==null||d.p===p));
+const dealPax=r=>(dealOn("codeshare")?1.08:1)*(dealsOn().some(d=>d.k==="tourism"&&(d.p==="tour:"+r.dest||d.p==="tour:"+r.from))?1.35:1);
+const dealCargo=()=>dealOn("freight")?1.25:1;
 const CN_HUBS=["PEK","PVG","CAN","SZX","CTU","KMG","XMN","HKG","MFM"];
 function gameDate(){const x=new Date(START);x.setDate(x.getDate()+S.day);return x}
 // Cargo seasons from the game calendar
@@ -705,7 +721,7 @@ function seaKindsHTML(l,c){const B=l.bk||{};
     <div class="ktab"><span></span><span>ต้องการ</span><span>รองรับ</span><span>เต็ม</span><span>สะสม</span>${["d","r","o"].filter(skOpen).map(k=>`<span>${kindChip(SEA_KN[k])}</span><b class="num">${Math.round(c.DK[k])}</b><b class="num">${Math.round(c.capK[k])}</b><b class="num">${c.capK[k]?Math.round(c.loadK[k]*100)+"%":"—"}</b><b class="num muted">${Math.round(B[k]||0)}</b>`).join("")}</div>
     <div class="muted small">เรือเฉพาะ (ห้องเย็น, ขนรถ) ขนได้เต็มลำ ค่าระวางสูงกว่า ${Math.round((SPEC_RATE-1)*100)}% และอาหารไม่เสียตอนรอสินค้า · เรือรวมขนได้ทุกอย่างแต่ทีละประเภท: พัสดุเต็มลำ อาหาร ${Math.round(SEA_LOAD.r*100)}% ชิ้นส่วน/รถ ${Math.round(SEA_LOAD.o*100)}% ของความจุ · ค่าระวาง อาหาร ×1.8 ชิ้นส่วน/รถ ×1.5</div>
     ${l.ships.length?`<div class="klist">${l.ships.map(shipById).filter(Boolean).map(sh=>{const m=shipM(sh.m);return `<div class="krow"><span><b>${sh.reg}</b> <span class="muted small">${m.name}</span></span>${shipSpec(m)?`<span class="small">${kindChip(SEA_KN[shipK(sh,m)])} <span class="muted">เรือเฉพาะ</span></span>`:`<span class="row" style="gap:6px">${(!sh.ck||sh.ck==="auto")?`<span class="small muted">ตอนนี้ ${CK_E[SEA_KN[shipK(sh,m)]]}</span>`:""}${ckSel("sck",sh.id,sh.ck,SEA_OPTS)}</span>`}</div>`}).join("")}</div>`:""}</div>`}
-function cargoBase(r,a,b,d,ev){return 8*Math.sqrt(a.w*b.w)*cargoDistF(d)*ev*Math.max(seasonMult(r.from),seasonMult(r.dest))*evCargo(r.from)*evCargo(r.dest)}
+function cargoBase(r,a,b,d,ev){return 8*Math.sqrt(a.w*b.w)*cargoDistF(d)*ev*dealCargo()*Math.max(seasonMult(r.from),seasonMult(r.dest))*evCargo(r.from)*evCargo(r.dest)}
 function autoCrate(r){const a=city(r.from),b=city(r.dest),d=dist(a,b),ev=evMult(r.dest)*evMult(r.from)*brBoost(r.from)*brBoost(r.dest),c0=cargoBase(r,a,b,d,ev)*(rkind(r)==="cargo"?1:.5)+(rkind(r)==="cargo"?xferOf(r).cargo:0);
   let cap=0;for(const id of r.planes){const p=plane(id);if(!p||p.down>S.day)continue;const m=model(p.m);cap+=legsFor(m,d)*m.cargo}
   if(!cap)return 1;return Math.round(clamp(Math.pow(c0/(.9*cap),1/1.3),.7,1.6)*20)/20}
@@ -733,7 +749,7 @@ function autoPrice(r,quick){const key=(quick?"q":"")+S.day+":"+r.planes.join("."
   else for(let i=0;i<=24;i++){const pr=Math.round(base*(.7+1.3*i/24)/10)*10,pf=calc(r,pr).profit;if(pf>bp){bp=pf;best=pr}}
   const v=Math.round((p0+AUTO_SMART*(best-p0))/10)*10;r._apk=key;r._apv=v;return v}
 function fillPrice(r){const a=city(r.from),b=city(r.dest),d=dist(a,b),base=baseFare(d);
-  const D0=(60*Math.sqrt(a.w*b.w)*distF(d)*evMult(r.dest)*evMult(r.from)*brBoost(r.from)*brBoost(r.dest)*compShare(r,r.price||base)+xferOf(r).pax)*(.6+S.rep/125)*SERVICE[svcOf(r)].f*mktMult()*starMult()*pk("pax");
+  const D0=(60*Math.sqrt(a.w*b.w)*distF(d)*evMult(r.dest)*evMult(r.from)*brBoost(r.from)*brBoost(r.dest)*compShare(r,r.price||base)+xferOf(r).pax)*(.6+S.rep/125)*SERVICE[svcOf(r)].f*mktMult()*starMult()*pk("pax")*dealPax(r);
   let cap=0;for(const id of r.planes){const p=plane(id);if(!p||p.down>S.day)continue;const m=model(p.m);cap+=legsFor(m,d)*m.seats}
   if(!cap)return base;
   return Math.round(base*clamp(Math.pow(D0/(.9*cap),1/1.5),.7,1.6)/10)*10}
@@ -791,7 +807,7 @@ function calc(r,price,crate,svc){
   const ps=r.planes.map(plane).filter(Boolean);
   const ground=grounded(r.dest)||grounded(r.from);
   const ev=evMult(r.dest)*evMult(r.from)*brBoost(r.from)*brBoost(r.dest);
-  svc=svc??svcOf(r);const XF=xferOf(r),noPax=rkind(r)==="cargo"||!aptTakes(r.from,"pax")||!aptTakes(r.dest,"pax"),pf=Math.pow(base/price,1.5)*(.6+S.rep/125)*SERVICE[svc].f*mktMult()*starMult()*pk("pax");
+  svc=svc??svcOf(r);const XF=xferOf(r),noPax=rkind(r)==="cargo"||!aptTakes(r.from,"pax")||!aptTakes(r.dest,"pax"),pf=Math.pow(base/price,1.5)*(.6+S.rep/125)*SERVICE[svc].f*mktMult()*starMult()*pk("pax")*dealPax(r);
   const xd=noPax?0:XF.pax*pf,demand=noPax?0:60*Math.sqrt(a.w*b.w)*distF(d)*pf*ev*compShare(r,price,svc)+xd;
   crate=crate??crateOf(r);const xc=rkind(r)==="cargo"?XF.cargo*Math.pow(1/crate,1.3):0,cdem=(aptTakes(r.from,"cargo")&&aptTakes(r.dest,"cargo")?1:0)*(cargoBase(r,a,b,d,ev)*(rkind(r)==="cargo"?1:.5)*Math.pow(1/crate,1.3)+xc);
   const kx=rkind(r)==="cargo"?CARGO_KIND_X:1,sh=ckShare(r),dk={pcl:cdem*sh.pcl*kx,fd:cdem*sh.fd*kx,pt:cdem*sh.pt*kx};autoAssign(r,dk,d);const B=cbkObj(r);
@@ -937,7 +953,7 @@ function simDay(){
   const target=(wsum?wrep/wsum:SERVICE[S.service].rep)-(avgCond<60?(60-avgCond)*.5:0);
   S.rep=clamp(S.rep+(target-S.rep)*.03,0,100);
   {const prev=standings();prev.forEach((x,i)=>{if(x.me)S.prank=i+1;else{const rv=S.rivals.find(r=>r.n===x.n);if(rv)rv.prank=i+1}})}
-  rivalTurn();leagueTick();
+  rivalTurn();leagueTick();dealTick();
   for(const rv of S.rivals){rv.ops=(rv.ops||0)+rv.v/2e6*.07*(.6+Math.random()*.8);rv.v*=1+(rv.v>1.1*Math.max(1,valuation())?.0004:.002)+(Math.random()-.5)*.014;rv.st=clamp(rivalStars(rv)+(Math.random()-.5)*.06,2.5,4.8)}
   S.hist.push({d:S.day,c:S.cash,r:rev,x:cost});if(S.hist.length>365)S.hist.shift();
   {const had=suezShut();S.events=S.events.filter(e=>e.until>S.day);if(had&&!suezShut()){seaCache.clear();addNews("🚢 คลองสุเอซเปิดใช้ได้อีกครั้ง")}}
@@ -1002,6 +1018,87 @@ function leagueHTML(compact){if(!has("rank"))return "";const sr=mySR(),t=tierOf(
     <div class="row between small muted"><span>${t.hi?`อีก ${t.hi-sr} SR ถึง ${tierOf(t.hi).n}`:"ระดับสูงสุดแล้ว"}</span><span>คู่แข่ง: <b style="color:var(--ink)">${botLvTxt()}</b></span></div>
     <div class="small muted">สัปดาห์นี้เหลือ ${left} วัน · โตเร็วกว่าคู่แข่งเจ้าไหน = ชนะเจ้านั้น${last?` · สัปดาห์ก่อน ชนะ ${last.w} เสมอ ${last.dr} แพ้ ${last.l}`:""}</div>
     ${!compact&&last?`<details class="more"><summary class="small">ผลสัปดาห์ก่อนกับคู่แข่งแต่ละเจ้า (คุณโต ${last.myG}%) ▾</summary><div class="lg-res">${last.res.map(x=>`<span class="${x.o===1?"good":x.o===0?"bad":"muted"}">${x.o===1?"ชนะ":x.o===0?"แพ้":"เสมอ"} ${esc(x.n)} <small class="num">(เขาโต ${x.g>=0?"+":""}${x.g}%)</small></span>`).join("")}</div></details>`:""}</div>`}
+function partners(){const out=[];
+  for(const rv of S.rivals)out.push({id:"rv:"+rv.n,e:"✈️",n:rv.n,sub:"สายการบินคู่แข่ง",kind:"rv"});
+  for(const [k,[e,n,sub]] of Object.entries(ORGS)){if(k==="log"&&!has("cargo"))continue;out.push({id:k,e,n,sub,kind:k})}
+  const dests=[...new Set(S.routes.filter(r=>r.planes.length).map(r=>r.dest))].map(city).filter(c=>aptTakes(c.c,"pax")).sort((a,b)=>b.w-a.w).slice(0,6);
+  for(const c of dests)out.push({id:"tour:"+c.c,e:"🏝️",n:`การท่องเที่ยว${c.n}`,sub:"หน่วยงานท่องเที่ยว",kind:"tour"});
+  for(const b of S.bases)out.push({id:"apt:"+b,e:"🛫",n:`ท่าอากาศยาน${city(b).n}`,sub:"สนามบินสาขา",kind:"apt"});
+  return out}
+const partnerOf=id=>partners().find(x=>x.id===id)||{id,e:"🤝",n:id,sub:"",kind:id.split(":")[0]};
+const relOf=id=>{S.rel=S.rel||{};if(S.rel[id]==null){let v=50;if(id.startsWith("rv:")){const n=id.slice(3);v-=8*S.routes.filter(r=>r.cmp&&r.cmp.rv===n).length}S.rel[id]=clamp(v,5,95)}return S.rel[id]};
+const relAdd=(id,d)=>{S.rel=S.rel||{};S.rel[id]=clamp(relOf(id)+d,0,100)};
+// what a deal costs now (scales with the business so it stays meaningful)
+function dealCost(k,pid){const dp=Math.max(2e6,avgDailyProfit()),L=S.last||{};
+  return Math.round({codeshare:dp*3,truce:dp*4+2e6*S.routes.filter(r=>r.cmp&&("rv:"+r.cmp.rv)===pid).length,tourism:8e6+(pid.startsWith("tour:")?city(pid.slice(5)).w*1.5e6:0),
+    fuel:Math.max(5e6,((L.fuelC||0)+(L.sfuel||0))*2.5),freight:Math.max(6e6,dp*2),fleetdeal:5e6+S.fleet.length*1e6,airport:6e6+(pid.startsWith("apt:")?city(pid.slice(4)).w*2e6:0)}[k]/1e5)*1e5}
+function dealChance(k,pid,disc){const rel=relOf(pid),st=S.rating?S.rating.overall:3;
+  return clamp(.15+(rel-40)/70+(st-3)*.08+(S.rep-50)/250-(disc||0),.05,.95)}
+const dealKindsFor=p=>Object.entries(DEALS).filter(([k,d])=>d.who===p.kind).map(([k])=>k);
+function startDeal(k,pid,cost,days){S.cash-=cost;S.deals=[...(S.deals||[]).filter(d=>d.until>S.day),{k,p:pid,until:S.day+(days||DEALS[k].days),from:S.day}];relAdd(pid,8);
+  if(k==="truce"){for(const r of S.routes)if(r.cmp&&("rv:"+r.cmp.rv)===pid){delete r.cmp;r.cmpCool=S.day+DEALS.truce.days}}
+  addNews(`🤝 ${DEALS[k].n} กับ ${partnerOf(pid).n} (${days||DEALS[k].days} วัน): ${DEALS[k].fx}`);save()}
+// we ask a partner
+function proposeDeal(k,pid){const c=dealCost(k,pid);if(S.cash<c)return toast("เงินไม่พอ");
+  S.dcool=S.dcool||{};if((S.dcool[pid]||0)>S.day)return toast(`${partnerOf(pid).n} ยังไม่พร้อมคุยอีก ${S.dcool[pid]-S.day} วัน`);
+  if(Math.random()<dealChance(k,pid)){startDeal(k,pid,c);celebrate("!🤝 ตกลงความร่วมมือ",`${DEALS[k].n} · ${partnerOf(pid).n}`);return true}
+  relAdd(pid,-4);S.dcool[pid]=S.day+8;addNews(`🙅 ${partnerOf(pid).n} ปฏิเสธข้อเสนอ ${DEALS[k].n} ลองใหม่ได้ใน 8 วัน`);toast(`${partnerOf(pid).n} ปฏิเสธ · ความสัมพันธ์ลดลงเล็กน้อย`);save();return false}
+// partners ask us (a few times a month); each request can be accepted, countered (ask for a better deal) or declined
+function dealTick(){if(!has("deals"))return;S.req=(S.req||[]).filter(q=>q.until>S.day);
+  if(S.req.length>=3||Math.random()>.12)return;
+  const ps=partners().filter(p=>!dealsOn().some(d=>d.p===p.id)&&!S.req.some(q=>q.p===p.id));if(!ps.length)return;
+  const p=rnd(ps),k=rnd(dealKindsFor(p));if(!k)return;
+  const disc=.2+Math.random()*.3,cost=Math.round(dealCost(k,p.id)*(1-disc)/1e5)*1e5,bonus=p.kind==="tour"&&Math.random()<.5?Math.round(dealCost(k,p.id)*.4/1e5)*1e5:0;
+  const q={id:S.nid++,k,p:p.id,cost:bonus?0:cost,bonus,until:S.day+7};S.req.push(q);
+  addNews(`📨 ${p.n} ขอความร่วมมือ: ${DEALS[k].n}${bonus?` และจะให้เงินสนับสนุน ${money(bonus,true)}`:` ราคาพิเศษ ${money(cost,true)}`} (ตอบภายใน 7 วัน ในแท็บบริษัท)`);toast(`📨 ${p.n} ขอความร่วมมือ · ดูในแท็บบริษัท`)}
+function answerReq(id,a){const q=(S.req||[]).find(x=>x.id===id);if(!q)return;const p=partnerOf(q.p);
+  if(a==="yes"){if(S.cash<q.cost)return toast("เงินไม่พอ");startDeal(q.k,q.p,q.cost);if(q.bonus){S.cash+=q.bonus;floatCash(q.bonus)}relAdd(q.p,4);toast(`ตกลงกับ ${p.n} แล้ว`)}
+  else if(a==="counter"){// ask them back for more: a longer deal for the same price, or a bigger discount
+    if(Math.random()<dealChance(q.k,q.p,.15)){startDeal(q.k,q.p,Math.round(q.cost*.8/1e5)*1e5,Math.round(DEALS[q.k].days*1.5));toast(`${p.n} ยอมตามข้อเสนอ: ถูกลง 20% และนานขึ้น 50%`)}
+    else{relAdd(q.p,-6);addNews(`😤 ${p.n} ไม่ยอมต่อรอง ${DEALS[q.k].n} ยกเลิกคำขอ`);toast(`${p.n} ไม่ยอม ยกเลิกคำขอแล้ว`)}}
+  else{relAdd(q.p,-3);toast(`ปฏิเสธ ${p.n} แล้ว`)}
+  S.req=S.req.filter(x=>x!==q);save();renderView()}
+function dealsHTML(){if(!has("deals"))return "";const reqs=(S.req||[]).filter(q=>q.until>S.day),act=dealsOn();
+  return secHead("🤝","ความร่วมมือ","ขอความร่วมมือกับคนอื่น หรือรับคำขอจากเขา")+
+   (reqs.length?`<div class="panel stack"><span class="eyebrow">📨 คำขอที่เข้ามา</span>${reqs.map(q=>{const p=partnerOf(q.p),d=DEALS[q.k];return `<div class="dreq"><div class="row" style="gap:8px"><span class="cav">${p.e}</span><div style="min-width:0;flex:1"><b class="small">${esc(p.n)}</b> <span class="muted small">· ${p.sub}</span><div class="small">ขอทำ <b>${d.e} ${d.n}</b> ${d.days} วัน: ${d.fx}</div><div class="small ${q.bonus?"good":""}">${q.bonus?`เขาจ่ายให้เรา ${money(q.bonus,true)}`:`ราคาพิเศษ ${money(q.cost,true)}`} · เหลือเวลาตอบ ${q.until-S.day} วัน</div></div></div>
+      <div class="row" style="gap:6px"><button class="btn sm primary" data-req="${q.id}:yes" ${S.cash<q.cost?"disabled":""}>ตกลง</button><button class="btn sm" data-req="${q.id}:counter" title="ขอเงื่อนไขที่ดีกว่า: ถูกลงและนานขึ้น">↩ ต่อรองกลับ (${Math.round(dealChance(q.k,q.p,.15)*100)}%)</button><button class="btn sm" data-req="${q.id}:no">ปฏิเสธ</button></div></div>`}).join("")}</div>`:"")+
+   `<div class="panel stack"><div class="row between"><span class="eyebrow">✅ ดีลที่ใช้อยู่ ${act.length}</span><button class="btn sm primary" id="dealnew">+ ขอความร่วมมือ</button></div>
+     ${act.length?act.map(d=>{const p=partnerOf(d.p),D=DEALS[d.k];return `<div class="dact"><span>${D.e}</span><div style="min-width:0;flex:1"><b class="small">${D.n}</b> <span class="muted small">กับ ${esc(p.n)}</span><div class="small muted">${D.fx}</div></div><span class="num small">${d.until-S.day} วัน</span></div>`}).join(""):`<div class="muted small">ยังไม่มีดีล กด “ขอความร่วมมือ” เพื่อเลือกพันธมิตรและข้อเสนอ</div>`}</div>`}
+function dealSheet(st){const fn=()=>{const ps=partners();st.p=st.p&&ps.some(x=>x.id===st.p)?st.p:null;
+   let h=head("🤝 ขอความร่วมมือ","เลือกพันธมิตร แล้วเลือกข้อเสนอ · โอกาสตอบตกลงขึ้นกับความสัมพันธ์ เรตติ้ง และชื่อเสียง");
+   const groups=[["rv","✈️ สายการบินคู่แข่ง"],["co","🏢 บริษัท"],["tour","🏝️ เมืองท่องเที่ยว"],["apt","🛫 สนามบินสาขา"]];
+   for(const [g,gn] of groups){const L=ps.filter(p=>g==="co"?ORGS[p.kind]:p.kind===g);if(!L.length)continue;
+     h+=`<div class="eyebrow" style="margin-top:8px">${gn}</div><div class="pick">${L.map(p=>{const rel=relOf(p.id),cool=(S.dcool||{})[p.id]>S.day,on=dealsOn().filter(d=>d.p===p.id);return `<button data-dp="${p.id}" class="${st.p===p.id?"sel":""}"><span class="cav">${p.e}</span><span style="min-width:0"><b>${esc(p.n)}</b><br><span class="small muted">${p.sub}${on.length?` · ✅ มีดีลอยู่`:""}${cool?" · ⏳ รอคุยใหม่":""}</span></span><span class="relbar" title="ความสัมพันธ์"><i style="width:${rel}%;background:${rel>=60?"var(--good)":rel>=35?"var(--warn)":"var(--bad)"}"></i><small class="num">${Math.round(rel)}</small></span></button>`}).join("")}</div>`}
+   if(st.p){const p=partnerOf(st.p);h+=`<div class="panel stack" style="position:sticky;bottom:-20px"><b>${p.e} ${esc(p.n)}</b>${dealKindsFor(p).map(k=>{const D=DEALS[k],c=dealCost(k,p.id),ch=dealChance(k,p.id),on=dealOn(k,p.id);
+       return `<div class="dopt"><div style="min-width:0;flex:1"><b class="small">${D.e} ${D.n}</b> <span class="muted small">${D.days} วัน</span><div class="small muted">${D.fx}</div></div><button class="btn sm primary" data-dk="${k}" ${on||S.cash<c?"disabled":""}>${on?"มีอยู่แล้ว":`เสนอ ${money(c,true)} · ${Math.round(ch*100)}%`}</button></div>`}).join("")}</div>`}
+   return h};
+ fn.bind=()=>{$$("[data-dp]").forEach(b=>b.onclick=()=>{st.p=b.dataset.dp;drawSheet();const s2=$(".sheet");s2.scrollTop=s2.scrollHeight});
+   $$("[data-dk]").forEach(b=>b.onclick=()=>{proposeDeal(b.dataset.dk,st.p);drawSheet()})};
+ return fn}
+/* World bulletin: what is going on in the world right now, written out (fuel, festivals, storms, seasons, sea routes,
+   rivals, our deals) with a one-line summary on top */
+function worldHTML(){const items=[],fu=S.fuel,today=dateOf(S.day);
+  const fuelTxt=fu>=1.35?["🔴","น้ำมันแพงมาก",`ดัชนี ${fu.toFixed(2)} เส้นทางไกลกำไรลดลง`]:fu>=1.12?["🟠","น้ำมันแพง",`ดัชนี ${fu.toFixed(2)}`]:fu<=.85?["🟢","น้ำมันถูก",`ดัชนี ${fu.toFixed(2)} ช่วงดีที่จะล็อกราคา`]:["⚪","น้ำมันปกติ",`ดัชนี ${fu.toFixed(2)}`];
+  items.push(["⛽",fuelTxt[0]+" "+fuelTxt[1],fuelTxt[2]+(S.hedge&&S.hedge.until>S.day?` · เราล็อกราคาไว้อีก ${S.hedge.until-S.day} วัน`:"")]);
+  const ev=S.events.filter(e=>e.until>S.day&&e.city&&city(e.city));
+  for(const e of ev.slice(0,8)){const c=city(e.city),left=e.until-S.day;
+    if(e.type==="fest")items.push(["🎉",`เทศกาลที่${c.n}`,`คนเดินทางเพิ่ม · อีก ${left} วัน`]);
+    else if(e.type==="storm")items.push(["🌀",`พายุเข้า${c.n}`,`เที่ยวบินเข้าออกงด · อีก ${left} วัน`]);
+    else if(e.type==="comp")items.push(["✈️",`คู่แข่งเปิดบินไป${c.n}`,`คนอยากบินลดลง · อีก ${left} วัน`]);
+    else if(e.type==="cboost")items.push(["📦",`สินค้าพิเศษที่${c.n}`,`ความต้องการขนส่งเพิ่ม · อีก ${left} วัน`]);
+    else if(e.mult||e.cmult)items.push(["📰",`เหตุการณ์ที่${c.n}`,`อีก ${left} วัน`])}
+  if(suezShut()){const e=S.events.find(x=>x.type==="suez"&&x.until>S.day);items.push(["⚓","คลองสุเอซปิด",`เรือเอเชีย–ยุโรปต้องอ้อมแหลมกู๊ดโฮป${e?` · อีก ${e.until-S.day} วัน`:""}`])}
+  const seas=new Set();for(const b of [...S.bases,...S.routes.map(r=>r.dest)])for(const [n] of cargoSeasons(b))seas.add(n);
+  for(const n of seas)items.push(["🗓️",n,"ช่วงนี้สินค้าทางอากาศเพิ่มขึ้น"]);
+  if(S.mkt&&S.mkt.until>S.day)items.push(["📣","แคมเปญการตลาดของเรา",`คนอยากบินเพิ่ม · อีก ${S.mkt.until-S.day} วัน`]);
+  const fights=S.routes.filter(r=>r.cmp);if(fights.length)items.push(["⚔️",`คู่แข่งบุก ${fights.length} เส้นทาง`,fights.slice(0,3).map(r=>`${r.from}→${r.dest} (${r.cmp.rv})`).join(" · ")]);
+  if(has("rank")){const B=standings(),top=B[0];items.push(["🏆",top.me?"เราเป็นอันดับหนึ่ง":`${top.n} นำอยู่`,`เราอยู่อันดับ ${rank()} · ลีก ${tierOf(mySR()).n} · คู่แข่งเล่นระดับ${botLvTxt()}`])}
+  for(const d of dealsOn())items.push([DEALS[d.k].e,`${DEALS[d.k].n} กับ ${partnerOf(d.p).n}`,`อีก ${d.until-S.day} วัน`]);
+  const req=(S.req||[]).filter(q=>q.until>S.day).length;if(req)items.push(["📨",`มีคำขอความร่วมมือ ${req} เรื่อง`,"ตอบได้ในแท็บบริษัท"]);
+  const good=ev.filter(e=>e.type==="fest"||e.type==="cboost").length,bad=ev.filter(e=>e.type==="storm"||e.type==="comp").length;
+  const sum=fu>=1.35?"น้ำมันแพงกดดันกำไร ระวังเส้นทางไกล":bad>good?"ช่วงนี้มีพายุและคู่แข่งหลายจุด เส้นทางที่โดนอาจรายได้ลด":good?"มีเทศกาลและความต้องการพิเศษ เป็นจังหวะดีที่จะเพิ่มเที่ยวบิน":fu<=.85?"น้ำมันถูก เหมาะขยายเส้นทางไกล":"โลกค่อนข้างสงบ เหมาะกับการขยายกิจการ";
+  return `<div class="row between"><b>🌐 จดหมายเหตุโลก</b><span class="muted small">${today}</span></div><div class="wsum">${sum}</div>
+    <div class="wlist">${items.map(([e,t,d])=>`<div class="witem"><span>${e}</span><div style="min-width:0"><b class="small">${t}</b><div class="small muted">${d}</div></div></div>`).join("")}</div>`}
 function rivalTurn(){
   const myV=valuation(),pax=S.routes.filter(r=>rkind(r)==="pax"&&r.planes.length&&r.last);
   const contested=pax.filter(r=>r.cmp).length,lead=rank()===1;
@@ -1011,6 +1108,7 @@ function rivalTurn(){
       const margin=clamp(r.last.profit/Math.max(1,r.last.rev),0,1);
       if(Math.random()<(.002+.016*margin)*(lead?1.6:1)*(pax.length<2?.4:1)*Math.max(.3,1+.6*botLv())){
         const tot=S.rivals.reduce((a,x)=>a+x.v,0);let k=Math.random()*tot,rv=S.rivals[0];for(const x of S.rivals){k-=x.v;if(k<=0){rv=x;break}}
+        if(dealOn("codeshare","rv:"+rv.n)||dealOn("truce","rv:"+rv.n))continue;
         r.cmp={rv:rv.n,fare:.92,since:S.day,weak:0};
         addNews(`⚔️ ${rv.n} เปิดบิน ${r.from}→${r.dest} แข่งกับคุณ ตั้งราคาถูกกว่าราคากลาง 8%`);toast(`⚔️ ${rv.n} บุกเส้นทาง ${r.from}→${r.dest} ของคุณ`)}
       continue}
@@ -1176,6 +1274,7 @@ const FEATS=[
  {id:"money",n:"📈 การเงิน",d:"แท็บการเงินใหม่ กู้เงิน ทำการตลาด ล็อกราคาน้ำมัน และดูกราฟรายได้",ok:()=>S.day>=4,go:"money",need:"ผ่านไป 4 วัน"},
  {id:"branch",n:"🏢 สาขา",d:"แท็บสาขาใหม่ เปิดสาขาที่เมืองอื่น เปิดเส้นทางจากที่นั่นได้ และผู้โดยสารจะต่อเครื่องที่สาขา",ok:()=>opRoutes()>=3&&solid(),go:"branch",need:"3 เส้นทาง และกำไรเฉลี่ย 7 วันเป็นบวก"},
  {id:"regions",n:"🔓 ภูมิภาคใหม่",d:"ปลดล็อกภูมิภาคอื่นบนแผนที่ได้แล้ว (ปุ่มมุมขวาล่างของแผนที่)",ok:()=>opRoutes()>=5&&solid()&&S.day>=10,go:"home",after:["branch"],need:"5 เส้นทาง กำไรเฉลี่ยเป็นบวก และผ่านไป 10 วัน"},
+ {id:"deals",n:"🤝 ความร่วมมือ",d:"แท็บบริษัท: ขอความร่วมมือกับสายการบินอื่น บริษัท เมืองท่องเที่ยว และสนามบิน หรือรับคำขอจากเขา",ok:()=>S.day>=20&&opRoutes()>=4,go:"company",after:["rank"],need:"ผ่านไป 20 วัน และมี 4 เส้นทาง"},
  {id:"rank",n:"🏆 การแข่งขันและเรตติ้ง",d:"ตารางอันดับเทียบกับคู่แข่ง ดาวเรตติ้ง และความคิดเห็นลูกค้า ดูได้ในแท็บบริษัท",ok:()=>S.day>=12,go:"company",need:"ผ่านไป 12 วัน"},
  {id:"perks",n:"🔬 ศูนย์พัฒนา",d:"อัปเกรดถาวร เช่น ประหยัดน้ำมัน และคนอยากบินเพิ่ม อยู่ในแท็บบริษัท",ok:()=>lv()>=3,go:"company",need:"Lv 3"},
  {id:"cargo",n:"📦 ขนสินค้าทางอากาศ",d:"ปุ่มสลับโหมดด้านบน: ซื้อเครื่องบินขนสินค้าลำเล็กและลำตัวแคบ เปิดเส้นทางขนพัสดุ (สินค้าประเภทอื่นจะเปิดทีหลัง)",ok:()=>opRoutes()>=6&&solid()&&(lv()>=3||S.day>=40),go:"fleet",mode:"cargo",after:["branch"],need:"6 เส้นทางผู้โดยสาร กำไรเฉลี่ยเป็นบวก และ Lv 3 (หรือผ่านไป 40 วัน)"},
@@ -1257,6 +1356,8 @@ function mapHudHTML(){if(vmode()==="sea"){const tpd=S.lanes.reduce((a,l)=>a+lane
 function _airHud(){const T=S.today||blankT();return `<span>✈ บินอยู่ <b class="num">${airborne}</b> ลำ</span>${bm()==="cargo"?`<span>📦 วันนี้ <b class="num">${Math.round(T.cargo||0).toLocaleString()}</b> ตัน</span>`:`<span>👥 วันนี้ <b class="num">${T.pax.toLocaleString()}</b> คน</span>`}<span>เที่ยวลงจอด <b class="num">${T.legs}</b></span>`}
 function mapTabHTML(){return `<div class="mapbox full" id="mapfull"><canvas id="map" aria-label="แผนที่โลกเต็มจอ ลากเพื่อเลื่อน บีบหรือกดปุ่มเพื่อซูม"></canvas><canvas id="mapbase" aria-hidden="true"></canvas>
    <div class="maplegend" id="legend">${legendHTML()}</div>${mapCtlHTML(false)}
+   <button class="worldbtn ${S.ui_world?"on":""}" id="worldbtn" aria-expanded="${!!S.ui_world}" aria-label="สถานการณ์โลก">🌐<span>สถานการณ์โลก</span></button>
+   <div class="worldpanel" id="worldpanel" ${S.ui_world?"":"hidden"}>${worldHTML()}</div>
    <button class="rankbtn ${S.ui_rank?"on":""}" id="rankbtn" aria-expanded="${!!S.ui_rank}" aria-label="อันดับการแข่งขัน">🏆<span class="num" id="rankno">#${rank()}</span></button>
    <div class="rankpanel" id="rankpanel" ${S.ui_rank?"":"hidden"}>${rankPanelHTML()}</div>
    <div class="mapinfo" id="mapinfo" ${selCity?"":"hidden"}>${apInfoHTML()}</div>
@@ -1266,7 +1367,7 @@ function mapTabHTML(){return `<div class="mapbox full" id="mapfull"><canvas id="
 function applyBarMin(){const on=!!(S&&S.ui_barmin);document.body.classList.toggle("barmin",on);const b=$("#barmin");if(b){b.setAttribute("aria-expanded",!on);b.setAttribute("aria-label",on?"ขยายแถบด้านบน":"ย่อแถบด้านบน")}
   if($("#mapfull")){sizeFullMap();if(typeof renderPop==="function"&&pop)renderPop()}}
 function sizeFullMap(){const c=$("#mapfull canvas"),mf=$("#mapfull");if(!c)return;const top=mf.getBoundingClientRect().top+scrollY,nav=$("nav.tabs").offsetHeight;c.style.height=Math.max(320,innerHeight-top-nav)+"px";mf.style.setProperty("--barh",Math.round($(".top").getBoundingClientRect().bottom-top+8)+"px")}
-function refreshMapTab(){if(!$("#mapfull")){renderView();return}{const wp=$("#wishpanel");if(wp&&!wp.hidden&&!wp.matches(":hover")){wp.innerHTML=mapWishHTML();bindWishes()}}{const rp=$("#rankpanel");if(rp&&!rp.hidden)rp.innerHTML=rankPanelHTML();const rn=$("#rankno");if(rn)rn.textContent="#"+rank()}$("#legend").innerHTML=legendHTML();$("#maphud").innerHTML=mapHudHTML();
+function refreshMapTab(){if(!$("#mapfull")){renderView();return}{const wp=$("#worldpanel");if(wp&&!wp.hidden&&!wp.matches(":hover"))wp.innerHTML=worldHTML()}{const wp=$("#wishpanel");if(wp&&!wp.hidden&&!wp.matches(":hover")){wp.innerHTML=mapWishHTML();bindWishes()}}{const rp=$("#rankpanel");if(rp&&!rp.hidden)rp.innerHTML=rankPanelHTML();const rn=$("#rankno");if(rn)rn.textContent="#"+rank()}$("#legend").innerHTML=legendHTML();$("#maphud").innerHTML=mapHudHTML();
   $("#regbtn").innerHTML=`🔓 ปลดล็อกแผนที่ <span class="num">${S.unlocked.length}/${REGIONS.length}</span>`;refreshAirports();if(pop)renderPop()}
 // map tab: where the people at each of your airports want to fly (top wishes per branch)
 function wantsOf(code,n){wishesOf(code);return (wishCache.all.get(code)||[]).filter(w=>isOpen(w.c.c)&&w.d<=AIR_MAX("pax")&&!S.routes.some(x=>rkind(x)==="pax"&&((x.from===code&&x.dest===w.c.c)||(x.dest===code&&x.from===w.c.c)))).slice(0,n)}
@@ -1455,6 +1556,7 @@ function companyHTML(){
      <div><div class="k">สาขา</div><div class="v num">${S.bases.length+pbList().length}</div></div></div>
    ${has("rank")?secHead("⭐","เรตติ้งและความคิดเห็น","ลูกค้า ลูกเรือ และสื่อพูดถึงเรา")+ratingHTML()+commentsHTML():secHead("💬","ความคิดเห็น")+commentsHTML()}
    ${suggestHTML()}
+   ${dealsHTML()}
    ${has("rank")?secHead("🏆","การแข่งขัน")+competeHTML()+`<div class="panel"><div class="eyebrow" style="margin-bottom:4px">📋 ตารางอันดับ · วัดจากขนาดบริษัท</div><div class="board">${board.map((b,i)=>`<div class="r ${b.me?"me":""}"><span class="num muted">#${i+1}</span><span class="nm" style="min-width:0">${esc(b.n)}<br>${starsHTML(b.st||0,11)} <span class="num muted" style="font-size:11px">${(b.st||0).toFixed(1)}</span></span><span class="num">${b.sc.toLocaleString()}<span class="muted small"> คะแนน</span></span></div>`).join("")}</div></div>`:""}
    ${secHead("🎯","เป้าหมายบริษัท")}<div class="panel stack" style="gap:8px"><div class="row between"><div><div class="eyebrow">เป้าหมายถัดไป</div><b>${S.goal>=GOALS.length?"พิชิตครบทุกระดับแล้ว":g[1]}</b></div><span class="num muted small">${money(v,true)} / ${money(g[0],true)}</span></div><div class="bar"><i style="width:${gp}%"></i></div>
      <div class="goals">${GOALS.map((x,i)=>`<span class="${i<S.goal?"done":i===S.goal?"now":""}">${i<S.goal?"✓":i+1} ${x[1]}</span>`).join("")}</div></div>
@@ -1749,7 +1851,8 @@ function bindMap(){
   $$("[data-night]").forEach(b=>b.onclick=()=>{S.night=S.night===false;save();$$("[data-night]").forEach(x=>{x.classList.toggle("on",S.night);x.setAttribute("aria-pressed",S.night);x.setAttribute("aria-label",(S.night?"ปิด":"เปิด")+"เงากลางวันกลางคืน")});toast(S.night?"🌙 เปิดกลางวัน-กลางคืนบนแผนที่":"☀️ ปิดเงากลางคืนแล้ว · เวลาในเกมยังเดินตามปกติ")});
   $$("[data-vm]").forEach(b=>b.onclick=()=>setMode(b.dataset.vm));
   const wb=$("#wishbtn");if(wb)wb.onclick=()=>{S.ui_wish=!S.ui_wish;save();const wp=$("#wishpanel");wp.hidden=!S.ui_wish;if(S.ui_wish){wp.innerHTML=mapWishHTML();bindWishes()}wb.classList.toggle("on",S.ui_wish);wb.setAttribute("aria-expanded",S.ui_wish);wb.textContent=wishLbl()};
-  const rb=$("#rankbtn");if(rb)rb.onclick=()=>{S.ui_rank=!S.ui_rank;save();const rp=$("#rankpanel");rp.hidden=!S.ui_rank;if(S.ui_rank)rp.innerHTML=rankPanelHTML();rb.classList.toggle("on",S.ui_rank);rb.setAttribute("aria-expanded",S.ui_rank)}}
+  const wb2=$("#worldbtn");if(wb2)wb2.onclick=()=>{S.ui_world=!S.ui_world;if(S.ui_world)S.ui_rank=false;save();const wp=$("#worldpanel");wp.hidden=!S.ui_world;if(S.ui_world)wp.innerHTML=worldHTML();wb2.classList.toggle("on",S.ui_world);const rp=$("#rankpanel");if(rp&&S.ui_world){rp.hidden=true;$("#rankbtn").classList.remove("on")}};
+  const rb=$("#rankbtn");if(rb)rb.onclick=()=>{S.ui_rank=!S.ui_rank;if(S.ui_rank){S.ui_world=false;const wp=$("#worldpanel");if(wp)wp.hidden=true;const w3=$("#worldbtn");if(w3)w3.classList.remove("on")}save();const rp=$("#rankpanel");rp.hidden=!S.ui_rank;if(S.ui_rank)rp.innerHTML=rankPanelHTML();rb.classList.toggle("on",S.ui_rank);rb.setAttribute("aria-expanded",S.ui_rank)}}
 function setCam(m,focus){camMode=m;camFocus=focus||null;$$("[data-cam]").forEach(b=>b.classList.toggle("on",b.dataset.cam===m))}
 function refreshAirports(){const el=$("#aplist");if(el)el.innerHTML=airportListHTML();const mi=$("#mapinfo");if(mi)mi.hidden=true;bindAirports()}
 // tiny inline chart of the last days' profit (green above zero, red below)
@@ -2017,7 +2120,7 @@ function confetti(cx,cy,n=30){if(reduce)return;const C=["#F2B33D","#E4572E","#2A
 function coinBurst(cx,cy){if(reduce)return;for(let i=0;i<14;i++){const d=document.createElement("span");d.className="coin";const a=Math.random()*Math.PI*2,r=40+Math.random()*60;
   d.style.left=cx+"px";d.style.top=cy+"px";d.style.setProperty("--dx",Math.cos(a)*r+"px");d.style.setProperty("--dy",(Math.sin(a)*r-50)+"px");d.style.animationDelay=(i*18)+"ms";document.body.appendChild(d);setTimeout(()=>d.remove(),1200)}}
 /* ---------- decisions: a choice pops up every week or two ---------- */
-const priceFor=m=>S.deal&&S.deal.m===m.id&&S.deal.until>=S.day?Math.round(m.price*(1-S.deal.off)):m.price;
+const priceFor=m=>Math.round((S.deal&&S.deal.m===m.id&&S.deal.until>=S.day?m.price*(1-S.deal.off):m.price)*(S.deals&&dealOn("fleetdeal")?.88:1));
 const DECISIONS=[
  ()=>{const ps=S.fleet.filter(p=>p.route&&model(p.m).seats&&p.down<=S.day);if(!ps.length)return null;const p=rnd(ps),m=model(p.m),pay=niceN(m.seats*9000+m.price*.006);
    return {e:"🧳",t:"บริษัททัวร์ขอเหมาลำ",d:`ขอเช่า ${m.name} (${p.reg}) 2 วัน พาคณะทัวร์ ${m.seats} คน เสนอเงิน ${money(pay)}`,c:[["รับงาน",`ได้ ${money(pay)} · เครื่องหยุดบินเส้นทางเดิม 2 วัน`,()=>{S.cash+=pay;p.down=S.day+2;return `ได้ค่าเหมาลำ ${money(pay)}`}],["ปฏิเสธ","บินตามตารางเดิม",()=>"ปฏิเสธงานเหมาลำ"]]}},
@@ -2318,6 +2421,8 @@ function bindWishes(){
   $$("[data-wroute]").forEach(b=>b.onclick=e=>{e.stopPropagation();openSheet(routeSheet(+b.dataset.wroute,{}))});
   $$("[data-brnew]").forEach(b=>b.onclick=e=>{e.stopPropagation();const c=b.dataset.brnew;openBranch(c);if(S.bases.includes(c)){toast(`ตั้งสาขาที่${city(c).n}แล้ว เปิดเส้นทางจากที่นี่ได้เลย`);renderView()}});
   $$("[data-brgo]").forEach(b=>b.onclick=e=>{e.stopPropagation();tab="branch";brSeg=b.dataset.brgo;renderView(true);window.scrollTo(0,0)});
+  $$("[data-req]").forEach(b=>b.onclick=e=>{e.stopPropagation();const [id,a]=b.dataset.req.split(":");answerReq(+id,a)});
+  {const dn=$("#dealnew");if(dn)dn.onclick=()=>openSheet(dealSheet({}))}
   $$("[data-cwish]").forEach(b=>b.onclick=e=>{e.stopPropagation();const [f,t]=b.dataset.cwish.split(">");openSheet(newRouteSheet({from:f,kind:"cargo",dest:t}))});
   $$("[data-lwish]").forEach(b=>b.onclick=e=>{e.stopPropagation();const [f,t]=b.dataset.lwish.split(">");openSheet(newLaneSheet({from:f,to:t}))});
   const rw=()=>{const wp=$("#wishpanel");if(wp){wp.innerHTML=mapWishHTML();bindWishes()}};
@@ -3071,6 +3176,7 @@ function guideSheet(){return head("คู่มือระบบ","ทุกร
 <details class="g"><summary>เงินกู้และการล้มละลาย</summary><div><p>กู้ได้ทีละ ฿50 ล้าน วงเงินขึ้นกับมูลค่าฝูงบิน ถ้าเงินสดติดลบต่อเนื่อง 30 วัน สายการบินล้มละลายและต้องเริ่มชะตาใหม่</p></div></details>
 <details class="g"><summary>✈ รอสินค้าก่อนออกบิน (เครื่องบินขนสินค้า)</summary><div><ul><li>ตั้งในหน้าเส้นทางขนสินค้า: บินตามตาราง หรือรอจนระวางเต็ม 50 / 75 / 95% ก่อนบิน</li><li>บินน้อยลงแต่เต็มขึ้น ประหยัดน้ำมันและค่าสนามบิน แต่ส่งช้าลง ลูกค้าจ่ายน้อยลงสูงสุด ${Math.round(LATE*100)}% และอาหารเสียความสดอีกสูงสุด ${Math.round(AIR_SPOIL*100)}%</li><li>ใช้ร่วมกับ “ตารางบิน” ได้: ถ้าตั้งบินเต็มตาราง การรอจะช่วยมาก ถ้าตั้งปรับตามสินค้า (เต็มราว 85% อยู่แล้ว) การรอจะช่วยน้อย</li></ul></div></details>
 <details class="g"><summary>🚢 เรือเฉพาะ และ ⏳ รอสินค้าก่อนออกเรือ</summary><div><ul><li>เรือห้องเย็นและเรือขนรถขนได้อย่างเดียวแต่เต็มลำ ได้ค่าระวางมากกว่า ${Math.round((SPEC_RATE-1)*100)}% และอาหารไม่เสียความสดตอนรอ</li><li>เรือรวมขนได้ทุกอย่างทีละประเภท แต่ใช้พื้นที่ขนอาหารได้แค่ ${Math.round(SEA_LOAD.r*100)}% และขนรถได้แค่ ${Math.round(SEA_LOAD.o*100)}% ของความจุ</li><li>⏳ รอสินค้า: ตั้งในหน้าเส้นทางเรือ ให้เรือรอที่ท่าจนตู้เต็ม 50 / 75 / 95% ก่อนออก ออกเรือน้อยลงจึงประหยัดน้ำมันและค่าท่า แต่ส่งช้าลง ลูกค้าจ่ายน้อยลงสูงสุด ${Math.round(LATE*100)}% และอาหารบนเรือรวมเสียความสดเพิ่มอีก</li><li>ตัวเลขใต้ปุ่มบอกกำไร/วันของแต่ละแบบ ⭐ คือแบบที่ดีที่สุดตอนนั้น เหมาะกับเส้นทางที่เรือใหญ่เกินสินค้า</li></ul></div></details>
+<details class="g"><summary>🤝 ความร่วมมือ และ 🌐 จดหมายเหตุโลก</summary><div><ul><li>แท็บบริษัท → ความร่วมมือ: กด “ขอความร่วมมือ” เลือกพันธมิตร (สายการบินคู่แข่ง บริษัทน้ำมัน บริษัทขนส่ง ผู้ผลิตเครื่องบิน การท่องเที่ยวเมืองต่างๆ สนามบินสาขา) แล้วเลือกข้อเสนอ เกมบอกราคา ผล และโอกาสที่เขาจะตกลง</li><li>ข้อเสนอ: โค้ดแชร์ (คน +8%) · สงบศึกราคา (คู่แข่งถอนตัว) · โปรโมทท่องเที่ยว (เมืองนั้น +35%) · สัญญาน้ำมัน (−10%) · สัญญาขนส่งสินค้า (+25%) · ส่วนลดเครื่องบิน (−12%) · พันธมิตรสนามบิน (ค่าธรรมเนียม −25%)</li><li>อีกฝ่ายก็ขอความร่วมมือเราได้ (📨 คำขอที่เข้ามา) ตอบได้ 3 แบบ: ตกลง · ต่อรองกลับ (ขอถูกลง 20% และนานขึ้น 50% ถ้าเขาไม่ยอมคำขอจะยกเลิก) · ปฏิเสธ</li><li>แต่ละพันธมิตรมีความสัมพันธ์ 0–100 ตกลงกันได้ความสัมพันธ์เพิ่ม ถูกปฏิเสธหรือแย่งเส้นทางกันความสัมพันธ์ลด ความสัมพันธ์ เรตติ้ง และชื่อเสียงสูง เขาจะตกลงง่ายขึ้น</li><li>🌐 แผนที่ → ปุ่มสถานการณ์โลก: สรุปสั้นๆ ว่าโลกตอนนี้เป็นอย่างไร น้ำมัน เทศกาล พายุ ฤดูสินค้า คลองสุเอซ คู่แข่ง และดีลของเรา</li></ul></div></details>
 <details class="g"><summary>📋 แต่ละแท็บมีอะไร</summary><div><ul><li><b>ภาพรวม</b> สิ่งที่เกิดขึ้นตอนนี้: แผนที่ เงินวันนี้ เที่ยวบินสด ภารกิจ ข่าว</li><li><b>แผนที่</b> แผนที่เต็มจอ</li><li><b>เส้นทาง</b> เส้นทางบินและเส้นทางเรือ</li><li><b>สาขา</b> สนามบินและท่าเรือของเรา</li><li><b>ฝูงบิน</b> เครื่องบินและเรือที่เรามี ปุ่มซื้อเพิ่ม</li><li><b>การเงิน</b> รายได้ ต้นทุน เงินกู้</li><li><b>บริษัท</b> ตัวตนของสายการบิน: เรตติ้ง ความคิดเห็นลูกค้า การแข่งขันและลีก เป้าหมาย ศูนย์พัฒนา สถิติ ความสำเร็จ</li></ul></div></details>
 <details class="g"><summary>🏆 ลีกจัดอันดับและความยากของคู่แข่ง</summary><div><ul><li>ทุก 7 วันคือ 1 สัปดาห์ลีก เกมจะเทียบว่าธุรกิจของคุณโตกี่เปอร์เซ็นต์ (มูลค่ากิจการ ผู้โดยสาร สินค้า ตู้เรือ ภารกิจ) กับคู่แข่งแต่ละเจ้า</li><li>โตเร็วกว่า = ชนะ · ช้ากว่า = แพ้ · ต่างกันไม่ถึง 0.3% = เสมอ ผลจะเพิ่มหรือลดคะแนนทักษะ (SR) เริ่มที่ 1000 ชนะคู่แข่งที่ SR สูงกว่าได้คะแนนมากกว่า</li><li>ระดับ: 🥉 ทองแดง · 🥈 เงิน 900 · 🥇 ทอง 1050 · 💠 แพลทินัม 1200 · 💎 เพชร 1350 · 👑 มาสเตอร์ 1500 · 🔥 ตำนาน 1700 · เลื่อนระดับได้โบนัส</li><li>ยิ่ง SR สูง คู่แข่งยิ่งเก่ง: โตเร็วขึ้น บุกเส้นทางบ่อยขึ้น ตัดราคาแรงขึ้น และถอนตัวยากขึ้น ถ้า SR ต่ำกว่า 1000 คู่แข่งจะผ่อนลง</li><li>ดูระดับ SR ผลสัปดาห์ก่อน และระดับความยากของคู่แข่งได้ในแท็บบริษัท และปุ่ม 🏆 บนแผนที่</li></ul></div></details>
 <details class="g"><summary>✨ ฟีเจอร์ที่ค่อยๆ ปลดล็อก</summary><div><p>เกมใหม่จะเริ่มแค่ ภาพรวม เส้นทาง และฝูงบิน ระบบอื่นจะเปิดทีละอย่าง (ไม่เกินวันละอย่าง) พร้อมกล่องแจ้งเตือน ✨ แยกจากภารกิจ:</p><ol>${FEATS.filter(f=>has(f.id)).map(f=>`<li><b>${f.n}</b></li>`).join("")}</ol>${FEATS.some(f=>!has(f.id))?`<p>🔒 ยังมีอีก ${FEATS.filter(f=>!has(f.id)).length} อย่าง · อย่างต่อไปจะเปิดเมื่อ: ${FEATS.filter(f=>!has(f.id)&&(f.after||[]).every(has)).map(f=>`<b>${f.need}</b>`).join(" หรือ ")}</p>`:""}<p class="small">ทุกการขยายกิจการต้องมีฐานที่มั่นคงก่อน คือกำไรเฉลี่ย 7 วันเป็นบวก สินค้าทางอากาศเริ่มจากพัสดุกับเครื่องลำเล็ก แล้วค่อยเปิดอาหาร เครื่องลำใหญ่ ชิ้นส่วน/รถ ส่วนเรือเริ่มจากเรือเล็กขนตู้พัสดุ แล้วค่อยเปิดเรือห้องเย็น เรือใหญ่ และเรือขนรถ</p><p class="muted small">เซฟเก่าก่อนมีระบบนี้เปิดครบทุกอย่างอยู่แล้ว</p></div></details>
