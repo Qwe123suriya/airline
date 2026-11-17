@@ -762,3 +762,6 @@ h1,h2,h3,.eyebrow{letter-spacing:0}
 /* kind filter above cargo buy lists */
 .kseg{margin:6px 0 2px}
 .kseg button{font-size:13px}
+
+/* wait-for-cargo choice on sea lanes */
+.waitseg button{font-size:12.5px;line-height:1.35;padding:6px 4px}

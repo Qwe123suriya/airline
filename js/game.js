@@ -426,10 +426,14 @@ function laneCalc(l){const a=port(l.from),b=port(l.to),sp=seaPath(l.from,l.to),k
   const DK={d:D,r:Dr,o:Do};laneAutoAssign(l,DK,km);
   const capK={d:0,r:0,o:0};let fixed=0;
   for(const id of l.ships){const sh=shipById(id);if(!sh)continue;const m=shipM(sh.m);fixed+=m.price*.0004;if(sh.down>S.day)continue;const k=shipK(sh,m);capK[k]+=m.teu*shipLoadF(m,k)/legDaysS(m,km)}
-  const loadK={d:capK.d?Math.min(1,D/capK.d):0,r:capK.r?Math.min(1,Dr/capK.r):0,o:capK.o?Math.min(1,Do/capK.o):0};let rev=0,fuel=0,fee=0,teu=0;
-  for(const id of l.ships){const sh=shipById(id);if(!sh||sh.down>S.day)continue;const m=shipM(sh.m),Ld=legDaysS(m,km),k=shipK(sh,m),f=shipLoadF(m,k),ld=loadK[k];
-    teu+=m.teu*f*ld/Ld;rev+=m.teu*f*ld*TEU_RATE(km)*SEA_RATE[k]*pk("cargo")/Ld;fuel+=km*m.cpk*fuelNow()*pk("fuel")/Ld;fee+=(portFee(a,m)+portFee(b,m))/2/Ld}
-  return {sp,km,XS,xteu:D>0?teu*XS/D:0,D,Dr,Do,DK,capK,loadK,cap:capK.d,capr:capK.r,capo:capK.o,load:loadK.d,loadr:loadK.r,loado:loadK.o,teu,rev,fuel,fee,fixed,profit:rev-fuel-fee-fixed}}
+  // with "wait for cargo" ships stay in port until they are w full: they sail a fraction sK of their schedule, each sailing w full
+  const w=l.wait||0,loadK={},sK={};
+  for(const k of ["d","r","o"]){const ld0=capK[k]?Math.min(1,DK[k]/capK[k]):0;if(w>0&&ld0>0&&ld0<w){sK[k]=ld0/w;loadK[k]=w}else{sK[k]=1;loadK[k]=ld0}}
+  let rev=0,fuel=0,fee=0,teu=0,spoil=0,saved=0;
+  for(const id of l.ships){const sh=shipById(id);if(!sh||sh.down>S.day)continue;const m=shipM(sh.m),Ld=legDaysS(m,km),k=shipK(sh,m),f=shipLoadF(m,k),ld=loadK[k],sf=sK[k];
+    const sp=(k==="r"&&!shipSpec(m)?SPOIL:0)*(1-sf)+LATE*(1-sf),rv=m.teu*f*ld*sf*TEU_RATE(km)*SEA_RATE[k]*specX(m)*pk("cargo")/Ld;
+    teu+=m.teu*f*ld*sf/Ld;rev+=rv*(1-sp);spoil+=rv*sp;const fl=km*m.cpk*fuelNow()*pk("fuel")/Ld,fe=(portFee(a,m)+portFee(b,m))/2/Ld;fuel+=fl*sf;fee+=fe*sf;saved+=(fl+fe)*(1-sf)}
+  return {sp,km,XS,xteu:D>0?teu*XS/D:0,D,Dr,Do,DK,capK,loadK,sK,spoil,saved,w,cap:capK.d,capr:capK.r,capo:capK.o,load:loadK.d,loadr:loadK.r,loado:loadK.o,teu,rev,fuel,fee,fixed,profit:rev-fuel-fee-fixed}}
 const shipRateX=m=>m.reefer?1.8:m.roro?1.5:1;
 const shipType=m=>m.reefer?"reefer":m.roro?"roro":"box";
 const SCATS=[["all","ทั้งหมด"],["box","📦 ตู้คอนเทนเนอร์"],["reefer","❄ ห้องเย็น"],["roro","🚗 ขนรถ"]];
@@ -441,9 +445,11 @@ function settleShips(T){
       if(sh.lk!==key){sh.lk=key;sh.ld=N;continue}
       if(N<=sh.ld)continue;const n0=sh.ld;sh.ld=N;if(sh.down>S.day)continue;
       for(let n=Math.max(n0+1,N-3);n<=N;n++)sailLeg(l,sh,m,lc,n)}}}
-function sailLeg(l,sh,m,lc,n){const bkk=shipK(sh,m),f=shipLoadF(m,bkk),ld=lc.loadK[bkk],arr=port(n%2===1?l.from:l.to),capT=m.teu*f;let teu=capT*ld*(.9+Math.random()*.2);
+function sailLeg(l,sh,m,lc,n){const bkk=shipK(sh,m),sf=lc.sK?lc.sK[bkk]:1;
+  if(sf<1){sh.wacc=(sh.wacc||0)+sf;if(sh.wacc<1-1e-9){sh.waiting=1;return}sh.wacc-=1}sh.waiting=0;   // still waiting for cargo in port
+  const f=shipLoadF(m,bkk),ld=lc.loadK[bkk],arr=port(n%2===1?l.from:l.to),capT=m.teu*f;let teu=capT*ld*(.9+Math.random()*.2);
   if(l.bk&&l.bk[bkk]>0&&teu<capT){const tk=Math.min(capT-teu,l.bk[bkk]);l.bk[bkk]-=tk;teu+=tk}
-  const o={srev:teu*TEU_RATE(lc.km)*SEA_RATE[bkk]*pk("cargo"),sfuel:lc.km*m.cpk*fuelNow()*pk("fuel"),sport:portFee(arr,m),teu,voy:1};
+  const o={srev:teu*TEU_RATE(lc.km)*SEA_RATE[bkk]*specX(m)*pk("cargo")*(1-((bkk==="r"&&!shipSpec(m)?SPOIL:0)+LATE)*(1-sf)),sfuel:lc.km*m.cpk*fuelNow()*pk("fuel"),sport:portFee(arr,m),teu,voy:1};
   const net=o.srev-o.sfuel-o.sport;S.cash+=net;sh.tn=(sh.tn||0)+net;addT(S.today,o);l.today=l.today||{};addT(l.today,o);S.totTeu=(S.totTeu||0)+teu;
   if((tab==="home"||tab==="map")&&floaters.length<14)floaters.push({p:arr.c,v:net,t0:performance.now()})}
 function shipResale(sh){return shipM(sh.m).price*.6*Math.max(.5,1-sh.age/7300)}
@@ -613,7 +619,15 @@ const CK_RATE={pcl:1,fd:1.35,pt:1.2},CK_LOAD={pcl:1,fd:.9,pt:.75};
 // freight-only routes: more freight per kind, since each freighter now carries a single kind (keeps a lone freighter as viable as before)
 let CARGO_KIND_X=1.8;
 const SPEC_AIR={a124:"pt"};   // specialised freighters carry one kind only (An-124: outsize parts and vehicles)
-const SEA_K={pcl:"d",fd:"r",pt:"o"},K_SEA={d:"pcl",r:"fd",o:"pt"},SEA_LOAD={d:1,r:.6,o:.5},SEA_RATE={d:1,r:1.8,o:1.5};
+const SEA_K={pcl:"d",fd:"r",pt:"o"},K_SEA={d:"pcl",r:"fd",o:"pt"},SEA_RATE={d:1,r:1.8,o:1.5};
+/* Combined ships carry food / vehicles poorly (only some reefer plugs or car decks): share of capacity usable.
+   Specialised ships (reefer, car carrier) fill completely, earn SPEC_RATE more per box (proper cold chain / ro-ro
+   service) and keep food fresh while waiting for cargo. */
+let SEA_LOAD={d:1,r:.45,o:.35},SPEC_RATE=1.3;
+// waiting for cargo: share of a food cargo's value lost per unit of waiting on a combined ship (spoilage)
+// and slower service: shippers pay up to LATE less when ships wait (no extra for food on reefers)
+const SPOIL=.35,LATE=.15,WAITS=[[0,"⏱ ออกตามตาราง"],[.5,"รอเต็ม 50%"],[.75,"รอเต็ม 75%"],[.95,"รอเต็ม 95%"]];
+const specX=m=>shipSpec(m)?SPEC_RATE:1;
 // share of each kind in a city pair's air freight: food-heavy in SE Asia, Oceania and South America, parts in East Asia, Europe, North America
 function ckShare(r){const s={pcl:.5,fd:.28,pt:.22},RG=[regionOf(r.from).id,regionOf(r.dest).id];
   if(RG.some(x=>["th","sea","sam","oc"].includes(x)))s.fd+=.1;if(RG.some(x=>["ea","eu","na"].includes(x)))s.pt+=.08;
@@ -640,7 +654,7 @@ function laneAutoAssign(l,DK,km){const ss=l.ships.map(shipById).filter(sh=>sh&&!
   for(const sh of ss.slice().sort((a,b)=>shipM(b.m).teu-shipM(a.m).teu)){const m=shipM(sh.m),Ld=legDaysS(m,km);let bk="d",bv=-Infinity;
     for(const k of ["d","r","o"]){if(!skOpen(k))continue;const v=res[k]>0?Math.min(res[k],m.teu*SEA_LOAD[k]/Ld)*SEA_RATE[k]:res[k]*1e-6;if(v>bv+1e-12){bv=v;bk=k}}sh.cka=bk;res[bk]-=m.teu*SEA_LOAD[bk]/Ld}}
 const AIR_OPTS=[["auto","🤖 อัตโนมัติ"],["pcl","📦 พัสดุ"],["fd","🍎 อาหาร"],["pt","🚗 ชิ้นส่วน/รถ"]];
-const SEA_OPTS=[["auto","🤖 อัตโนมัติ"],["d","📦 พัสดุ · เต็มลำ"],["r","🍎 อาหาร · 60%"],["o","🚗 ชิ้นส่วน/รถ · 50%"]];
+const SEA_OPTS=[["auto","🤖 อัตโนมัติ"],["d","📦 พัสดุ · เต็มลำ"],["r",`🍎 อาหาร · ${Math.round(SEA_LOAD.r*100)}%`],["o",`🚗 ชิ้นส่วน/รถ · ${Math.round(SEA_LOAD.o*100)}%`]];
 const ckSel=(attr,id,val,opts)=>`<select class="cksel" data-${attr}="${id}">${opts.filter(([v])=>v==="auto"||(attr==="sck"?skOpen(v):ckOpen(v))||v===val).map(([v,n])=>`<option value="${v}" ${(val||"auto")===v?"selected":""}>${n}</option>`).join("")}</select>`;
 const kindChip=t=>`<span class="kchip k-${t}">${CK_E[t]} ${CK_N[t]}</span>`;
 /* Advice for a route's freight mix: switch an aircraft from a kind that has spare room to one that is short,
@@ -689,7 +703,7 @@ function seaKindsHTML(l,c){const B=l.bk||{};
     <div class="muted small">เส้นทางเดียวขนได้หลายอย่างพร้อมกัน โดยแต่ละลำขนคนละอย่าง</div>
     ${adviceBox(seaAdvice(l,c))}
     <div class="ktab"><span></span><span>ต้องการ</span><span>รองรับ</span><span>เต็ม</span><span>สะสม</span>${["d","r","o"].filter(skOpen).map(k=>`<span>${kindChip(SEA_KN[k])}</span><b class="num">${Math.round(c.DK[k])}</b><b class="num">${Math.round(c.capK[k])}</b><b class="num">${c.capK[k]?Math.round(c.loadK[k]*100)+"%":"—"}</b><b class="num muted">${Math.round(B[k]||0)}</b>`).join("")}</div>
-    <div class="muted small">เรือเฉพาะ (ห้องเย็น, ขนรถ) ขนได้เต็มลำ · เรือรวมขนได้ทุกอย่างแต่ทีละประเภท: พัสดุเต็มลำ อาหาร 60% ชิ้นส่วน/รถ 50% ของความจุ · ค่าระวาง อาหาร ×1.8 ชิ้นส่วน/รถ ×1.5</div>
+    <div class="muted small">เรือเฉพาะ (ห้องเย็น, ขนรถ) ขนได้เต็มลำ ค่าระวางสูงกว่า ${Math.round((SPEC_RATE-1)*100)}% และอาหารไม่เสียตอนรอสินค้า · เรือรวมขนได้ทุกอย่างแต่ทีละประเภท: พัสดุเต็มลำ อาหาร ${Math.round(SEA_LOAD.r*100)}% ชิ้นส่วน/รถ ${Math.round(SEA_LOAD.o*100)}% ของความจุ · ค่าระวาง อาหาร ×1.8 ชิ้นส่วน/รถ ×1.5</div>
     ${l.ships.length?`<div class="klist">${l.ships.map(shipById).filter(Boolean).map(sh=>{const m=shipM(sh.m);return `<div class="krow"><span><b>${sh.reg}</b> <span class="muted small">${m.name}</span></span>${shipSpec(m)?`<span class="small">${kindChip(SEA_KN[shipK(sh,m)])} <span class="muted">เรือเฉพาะ</span></span>`:`<span class="row" style="gap:6px">${(!sh.ck||sh.ck==="auto")?`<span class="small muted">ตอนนี้ ${CK_E[SEA_KN[shipK(sh,m)]]}</span>`:""}${ckSel("sck",sh.id,sh.ck,SEA_OPTS)}</span>`}</div>`}).join("")}</div>`:""}</div>`}
 function cargoBase(r,a,b,d,ev){return 8*Math.sqrt(a.w*b.w)*cargoDistF(d)*ev*Math.max(seasonMult(r.from),seasonMult(r.dest))*evCargo(r.from)*evCargo(r.dest)}
 function autoCrate(r){const a=city(r.from),b=city(r.dest),d=dist(a,b),ev=evMult(r.dest)*evMult(r.from)*brBoost(r.from)*brBoost(r.dest),c0=cargoBase(r,a,b,d,ev)*(rkind(r)==="cargo"?1:.5)+(rkind(r)==="cargo"?xferOf(r).cargo:0);
@@ -1807,6 +1821,7 @@ function laneSheet(lid,st){
      <div class="stack" style="gap:6px"><span class="eyebrow">การออกเรือ</span><div class="seg"><button data-lspread="1" class="${l.spread!==false?"on":""}">⏱ เว้นระยะเท่ากัน</button><button data-lspread="0" class="${l.spread===false?"on":""}">🎲 ออกตามสะดวก</button></div>
       <div class="muted small">${(()=>{const gd=laneGapD(l);if(gd==null)return "มีเรือลำเดียวในเส้นทางนี้ ยังไม่ต้องเว้นระยะ";
         return l.spread!==false?`เรือ ${l.ships.length} ลำออกจาก ${port(l.from).n} สลับกันทุก ~${gd<1?Math.round(gd*24)+" ชม.":gd.toFixed(1)+" วัน"} ครึ่งหนึ่งเริ่มจาก ${port(l.to).n} ไม่ไปเทียบท่าพร้อมกัน · ค่าระวางเท่าเดิม`:"เรือแต่ละลำออกตามเวลาของตัวเอง อาจไปถึงท่าพร้อมกันได้ · ค่าระวางเท่าเดิม"})()}</div></div>
+     ${waitHTML(l,c)}
      <div><div class="eyebrow" style="margin-bottom:6px">เรือในเส้นทาง ${l.ships.length} ลำ</div><div class="pick">${l.ships.map(shipById).filter(Boolean).map(sh=>row(sh,"srem")).join("")||'<div class="muted small">ยังไม่มีเรือ</div>'}
       ${idle.length?`<div class="eyebrow" style="margin-top:6px">เรือที่จอดว่าง</div>`:""}${idle.map(sh=>row(sh,"sadd")).join("")}</div></div>
      ${(()=>{const {opts,bd}=seaBuys(l,st.sk);
@@ -1822,6 +1837,7 @@ function laneSheet(lid,st){
       if(a.act.ship){const sh=shipById(a.act.ship);sh.ck=a.act.ck;save();toast(`${sh.reg} เปลี่ยนไปขน ${CK_E[SEA_KN[a.act.ck]]} ${CK_N[SEA_KN[a.act.ck]]}`);drawSheet()}
       else if(a.act.buy){st.buy=1;if(a.act.ck)st.sk=a.act.ck;drawSheet();const bh=$("#sbuy");if(bh){bh.open=true;bh.scrollIntoView({block:"start"})}}}}
     $$("[data-sck]").forEach(sl=>sl.onchange=()=>{const sh=shipById(+sl.dataset.sck);if(!sh)return;sh.ck=sl.value;save();toast(`${sh.reg} ขน ${sl.options[sl.selectedIndex].text}`);drawSheet()});
+    $$("[data-lwait]").forEach(b=>b.onclick=()=>{l.wait=+b.dataset.lwait;save();toast(l.wait?`เรือจะรอจนตู้เต็ม ${Math.round(l.wait*100)}% ก่อนออก`:"เรือออกตามตารางแล้ว");drawSheet()});
     $$("[data-lspread]").forEach(b=>b.onclick=()=>{l.spread=b.dataset.lspread==="1";syncLaneSpread(l);save();toast(l.spread?"เว้นระยะการออกเรือแล้ว":"ให้เรือออกตามสะดวกแล้ว");drawSheet()});
     $$("[data-srem]").forEach(b=>b.onclick=()=>{const id=+b.dataset.srem;l.ships=l.ships.filter(x=>x!==id);shipById(id).lane=null;save();drawSheet()});
     $$("[data-sadd]").forEach(b=>b.onclick=()=>{const id=+b.dataset.sadd;l.ships.push(id);shipById(id).lane=l.id;save();drawSheet()});
@@ -1830,6 +1846,12 @@ function laneSheet(lid,st){
     $$("[data-sbuy]").forEach(b=>b.onclick=()=>{const sh=buyShip(b.dataset.sbuy);if(!sh)return;applyCk(sh,b.dataset.ck,shipSpec(shipM(sh.m)));l.ships.push(sh.id);sh.lane=l.id;save();toast(`${sh.reg} เข้าประจำ ${laneNo(l)} แล้ว`);drawSheet()});
     $("#lclose").onclick=()=>{if(!st.confirm){st.confirm=1;drawSheet();return}for(const id of l.ships){const sh=shipById(id);if(sh)sh.lane=null}S.lanes=S.lanes.filter(x=>x!==l);addNews(`ปิดเส้นทางเรือ ${port(l.from).n} → ${port(l.to).n}`);save();closeSheet()}};
   return fn}
+function waitHTML(l,c){if(!l.ships.length)return "";
+  const opts=WAITS.map(([w,n])=>({w,n,c:w===(l.wait||0)?c:laneCalc({...l,wait:w})})),best=opts.reduce((a,b)=>b.c.profit>a.c.profit+1?b:a);
+  const waiting=l.ships.map(shipById).filter(sh=>sh&&sh.waiting).length;
+  return `<div class="stack" style="gap:6px"><div class="row between"><span class="eyebrow">⏳ รอสินค้าก่อนออกเรือ</span>${waiting?`<span class="small warn">⏳ ${waiting} ลำกำลังรอสินค้าที่ท่า</span>`:""}</div>
+    <div class="seg waitseg">${opts.map(o=>`<button data-lwait="${o.w}" class="${(l.wait||0)===o.w?"on":""}">${o.n}${o===best&&best.w!==(l.wait||0)?" ⭐":""}<br><span class="num ${o.c.profit<0?"bad":"good"}" style="font-size:12px;font-weight:700">${o.c.profit>=0?"+":""}${money(o.c.profit,true)}</span></button>`).join("")}</div>
+    <div class="muted small">${(l.wait||0)>0?`เรือจะรอที่ท่าจนตู้เต็ม ${Math.round(l.wait*100)}% แล้วค่อยออก: ออกเรือน้อยลง ประหยัดน้ำมันและค่าท่า ~${money(c.saved,true)}/วัน${c.spoil>1?` · แต่ส่งช้าลง ลูกค้าจ่ายน้อยลง${c.capK.r&&l.ships.some(id=>{const sh=shipById(id);return sh&&shipK(sh,shipM(sh.m))==="r"&&!shipSpec(shipM(sh.m))})?" และอาหารบนเรือรวมเสียความสด":""} −${money(c.spoil,true)}/วัน (อาหารบนเรือห้องเย็นไม่เสีย)`:""}`:"เรือออกตามตารางเสมอ แม้ตู้ยังไม่เต็ม · เลือก “รอเต็ม” ถ้าสินค้าน้อยกว่าที่เรือขนได้ จะออกเรือน้อยลงแต่เต็มขึ้น"} · ตัวเลขใต้ปุ่มคือกำไร/วันถ้าเลือกแบบนั้น${best.w!==(l.wait||0)?` · ⭐ คือแบบที่กำไรดีสุดตอนนี้`:""}</div></div>`}
 function breakdownS(c){const rows=[["ค่าระวางตู้",c.rev,1],["น้ำมันเรือ",-c.fuel],["ค่าท่าเรือ",-c.fee],["ลูกเรือ/ประกัน",-c.fixed]],mx=Math.max(1,...rows.map(r=>Math.abs(r[1])));
   return `<div class="stack" style="gap:5px">${rows.map(([n,v,g])=>`<div style="display:grid;grid-template-columns:118px 1fr 64px;gap:8px;align-items:center;font-size:12.5px"><span class="muted">${n}</span><div class="bar" style="height:6px"><i style="width:${Math.abs(v)/mx*100}%;background:var(${g?"--good":"--bad"})"></i></div><span class="num" style="text-align:right">${money(v,true)}</span></div>`).join("")}</div>`}
 function shipSheet(sid,st){
@@ -2949,6 +2971,7 @@ function guideSheet(){return head("คู่มือระบบ","ทุกร
 <details class="g"><summary>ชื่อเสียงและระดับบริการ</summary><div><p>ชื่อเสียงจะค่อย ๆ เคลื่อนเข้าหาค่าเป้าหมายของระดับบริการ ประหยัด 35 มาตรฐาน 60 พรีเมียม 85 คลิปไวรัลและแคมเปญใหญ่ช่วยดันขึ้น เครื่องเสียกลางทางทำให้ลดลง</p></div></details>
 <details class="g"><summary>การตลาดและล็อกราคาน้ำมัน</summary><div><p>แคมเปญการตลาดเพิ่มคนบินทุกเส้นทางชั่วคราว เปิดได้ทีละแคมเปญ</p><p>ดัชนีน้ำมันขึ้นลงทุกวันและพุ่งแรงได้จากเหตุการณ์ การล็อกราคาจะตรึงดัชนีไว้ 60 วัน ค่าธรรมเนียมประมาณ 3% ของค่าน้ำมันช่วงนั้น เหมาะตอนน้ำมันถูก</p></div></details>
 <details class="g"><summary>เงินกู้และการล้มละลาย</summary><div><p>กู้ได้ทีละ ฿50 ล้าน วงเงินขึ้นกับมูลค่าฝูงบิน ถ้าเงินสดติดลบต่อเนื่อง 30 วัน สายการบินล้มละลายและต้องเริ่มชะตาใหม่</p></div></details>
+<details class="g"><summary>🚢 เรือเฉพาะ และ ⏳ รอสินค้าก่อนออกเรือ</summary><div><ul><li>เรือห้องเย็นและเรือขนรถขนได้อย่างเดียวแต่เต็มลำ ได้ค่าระวางมากกว่า ${Math.round((SPEC_RATE-1)*100)}% และอาหารไม่เสียความสดตอนรอ</li><li>เรือรวมขนได้ทุกอย่างทีละประเภท แต่ใช้พื้นที่ขนอาหารได้แค่ ${Math.round(SEA_LOAD.r*100)}% และขนรถได้แค่ ${Math.round(SEA_LOAD.o*100)}% ของความจุ</li><li>⏳ รอสินค้า: ตั้งในหน้าเส้นทางเรือ ให้เรือรอที่ท่าจนตู้เต็ม 50 / 75 / 95% ก่อนออก ออกเรือน้อยลงจึงประหยัดน้ำมันและค่าท่า แต่ส่งช้าลง ลูกค้าจ่ายน้อยลงสูงสุด ${Math.round(LATE*100)}% และอาหารบนเรือรวมเสียความสดเพิ่มอีก</li><li>ตัวเลขใต้ปุ่มบอกกำไร/วันของแต่ละแบบ ⭐ คือแบบที่ดีที่สุดตอนนั้น เหมาะกับเส้นทางที่เรือใหญ่เกินสินค้า</li></ul></div></details>
 <details class="g"><summary>🏆 ลีกจัดอันดับและความยากของคู่แข่ง</summary><div><ul><li>ทุก 7 วันคือ 1 สัปดาห์ลีก เกมจะเทียบว่าธุรกิจของคุณโตกี่เปอร์เซ็นต์ (มูลค่ากิจการ ผู้โดยสาร สินค้า ตู้เรือ ภารกิจ) กับคู่แข่งแต่ละเจ้า</li><li>โตเร็วกว่า = ชนะ · ช้ากว่า = แพ้ · ต่างกันไม่ถึง 0.3% = เสมอ ผลจะเพิ่มหรือลดคะแนนทักษะ (SR) เริ่มที่ 1000 ชนะคู่แข่งที่ SR สูงกว่าได้คะแนนมากกว่า</li><li>ระดับ: 🥉 ทองแดง · 🥈 เงิน 900 · 🥇 ทอง 1050 · 💠 แพลทินัม 1200 · 💎 เพชร 1350 · 👑 มาสเตอร์ 1500 · 🔥 ตำนาน 1700 · เลื่อนระดับได้โบนัส</li><li>ยิ่ง SR สูง คู่แข่งยิ่งเก่ง: โตเร็วขึ้น บุกเส้นทางบ่อยขึ้น ตัดราคาแรงขึ้น และถอนตัวยากขึ้น ถ้า SR ต่ำกว่า 1000 คู่แข่งจะผ่อนลง</li><li>ดูระดับ SR ผลสัปดาห์ก่อน และระดับความยากของคู่แข่งได้ในกล่อง 🏆 ที่หน้าภาพรวมและปุ่ม 🏆 บนแผนที่</li></ul></div></details>
 <details class="g"><summary>✨ ฟีเจอร์ที่ค่อยๆ ปลดล็อก</summary><div><p>เกมใหม่จะเริ่มแค่ ภาพรวม เส้นทาง และฝูงบิน ระบบอื่นจะเปิดทีละอย่าง (ไม่เกินวันละอย่าง) พร้อมกล่องแจ้งเตือน ✨ แยกจากภารกิจ:</p><ol>${FEATS.filter(f=>has(f.id)).map(f=>`<li><b>${f.n}</b></li>`).join("")}</ol>${FEATS.some(f=>!has(f.id))?`<p>🔒 ยังมีอีก ${FEATS.filter(f=>!has(f.id)).length} อย่าง · อย่างต่อไปจะเปิดเมื่อ: ${FEATS.filter(f=>!has(f.id)&&(f.after||[]).every(has)).map(f=>`<b>${f.need}</b>`).join(" หรือ ")}</p>`:""}<p class="small">ทุกการขยายกิจการต้องมีฐานที่มั่นคงก่อน คือกำไรเฉลี่ย 7 วันเป็นบวก สินค้าทางอากาศเริ่มจากพัสดุกับเครื่องลำเล็ก แล้วค่อยเปิดอาหาร เครื่องลำใหญ่ ชิ้นส่วน/รถ ส่วนเรือเริ่มจากเรือเล็กขนตู้พัสดุ แล้วค่อยเปิดเรือห้องเย็น เรือใหญ่ และเรือขนรถ</p><p class="muted small">เซฟเก่าก่อนมีระบบนี้เปิดครบทุกอย่างอยู่แล้ว</p></div></details>
 <details class="g"><summary>🧭 พิสัยบิน/แล่น 🔗 ต่อเครื่อง และถ่ายลำ</summary><div><ul><li>เครื่องบินทุกรุ่นมีระยะบินไกลสุด เครื่องโดยสารไกลสุด ${AIR_MAX_P.toLocaleString()} กม. เครื่องขนสินค้า ${AIR_MAX_C.toLocaleString()} กม. ปลายทางที่ไกลกว่านั้นเปิดเส้นทางบินตรงไม่ได้</li><li>เรือก็มีระยะแล่นไกลสุด เรือชายฝั่งและฟีดเดอร์วิ่งได้แค่ในภูมิภาค เส้นทางข้ามทวีปต้องใช้เรือใหญ่ ดูได้ที่ “แล่นได้ไกล” ในอู่ต่อเรือ</li><li>🔗 ต่อเครื่อง: ผู้โดยสาร (และสินค้า) ระหว่างสองเมืองที่เราไม่มีเที่ยวบินตรง จะต่อเครื่องที่<b>สาขา</b>ของเราได้สูงสุด 2 ครั้ง (3 เที่ยวบิน) ถ้าทางอ้อมไม่ไกลเกินไป เช่น กรุงเทพ → ดูไบ → เซาเปาโล</li><li>คนต่อเครื่องจะเพิ่มเข้าไปในทุกเส้นทางที่ใช้ จ่ายค่าตั๋วตามราคาของแต่ละช่วง ดูได้ที่กล่อง 🔗 ในหน้าเส้นทาง</li><li>🚢 ถ่ายลำ: เรือก็เหมือนกัน ตู้สินค้าระหว่างท่าที่ไม่มีเรือวิ่งตรง จะขนต่อกันที่<b>สาขาท่าเรือ</b>ได้สูงสุด 2 ครั้ง ดูได้ที่กล่อง 🔗 ในส่วนเส้นทางเรือ</li><li>อยากไปที่ไกลเกินบินตรง: เปิดสาขาที่เมืองกลางทาง แล้วเปิดเส้นทางทั้งสองช่วง หน้าเปิดเส้นทางจะแนะนำเมืองให้</li></ul></div></details>
