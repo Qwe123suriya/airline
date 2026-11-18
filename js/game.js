@@ -1525,8 +1525,27 @@ function mapWishHTML(){if(bm()==="cargo")return cargoWishHTML();const rows=S.bas
     return `<div class="mw-br"><div class="mw-h"><b class="num">${code}</b> ${c.n}${code===S.hub?' <span class="muted">· ฐานหลัก</span>':""}</div>
       ${ws.length?ws.map(w=>`<div class="mw-row"><span class="mw-to"><b class="num">${w.c.c}</b> ${w.c.n}</span><b class="num mw-n">${Math.round(w.dem).toLocaleString()}</b><button class="btn sm primary" data-wish="${code}>${w.c.c}">เปิด</button></div>`).join(""):`<div class="muted small">เปิดเส้นทางไปที่คนอยากไปครบแล้ว</div>`}</div>`}).join("");
   return `<div class="row between mw-top"><b>💭 อยากไปไหน</b><span class="muted">ที่ที่คนอยากไปแต่ยังไม่มีเที่ยวบิน · คน/วัน</span></div>${rows||'<div class="muted small">ยังไม่มีสาขาที่รับผู้โดยสาร</div>'}`}
-function rankPanelHTML(){const B=standings(),mine=myScoreParts();
-  return `<div class="row between"><b>🏆 การแข่งขัน</b><span class="muted small">วันที่ ${S.day+1}</span></div>${leagueHTML(true)}
+/* The map's ranking panel: an overview of every race (our medal, our number, the gap to the next place) and a table
+   for any single race. Tapping a tile or a chip switches the view; the choice is remembered. */
+const raceDeals=k=>Object.keys(DEALS).filter(d=>{const r=DEAL_RACE[d];return r===k||(r==="frt"&&(k==="cargo"||k==="sea"))}).map(d=>DEALS[d].e+" "+DEALS[d].n);
+function raceGap(k){const B=k==="all"?standings().map(x=>({n:x.n,v:x.sc,me:x.me})):catBoard(k),i=B.findIndex(x=>x.me),me=B[i];
+  if(i===0){const o=B[1];return o?{good:1,t:`นำ ${o.n} อยู่ ${Math.round((me.v-o.v)/Math.max(1,me.v)*100)}%`}:{good:1,t:""}}
+  if(!(me.v>0))return {good:0,t:"ยังไม่ได้เริ่มด้านนี้"};
+  const o=B[i-1];return {good:0,t:`ตาม ${o.n} (#${i}) อีก ${Math.round((o.v-me.v)/Math.max(1,o.v)*100)}%`}}
+const raceVal=(k,v)=>k==="val"?money(v,true):k==="svc"?v.toFixed(1)+"★":k==="all"?Math.round(v).toLocaleString():niceShort(v);
+function rankPanelHTML(){const v=S.ui_mrace||"ov",L=catList(),cur=v==="ov"||L.some(c=>c.k===v)?v:"ov";
+  const chips=`<div class="mrchips"><button data-mrace="ov" class="${cur==="ov"?"on":""}">ภาพรวม</button>${L.map(c=>`<button data-mrace="${c.k}" class="${cur===c.k?"on":""}" title="${c.n}">${c.e}</button>`).join("")}</div>`;
+  const head=`<div class="row between"><b>🏆 การแข่งขัน</b><span class="muted small">วันที่ ${S.day+1}</span></div>`;
+  if(cur==="ov"){const tiles=L.map(c=>{const rk=c.k==="all"?rank():catRank(c.k),mv=c.k==="all"?standings().find(x=>x.me).sc:myCat(c.k),g=raceGap(c.k);
+      return `<button class="mrtile ${rk===1?"gold":""}" data-mrace="${c.k}"><span class="mrt-h"><span>${c.e} ${c.n}</span><b>${medal(rk)}</b></span><span class="num small">${raceVal(c.k,mv)} <span class="muted">${c.k==="val"||c.k==="all"||c.k==="svc"?"":c.u}</span></span><span class="small ${g.good?"good":"muted"}">${g.t}</span></button>`}).join("");
+    const firsts=L.filter(c=>(c.k==="all"?rank():catRank(c.k))===1).length;
+    return head+chips+`<div class="small muted">เราได้ที่ 1 อยู่ <b>${firsts}</b> จาก ${L.length} ด้าน · แตะด้านไหนเพื่อดูตารางเต็ม</div><div class="mrgrid">${tiles}</div>`}
+  if(cur!=="all"){const C=RACES.find(c=>c.k===cur),B=catBoard(cur),dl=raceDeals(cur);
+    return head+chips+`<div class="small"><b>${C.e} ${C.n}</b> <span class="muted">· ${C.u}</span></div>
+     <div class="rlist">${B.map((b,i)=>`<div class="rk ${b.me?"me":""}"><span class="rkn num">${i<3?medal(i+1):i+1}</span><span class="rkname">${esc(b.n)}${b.me?"":`<small class="muted"> ${rvProf(b.rv).tag.split(" ")[0]}</small>`}</span><span class="num rksc">${raceVal(cur,b.v)}</span></div>`).join("")}</div>
+     <div class="small ${raceGap(cur).good?"good":"muted"}">${raceGap(cur).t}</div>${dl.length?`<div class="small muted">อันดับด้านนี้มีผลกับดีล: ${dl.join(" · ")}</div>`:""}`}
+  const B=standings(),mine=myScoreParts();
+  return head+chips+`${leagueHTML(true)}
    <div class="rlist">${B.map((b,i)=>{const mv=b.prev?b.prev-(i+1):0;return `<div class="rk ${b.me?"me":""}"><span class="rkn num">${i+1}</span><span class="rkname">${esc(b.n)}</span><span class="rkmv ${mv>0?"good":mv<0?"bad":"muted"}">${mv>0?"▲"+mv:mv<0?"▼"+(-mv):"–"}</span><span class="num rksc">${b.sc.toLocaleString()}</span></div>`}).join("")}</div>
    <details class="more"><summary>คะแนนของคุณมาจากอะไร ▾</summary><div class="rparts">${mine.map(([n,v])=>`<div class="row between small"><span class="muted">${n}</span><span class="num">${Math.round(v).toLocaleString()}</span></div>`).join("")}</div></details>`}
 const niceShort=v=>v>=1e6?(v/1e6).toFixed(1)+"M":v>=1e4?Math.round(v/1e3)+"K":v>=1e3?(v/1e3).toFixed(1)+"K":Math.round(v).toString();
@@ -1975,6 +1994,7 @@ function bindMap(){
   $$("[data-vm]").forEach(b=>b.onclick=()=>setMode(b.dataset.vm));
   const wb=$("#wishbtn");if(wb)wb.onclick=()=>{S.ui_wish=!S.ui_wish;save();const wp=$("#wishpanel");wp.hidden=!S.ui_wish;if(S.ui_wish){wp.innerHTML=mapWishHTML();bindWishes()}wb.classList.toggle("on",S.ui_wish);wb.setAttribute("aria-expanded",S.ui_wish);wb.textContent=wishLbl()};
   const wb2=$("#worldbtn");if(wb2)wb2.onclick=()=>{S.ui_world=!S.ui_world;if(S.ui_world)S.ui_rank=false;save();const wp=$("#worldpanel");wp.hidden=!S.ui_world;if(S.ui_world)wp.innerHTML=worldHTML();wb2.classList.toggle("on",S.ui_world);const rp=$("#rankpanel");if(rp&&S.ui_world){rp.hidden=true;$("#rankbtn").classList.remove("on")}};
+  const rpn=$("#rankpanel");if(rpn)rpn.onclick=e=>{const b=e.target.closest("[data-mrace]");if(!b)return;e.stopPropagation();S.ui_mrace=b.dataset.mrace;save();rpn.innerHTML=rankPanelHTML()};
   const rb=$("#rankbtn");if(rb)rb.onclick=()=>{S.ui_rank=!S.ui_rank;if(S.ui_rank){S.ui_world=false;const wp=$("#worldpanel");if(wp)wp.hidden=true;const w3=$("#worldbtn");if(w3)w3.classList.remove("on")}save();const rp=$("#rankpanel");rp.hidden=!S.ui_rank;if(S.ui_rank)rp.innerHTML=rankPanelHTML();rb.classList.toggle("on",S.ui_rank);rb.setAttribute("aria-expanded",S.ui_rank)}}
 function setCam(m,focus){camMode=m;camFocus=focus||null;$$("[data-cam]").forEach(b=>b.classList.toggle("on",b.dataset.cam===m))}
 function refreshAirports(){const el=$("#aplist");if(el)el.innerHTML=airportListHTML();const mi=$("#mapinfo");if(mi)mi.hidden=true;bindAirports()}
