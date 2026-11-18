@@ -849,3 +849,15 @@ h1,h2,h3,.eyebrow{letter-spacing:0}
 .mrtile.gold{border-color:#e0b43a;background:rgba(224,180,58,.10)}
 .mrt-h{display:flex;justify-content:space-between;width:100%;font-size:12.5px;gap:4px}
 .mrtile .small{font-size:11.5px;line-height:1.3}
+
+/* load as a number */
+.lfn{font-size:12.5px;color:var(--muted);white-space:nowrap}.lfn b{font-size:13.5px}
+.lfn.good b{color:var(--good)}.lfn.warn b{color:var(--warn)}.lfn.bad b{color:var(--bad)}
+/* price table (route sheet, bulk prices) */
+.ptab{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:6px}
+.ptr{display:grid;grid-template-columns:1.6fr .8fr .8fr 1fr;gap:6px;align-items:center;padding:7px 10px;border:0;border-top:1px solid var(--line);background:transparent;color:inherit;font:inherit;font-size:13px;text-align:left}
+button.ptr{cursor:pointer}button.ptr:hover{background:var(--grid)}
+.ptr>span:not(:first-child){text-align:right}
+.ptr.ph{border-top:0;font-size:11.5px;color:var(--muted);background:var(--grid)}
+.ptr.cur{background:rgba(232,140,40,.14);font-weight:700}
+.ptr small{font-size:11px;font-weight:500}

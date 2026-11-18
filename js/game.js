@@ -2024,6 +2024,8 @@ function bindMap(){
 function setCam(m,focus){camMode=m;camFocus=focus||null;$$("[data-cam]").forEach(b=>b.classList.toggle("on",b.dataset.cam===m))}
 function refreshAirports(){const el=$("#aplist");if(el)el.innerHTML=airportListHTML();const mi=$("#mapinfo");if(mi)mi.hidden=true;bindAirports()}
 // tiny inline chart of the last days' profit (green above zero, red below)
+// how full: a plain number, coloured (green when well filled, amber when half empty, red when mostly empty)
+const lfTag=(x,w)=>{const v=Math.round((x||0)*100);return `<span class="lfn ${v>=75?"good":v>=50?"warn":"bad"}"><b class="num">${v}%</b> ${w??"ที่นั่งเต็ม"}</span>`};
 function sparkSVG(h,w=64,ht=18){const v=(h||[]).slice(-14);if(v.length<2)return "";const mx=Math.max(...v,0),mn=Math.min(...v,0),sp=mx-mn||1,X=i=>(i/(v.length-1)*(w-2)+1).toFixed(1),Y=x=>(ht-1-(x-mn)/sp*(ht-2)).toFixed(1);
   const pts=v.map((x,i)=>X(i)+","+Y(x)).join(" "),last=v[v.length-1],col=last>=0?"var(--good)":"var(--bad)";
   return `<svg class="spk" width="${w}" height="${ht}" viewBox="0 0 ${w} ${ht}" aria-hidden="true">${mn<0&&mx>0?`<line x1="0" x2="${w}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)" stroke-dasharray="2 2"/>`:""}<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${X(v.length-1)}" cy="${Y(last)}" r="2" fill="${col}"/></svg>`}
@@ -2106,7 +2108,7 @@ function airCargoHTML(){const L=S.last||{},fr=S.fleet.filter(p=>!model(p.m).seat
   <div class="panel stack"><span class="eyebrow">ปฏิทินสินค้า</span>${cal.map(([n,w,e,on])=>`<div class="row between"><span><b>${n}</b> <span class="muted small">${w}</span><br><span class="small muted">${e}</span></span>${on?'<span class="chip got">กำลังเกิด</span>':'<span class="chip">รอ</span>'}</div>`).join("")}</div>
   <div class="row between"><h2>เส้นทางที่ขนสินค้า</h2><span class="muted small">แตะเพื่อตั้งค่าระวาง</span></div>
   ${rs.length?`<div class="strips">${rs.map(({r,c})=>{const ld=c.ccap?Math.min(1,(c.cargo||0)/c.ccap):0,frt=r.planes.length&&r.planes.every(id=>{const p=plane(id);return p&&!model(p.m).seats});
-    return `<button class="strip" data-route="${r.id}" style="${rkind(r)==="cargo"?"border-left-color:var(--cargo)":""}"><div class="fno">${fno(r)}<small>${rkind(r)==="cargo"?"เส้นทางสินค้า":"ใต้ท้องเครื่อง"}</small>${bkChip(bkCargo(r),"ตัน")}</div><div style="min-width:0"><div class="iata">${r.from} → ${r.dest}</div><div class="sub">${Math.round(c.cargo||0).toLocaleString()} / ${Math.round(c.ccap).toLocaleString()} ตัน · ${crateText(c)}</div><div class="lf"><i style="width:${Math.round(ld*100)}%"></i></div></div><div class="right"><div class="num good">${money(c.crev,true)}</div><div class="sub">ระวางเต็ม ${Math.round(ld*100)}%</div></div></button>`}).join("")}</div>`:`<div class="panel muted small">ยังไม่มีเส้นทางที่ขนสินค้า ทุกเที่ยวบินขนสินค้าใต้ท้องเครื่องได้ หรือซื้อเครื่องขนสินค้าด้านล่างไปใส่เส้นทาง</div>`}
+    return `<button class="strip" data-route="${r.id}" style="${rkind(r)==="cargo"?"border-left-color:var(--cargo)":""}"><div class="fno">${fno(r)}<small>${rkind(r)==="cargo"?"เส้นทางสินค้า":"ใต้ท้องเครื่อง"}</small>${bkChip(bkCargo(r),"ตัน")}</div><div style="min-width:0"><div class="iata">${r.from} → ${r.dest}</div><div class="sub">${Math.round(c.cargo||0).toLocaleString()} / ${Math.round(c.ccap).toLocaleString()} ตัน · ${crateText(c)}</div><div class="sub">${lfTag(ld,"ระวางเต็ม")}</div></div><div class="right"><div class="num good">${money(c.crev,true)}</div><div class="sub">ค่าระวาง/วัน</div></div></button>`}).join("")}</div>`:`<div class="panel muted small">ยังไม่มีเส้นทางที่ขนสินค้า ทุกเที่ยวบินขนสินค้าใต้ท้องเครื่องได้ หรือซื้อเครื่องขนสินค้าด้านล่างไปใส่เส้นทาง</div>`}
   <h2>เครื่องบินขนสินค้า <span class="muted num small">${MODELS.filter(m=>m.cat==="cargo").length} รุ่น</span></h2>
   <button class="btn pickbtn" data-pick="air">🧭 ไม่รู้จะใช้เครื่องรุ่นไหน? ให้เกมช่วยเลือกตามเส้นทาง</button>
   <div class="seg scrollx">${CCLS.map(([k,n])=>`<button data-ccls="${k}" class="${ccls===k?"on":""}">${n}</button>`).join("")}</div>
@@ -2121,8 +2123,8 @@ function seaHTML(){const lp=S.lanes.reduce((a,l)=>a+laneAvg(l),0),tpd=S.lanes.re
   ${suezShut()?`<div class="panel small bad">คลองสุเอซปิดอยู่ เรือที่วิ่งระหว่างเอเชียกับยุโรปต้องอ้อมแหลมกู๊ดโฮป ระยะทางไกลขึ้น</div>`:""}
   ${S.lanes.length?`<div class="strips">${S.lanes.map(l=>{const c={...laneCalc(l),profit:laneAvg(l)},a=port(l.from),b=port(l.to),ld=Math.max(c.load,c.loadr),
      days=c.km/40/24;return `<button class="strip ${!l.ships.length?"idle":c.profit<0?"loss":""}" data-lane="${l.id}" style="border-left-color:${!l.ships.length?"var(--muted)":c.profit<0?"var(--bad)":"var(--port)"}"><div class="fno">${laneNo(l)}<small>${l.ships.length} ลำ</small>${bkChip(bkSea(l),"ตู้")}</div>
-      <div style="min-width:0"><div class="iata" style="font-size:15px">${a.n} → ${b.n}</div><div class="sub">${c.km.toLocaleString()} กม. ทางทะเล · ราว ${Math.round(days)} วัน${viaText(c.sp).length?" · ผ่าน"+viaText(c.sp)[0]:""}</div><div class="lf"><i style="width:${Math.round(ld*100)}%;background:var(--port)"></i></div></div>
-      <div class="right"><div class="num ${c.profit<0?"bad":"good"}">${money(c.profit,true)}</div>${sparkSVG(l.h)}<div class="sub">เฉลี่ย/วัน · เต็ม ${Math.round(ld*100)}%</div></div></button>`}).join("")}</div>`:`<div class="panel muted small">ยังไม่มีเส้นทางเรือ เปิดเส้นทางระหว่างท่าเรือสองแห่งในภูมิภาคที่ปลดล็อกแล้ว แล้วซื้อเรือใส่ เรือช้ากว่าเครื่องบินมาก แต่ขนตู้สินค้าได้ครั้งละหลายพันตู้</div>`}
+      <div style="min-width:0"><div class="iata" style="font-size:15px">${a.n} → ${b.n}</div><div class="sub">${c.km.toLocaleString()} กม. ทางทะเล · ราว ${Math.round(days)} วัน${viaText(c.sp).length?" · ผ่าน"+viaText(c.sp)[0]:""}</div><div class="sub">${lfTag(ld,"ระวางเต็ม")}</div></div>
+      <div class="right"><div class="num ${c.profit<0?"bad":"good"}">${money(c.profit,true)}</div><div class="sub">เฉลี่ย/วัน</div></div></button>`}).join("")}</div>`:`<div class="panel muted small">ยังไม่มีเส้นทางเรือ เปิดเส้นทางระหว่างท่าเรือสองแห่งในภูมิภาคที่ปลดล็อกแล้ว แล้วซื้อเรือใส่ เรือช้ากว่าเครื่องบินมาก แต่ขนตู้สินค้าได้ครั้งละหลายพันตู้</div>`}
   ${S.ships.length?`<h2>กองเรือของคุณ</h2><div class="hangar">${S.ships.map(sh=>{const m=shipM(sh.m),l=S.lanes.find(x=>x.id===sh.lane);
     return `<button class="pcard ${l?"":"idle"}" data-ship="${sh.id}" style="border-bottom-color:${l?"var(--port)":"var(--muted)"}">${shipArt(m)}<div class="row between"><b class="num">${sh.reg}</b><span class="small">${l?`${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:'<span class="muted">จอดว่าง</span>'}</span></div><div class="small muted">${m.name}</div></button>`}).join("")}</div>`:""}
   <h2>อู่ต่อเรือ <span class="muted num small">${SHIPS.length} รุ่น</span></h2>
@@ -2635,14 +2637,14 @@ function openBranch(code){const c=city(code),cost=branchCost(c);if(S.cash<cost||
   if(tab==="branch")renderView();else refreshAirports()}
 let rseg="pax";
 function routesHTML(){rseg=bm();const RL=S.routes.filter(r=>rkind(r)===rseg),np=S.routes.filter(r=>rkind(r)==="pax").length,nc=S.routes.length-np;
-  return `${firstStepsHTML()}${oppsHTML()}${xferHTML()}<div class="row between"><h2>เส้นทางบิน</h2><button class="btn primary sm" id="newr">+ เปิดเส้นทาง${rseg==="cargo"?"สินค้า":""}</button></div>
+  return `${firstStepsHTML()}${oppsHTML()}${xferHTML()}<div class="row between"><h2>เส้นทางบิน</h2><div class="row" style="gap:6px">${rseg==="pax"&&np>1?`<button class="btn sm" id="bulkp">🏷️ ปรับราคาทุกเส้น</button>`:""}<button class="btn primary sm" id="newr">+ เปิดเส้นทาง${rseg==="cargo"?"สินค้า":""}</button></div></div>
   <div class="seg"><button data-rseg="pax" class="${rseg==="pax"?"on":""}">✈ ผู้โดยสาร <span class="num muted small">${np}</span></button><button data-rseg="cargo" class="${rseg==="cargo"?"on":""}">📦 ขนสินค้า <span class="num muted small">${nc}</span></button></div>
   ${RL.length?`<div class="strips">${RL.map(r=>{const c=r.last||calc(r),dc=city(r.dest);
     const cls=!r.planes.length?"idle":c.profit<0?"loss":"";
     return `<button class="strip ${cls}" data-route="${r.id}">
       <div class="fno">${fno(r)}<small>${r.planes.length} ลำ · ${c.legs} เที่ยว/วัน</small>${rkind(r)==="cargo"?bkChip(bkCargo(r),"ตัน"):bkChip(bkPax(r),"คน")}</div>
-      <div style="min-width:0"><div class="iata">${r.from} → ${r.dest}</div>${r.cmp?`<div class="cmpchip cmpline">⚔️ ${esc(r.cmp.rv)} · คุณได้ ${Math.round((r.cmp.share??compShare(r,priceOf(r)))*100)}%</div>`:""}<div class="sub">${dc.n} · ${c.d.toLocaleString()} กม. · ${rkind(r)==="cargo"?(c.crate?crateText(c):""):money(c.price??r.price,true)}${r.pmode==="auto"&&rkind(r)!=="cargo"?' <span class="tagauto">อัตโนมัติ</span>':""}${c.ground?' · <span class="bad">งดบินพายุ</span>':""}${evMult(r.dest)>1?' · <span class="warn">เทศกาล</span>':""}</div><div class="lf"><i style="width:${Math.round((rkind(r)==="cargo"?(c.ccap?(c.cargo||0)/c.ccap:0):c.lf)*100)}%;${rkind(r)==="cargo"?"background:var(--cargo)":""}"></i></div></div>
-      <div class="right"><div class="num ${c.profit<0?"bad":"good"}">${c.profit>=0?"+":""}${money(c.profit,true)}</div>${sparkSVG(r.h)}<div class="sub">${rkind(r)==="cargo"?`${Math.round(c.cargo||0).toLocaleString()} ตัน`:`${(c.pax||0).toLocaleString()} คน ${trend(r)}`}</div></div>
+      <div style="min-width:0"><div class="iata">${r.from} → ${r.dest}</div>${r.cmp?`<div class="cmpchip cmpline">⚔️ ${esc(r.cmp.rv)} · คุณได้ ${Math.round((r.cmp.share??compShare(r,priceOf(r)))*100)}%</div>`:""}<div class="sub">${dc.n} · ${c.d.toLocaleString()} กม. · ${rkind(r)==="cargo"?(c.crate?crateText(c):""):money(c.price??r.price,true)}${r.pmode==="auto"&&rkind(r)!=="cargo"?' <span class="tagauto">อัตโนมัติ</span>':""}${c.ground?' · <span class="bad">งดบินพายุ</span>':""}${evMult(r.dest)>1?' · <span class="warn">เทศกาล</span>':""}</div><div class="sub">${rkind(r)==="cargo"?lfTag(c.ccap?(c.cargo||0)/c.ccap:0,"ระวางเต็ม"):lfTag(c.lf)}</div></div>
+      <div class="right"><div class="num ${c.profit<0?"bad":"good"}">${c.profit>=0?"+":""}${money(c.profit,true)}</div><div class="sub">${rkind(r)==="cargo"?`${Math.round(c.cargo||0).toLocaleString()} ตัน`:`${(c.pax||0).toLocaleString()} คน ${trend(r)}`}</div></div>
     </button>`}).join("")}</div>`:`<div class="panel muted">${rseg==="cargo"?"ยังไม่มีเส้นทางขนสินค้า เปิดเส้นทางสินค้าจากสาขาไหนก็ได้ แล้วใส่เครื่องบินขนสินค้า":`ยังไม่มีเส้นทางผู้โดยสาร เส้นทางทุกเส้นออกจากสาขา เช่น ${city(S.hub).n} (${S.hub})`}</div>`}
   <div class="panel row between"><div><div class="eyebrow">สาขา</div><div class="small muted">${S.bases.join(" · ")}</div></div><button class="btn sm" id="gobranch">จัดการสาขา</button></div>${rseg==="cargo"&&has("sea")?`<div class="modesec"></div>${seaPart("lanes")}<div class="modesec"><span>🗓️ ฤดูสินค้าและสถิติ</span></div>${cargoCalHTML()}`:""}`;
 }
@@ -2945,7 +2947,7 @@ function bindView(rest){
   $$("[data-claim]").forEach(b=>b.onclick=()=>claimMission(+b.dataset.claim,b));
   {const pb=$("#perkbtn");if(pb)pb.onclick=()=>openSheet(perkSheet())}
   $$("[data-go]").forEach(b=>b.onclick=()=>{tab=b.dataset.go;renderView(true)});
-  bindWishes();const nr=$("#newr");if(nr)nr.onclick=()=>openSheet(newRouteSheet({from:S.hub,kind:rseg}));
+  bindWishes();const nr=$("#newr");if(nr)nr.onclick=()=>openSheet(newRouteSheet({from:S.hub,kind:rseg}));const bp=$("#bulkp");if(bp)bp.onclick=()=>openSheet(bulkPriceSheet({mode:"auto",f:1,flt:"all"}));
   $$("[data-rseg]").forEach(b=>b.onclick=()=>setBM(b.dataset.rseg));
   const gb=$("#gobranch");if(gb)gb.onclick=()=>{tab="branch";renderView(true);window.scrollTo(0,0)};
   $$("[data-route]").forEach(b=>b.onclick=()=>openSheet(routeSheet(+b.dataset.route,{})));
@@ -3162,8 +3164,8 @@ function routeSheet(rid,st){
       <input type="range" id="pr" min="${Math.round(c.base*.5)}" max="${Math.round(c.base*2)}" step="10" value="${price}">
       <div class="row between muted num" style="font-size:12px"><span>ถูก</span><span>ราคากลาง ${money(c.base)}</span><span>แพง</span></div>
       <div class="row qprice" style="gap:6px;margin-top:6px">${[["−10%",.9],["ราคากลาง",0],["+10%",1.1],["กำไรสูงสุด",-1]].map(([n,f])=>`<button class="btn sm" data-qp="${f}">${n}</button>`).join("")}</div>
-      <canvas class="dchart" id="dchart" aria-label="กราฟราคาตั๋วกับจำนวนผู้โดยสาร"></canvas>
-      <div class="dlegend small muted"><span><i style="background:var(--route)"></i>คนอยากบิน</span><span><i style="background:var(--muted)"></i>ที่นั่ง</span><span><i style="background:var(--accent)"></i>กำไร/วัน</span><span><i style="background:var(--ink)"></i>ราคาที่เลือก</span></div></div>
+      <div id="ptab">${priceTableHTML(r,price)}</div>
+</div>
 `}     <div class="stack" style="gap:6px"><span class="eyebrow">การออกเดินทาง</span><div class="seg"><button data-spread="1" class="${r.spread!==false?"on":""}">⏱ เว้นระยะเท่ากัน</button><button data-spread="0" class="${r.spread===false?"on":""}">🎲 ออกตามสะดวก</button></div>
       <div class="muted small">${(()=>{const gh=spreadGapH(r);if(gh==null)return "มีเครื่องบินลำเดียวในเส้นทางนี้ ยังไม่ต้องเว้นระยะ";
         return r.spread!==false?`เครื่อง ${r.planes.length} ลำออกจาก ${r.from} สลับกันทุก ~${gh<1?Math.round(gh*60)+" นาที":gh.toFixed(1)+" ชม."} ครึ่งหนึ่งรอที่ ${r.dest} ไม่ออกพร้อมกัน · จำนวนเที่ยวและรายได้เท่าเดิม`:"แต่ละลำออกตามเวลาของตัวเอง อาจออกติดๆ กันได้ · จำนวนเที่ยวและรายได้เท่าเดิม"})()}</div></div>
@@ -3196,14 +3198,14 @@ function routeSheet(rid,st){
      <button class="btn danger" id="close">${st.confirm?"ยืนยันปิด"+(bkPax(r)+bkCargo(r)>=1?" (ของสะสมจะหาย)":""):"ปิดเส้นทาง"}</button></div>`;
     return out};
   fn.bind=()=>{const r=S.routes.find(x=>x.id===rid);if(!r)return;
-    const preview=v=>{st.price=v;const c=calc(r,v);$("#pr").value=v;$("#pv").textContent=money(v);$("#kv").innerHTML=kvHTML(c);$("#bd").innerHTML=breakdownHTML(c);$("#fc").innerHTML=forecastHTML(r,c);$("#savep").disabled=false;demandChart($("#dchart"),r,v)};
+    const preview=v=>{st.price=v;const c=calc(r,v);$("#pr").value=v;$("#pv").textContent=money(v);$("#kv").innerHTML=kvHTML(c);$("#bd").innerHTML=breakdownHTML(c);$("#fc").innerHTML=forecastHTML(r,c);$("#savep").disabled=false;const pt=$("#ptab");if(pt)pt.innerHTML=priceTableHTML(r,v)};
+    const ptb=$("#ptab");if(ptb)ptb.onclick=e=>{const t=e.target.closest("[data-pt]");if(t)preview(+t.dataset.pt)};
     const pr=$("#pr");if(pr)pr.oninput=()=>preview(+pr.value);
     $$("[data-qp]").forEach(b=>b.onclick=()=>{const f=+b.dataset.qp,base=baseFare(rd(r)),cur=st.price??priceOf(r);let v=f===0?base:f>0?cur*f:bestPrice(r);preview(Math.round(clamp(v,base*.5,base*2)/10)*10)});
     $$("[data-rsvc]").forEach(b=>b.onclick=()=>{const i=+b.dataset.rsvc;r.svc=i===S.service?undefined:i;if(r.svc===undefined)delete r.svc;r.last=null;save();toast(`${fno(r)} ใช้บริการ${SERVICE[i].n}`);drawSheet()});
     const sd=$("#svcdef");if(sd)sd.onclick=()=>{delete r.svc;r.last=null;save();drawSheet()};
     const svb=$("#savep");if(svb)svb.onclick=()=>{r.price=st.price;r.pmode="manual";st.price=undefined;r.last=null;save();toast("ตั้งราคาใหม่แล้ว");drawSheet()};
     $$("[data-pmode]").forEach(b=>b.onclick=()=>{if(b.dataset.pmode==="auto"){r.pmode="auto"}else{r.price=priceOf(r);r.pmode="manual"}st.price=undefined;r.last=null;save();drawSheet()});
-    demandChart($("#dchart"),r,st.price??priceOf(r));
     $$("[data-freq]").forEach(b=>b.onclick=()=>{r.freq=b.dataset.freq;r.last=null;save();drawSheet()});
     {const ab=$("#advgo");if(ab)ab.onclick=()=>{const a=airAdvice(r,calc(r));if(!a.act)return;
       if(a.act.plane){const p=plane(a.act.plane);p.ck=a.act.ck;r.last=null;save();toast(`${p.reg} เปลี่ยนไปขน ${CK_E[a.act.ck]} ${CK_N[a.act.ck]}`);drawSheet()}
@@ -3249,6 +3251,37 @@ function cargoKV(c){const ld=c.ccap?Math.min(c.cdem,c.ccap)/c.ccap:0;return `<di
  <div><div class="k">ระวาง/วัน</div><div class="v">${Math.round(c.ccap).toLocaleString()} ตัน</div></div>
  <div><div class="k">ระวางเต็ม</div><div class="v">${Math.round(ld*100)}%</div></div>
  <div><div class="k">รายได้สินค้า/วัน</div><div class="v good">${money(c.crev,true)}</div></div>`}
+/* What happens at other prices, as plain numbers: passengers a day, how full the seats are, and profit a day.
+   Tap a row to try that price. */
+function priceTableHTML(r,cur){const base=baseFare(rd(r)),best=Math.round(bestPrice(r)/10)*10,set=new Map();
+  for(const f of [.8,.9,1,1.1,1.2,1.35])set.set(Math.round(base*f/10)*10,"");
+  set.set(Math.round(cur/10)*10,"cur");set.set(best,set.get(best)==="cur"?"cur best":"best");
+  const rows=[...set.entries()].sort((a,b)=>a[0]-b[0]).map(([pr,t])=>{const c=calc(r,pr),pct=Math.round(pr/base*100);
+    return `<button class="ptr ${t.includes("cur")?"cur":""}" data-pt="${pr}"><span class="num">${money(pr)}<small class="muted"> ${pct}%</small>${t.includes("best")?' <small class="good">★ กำไรสูงสุด</small>':""}</span><span class="num">${(c.pax||0).toLocaleString()}</span>${lfTag(c.lf,"")}<span class="num ${c.profit<0?"bad":"good"}">${c.profit>=0?"+":""}${money(c.profit,true)}</span></button>`}).join("");
+  return `<div class="ptab"><div class="ptr ph"><span>ราคา (เทียบราคากลาง)</span><span>คน/วัน</span><span>ที่นั่งเต็ม</span><span>กำไร/วัน</span></div>${rows}</div><div class="muted small">แตะแถวเพื่อลองราคานั้น แล้วกด “บันทึกราคา”</div>`}
+/* Set the ticket price of many routes in one go: all automatic, a share of the standard fare, a step up or down from
+   today's price, or each route's most profitable price. Shows what it would do to profit and seat load before applying. */
+function bulkPriceSheet(st){const fn=()=>{const all=S.routes.filter(r=>rkind(r)==="pax"&&r.planes.length);
+   const cal=all.map(r=>({r,c:calc(r,priceOf(r))}));
+   const pick=cal.filter(({c})=>st.flt==="full"?c.lf>=.95:st.flt==="empty"?c.lf<.7:true);
+   const newP=({r})=>{const base=baseFare(rd(r)),cur=priceOf(r);return st.mode==="auto"?null:st.mode==="base"?Math.round(base*st.f/10)*10:st.mode==="rel"?Math.round(clamp(cur*st.f,base*.5,base*2)/10)*10:Math.round(bestPrice(r)/10)*10};
+   const res=pick.map(x=>{const np=newP(x),c2=np==null?(x.r.pmode==="auto"?x.c:calc({...x.r,pmode:"auto"},null)):calc(x.r,np);return {...x,np,c2,np2:np==null?c2.price:np}});
+   const sum=(L,f)=>L.reduce((a,x)=>a+f(x),0),p0=sum(res,x=>x.c.profit),p1=sum(res,x=>x.c2.profit),l0=sum(res,x=>x.c.pax)/Math.max(1,sum(res,x=>x.c.cap)),l1=sum(res,x=>x.c2.pax)/Math.max(1,sum(res,x=>x.c2.cap));
+   const seg=(k,v,n)=>`<button data-bk="${k}:${v}" class="${String(st[k])===String(v)?"on":""}">${n}</button>`;
+   let h=head("🏷️ ปรับราคาทุกเส้นทาง","เลือกวิธีและเส้นทางที่จะปรับ ดูผลก่อน แล้วกดใช้ทีเดียว");
+   h+=`<div class="stack" style="gap:6px"><span class="eyebrow">วิธีปรับ</span><div class="seg">${seg("mode","auto","อัตโนมัติทั้งหมด")}${seg("mode","best","กำไรสูงสุด")}${seg("mode","base","ตามราคากลาง")}${seg("mode","rel","ขึ้น/ลงจากเดิม")}</div>
+     ${st.mode==="base"?`<div class="seg scrollx">${[.8,.9,1,1.1,1.2,1.3].map(f=>seg("f",f,Math.round(f*100)+"%")).join("")}</div>`:""}
+     ${st.mode==="rel"?`<div class="seg">${[.9,.95,1.05,1.1].map(f=>seg("f",f,(f>1?"+":"−")+Math.round(Math.abs(f-1)*100)+"%")).join("")}</div>`:""}
+     <div class="muted small">${st.mode==="auto"?"ระบบปรับราคาให้เองทุกวัน ตามจำนวนคน":st.mode==="best"?"ตั้งราคาที่คาดว่ากำไรต่อวันสูงสุดของแต่ละเส้น (ตั้งเอง ไม่เปลี่ยนตามวัน)":st.mode==="base"?`ทุกเส้นใช้ราคา ${Math.round(st.f*100)}% ของราคากลางของเส้นนั้น`:`ทุกเส้น${st.f>1?"ขึ้น":"ลด"}ราคา ${Math.round(Math.abs(st.f-1)*100)}% จากราคาตอนนี้`}</div>
+     <span class="eyebrow">เส้นทางที่จะปรับ</span><div class="seg">${seg("flt","all",`ทุกเส้น (${cal.length})`)}${seg("flt","full",`ที่นั่งเต็ม ≥95% (${cal.filter(x=>x.c.lf>=.95).length})`)}${seg("flt","empty",`ที่นั่งเต็ม <70% (${cal.filter(x=>x.c.lf<.7).length})`)}</div></div>`;
+   h+=`<div class="panel stack" style="gap:4px"><div class="row between"><span>กำไรรวม/วัน</span><b class="num">${money(p0,true)} → <span class="${p1>=p0?"good":"bad"}">${money(p1,true)}</span></b></div>
+     <div class="row between"><span>ที่นั่งเต็มเฉลี่ย</span><b class="num">${Math.round(l0*100)}% → ${Math.round(l1*100)}%</b></div>
+     <button class="btn primary" id="bkgo" ${res.length?"":"disabled"}>ใช้กับ ${res.length} เส้นทาง</button></div>`;
+   h+=`<div class="ptab"><div class="ptr ph"><span>เส้นทาง</span><span>ราคา</span><span>ที่นั่งเต็ม</span><span>กำไร/วัน</span></div>${res.map(x=>`<div class="ptr"><span class="num">${x.r.from}→${x.r.dest}</span><span class="num">${money(priceOf(x.r),true)}→${money(x.np2,true)}</span><span class="num">${Math.round(x.c.lf*100)}→${Math.round(x.c2.lf*100)}%</span><span class="num ${x.c2.profit>=x.c.profit?"good":"bad"}">${money(x.c2.profit,true)}</span></div>`).join("")}</div>`;
+   fn.res=res;return h};
+ fn.bind=()=>{$$("[data-bk]").forEach(b=>b.onclick=()=>{const [k,v]=b.dataset.bk.split(":");st[k]=k==="f"?+v:v;if(k==="mode")st.f=v==="base"?1:v==="rel"?1.05:1;drawSheet()});
+   const g=$("#bkgo");if(g)g.onclick=()=>{for(const x of fn.res){if(x.np==null)x.r.pmode="auto";else{x.r.price=x.np;x.r.pmode="manual"}x.r.last=null}save();toast(`ปรับราคา ${fn.res.length} เส้นทางแล้ว`);closeSheet()}};
+ return fn}
 function bestPrice(r){const base=baseFare(rd(r));let best=base,bp=-Infinity;for(let i=0;i<=60;i++){const pr=base*(.5+1.5*i/60),pf=calc(r,pr).profit;if(pf>bp){bp=pf;best=pr}}return best}
 // Plain-language daily forecast for one route
 function bkLineHTML(r){const K=rkind(r)==="cargo",np=bkPax(r),nc=bkCargo(r),parts=[];if(!K&&np>=1)parts.push(`<b class="num">${np.toLocaleString()}</b> คน`);if(nc>=1)parts.push(`<b class="num">${nc.toLocaleString()}</b> ตัน`);
