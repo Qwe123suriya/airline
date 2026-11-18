@@ -1019,8 +1019,31 @@ const relAdd=(id,d)=>{S.rel=S.rel||{};S.rel[id]=clamp(relOf(id)+d,0,100)};
 function dealCost(k,pid){const dp=Math.max(2e6,avgDailyProfit()),L=S.last||{};
   return Math.round({codeshare:dp*3,truce:dp*4+2e6*S.routes.filter(r=>r.cmp&&("rv:"+r.cmp.rv)===pid).length,tourism:8e6+(pid.startsWith("tour:")?city(pid.slice(5)).w*1.5e6:0),
     fuel:Math.max(5e6,((L.fuelC||0)+(L.sfuel||0))*2.5),freight:Math.max(6e6,dp*2),fleetdeal:5e6+S.fleet.length*1e6,airport:6e6+(pid.startsWith("apt:")?city(pid.slice(4)).w*2e6:0)}[k]/1e5)*1e5}
-function dealChance(k,pid,disc){const rel=relOf(pid),st=S.rating?S.rating.overall:3;
-  return clamp(.15+(rel-40)/70+(st-3)*.08+(S.rep-50)/250-(disc||0),.05,.95)}
+/* Would the partner say yes? Each partner weighs what is in it for them, and we show their reasons.
+   Suppliers (fuel, aircraft, logistics) want a big customer; tourism boards and airports want the airline that brings
+   people; rival airlines: small ones like teaming up with the leader, a rival losing a price war wants peace. */
+function dealWhy(k,pid){const out=[],add=(v,t)=>out.push([v,t]),L=S.last||{},rk=rank(),n=S.rivals.length+1,rel=relOf(pid);
+  const big=(n-rk)/(n-1);   // 1 for #1, 0 for last
+  if(pid.startsWith("rv:")){const rv=S.rivals.find(x=>"rv:"+x.n===pid),theirs=rv?rivalScore(rv):1,ratio=theirs/Math.max(1,myScore());
+    const fights=S.routes.filter(r=>r.cmp&&("rv:"+r.cmp.rv)===pid),losing=fights.filter(r=>(r.cmp.share??compShare(r,priceOf(r)))>.5).length;
+    if(k==="codeshare"){if(ratio<.5)add(.35,`${rv?rv.n:""}เล็กกว่าเรามาก อยากได้ผู้โดยสารจากเครือข่ายเรา`);else if(ratio<.9)add(.15,"เล็กกว่าเรา ร่วมมือแล้วได้ประโยชน์");else if(ratio<1.1)add(-.15,"ขนาดใกล้เคียงเรา กลัวเสียลูกค้าให้เรา");else add(.05,"ใหญ่กว่าเรา แต่สนใจเครือข่ายของเรา");
+      if(fights.length)add(-.12*Math.min(3,fights.length),`กำลังแย่งเส้นทางกับเราอยู่ ${fights.length} เส้น`)}
+    else{if(losing)add(.25+.1*Math.min(3,losing),`กำลังแพ้สงครามราคากับเรา ${losing} เส้นทาง อยากหยุดเสียเงิน`);else if(fights.length)add(-.05,"กำลังแข่งกับเราแต่ยังไม่แพ้ ยังไม่อยากถอย");else add(-.25,"ไม่ได้แข่งกับเราอยู่ ไม่รู้จะสงบศึกเรื่องอะไร");
+      if(ratio<.6)add(.15,"เล็กกว่าเรามาก ไม่อยากสู้ต่อ")}
+    if(rk===1)add(.1,"เราเป็นอันดับ 1 ใครๆ ก็อยากอยู่ข้างผู้นำ")}
+  else{add(.35*big,`เราอยู่อันดับ ${rk} จาก ${n}${rk===1?" เป็นลูกค้าที่ทุกคนอยากได้":""}`);
+    if(k==="fuel"){const f=(L.fuelC||0)+(L.sfuel||0);add(clamp(f/30e6,0,1)*.3,`เราซื้อน้ำมันวันละ ${money(f,true)}`)}
+    else if(k==="fleetdeal"){add(clamp(S.fleet.length/25,0,1)*.3,`เรามีเครื่องบิน ${S.fleet.length} ลำ`);if(S.cash>3e9)add(.1,"เรามีเงินพร้อมซื้อเครื่องเพิ่ม")}
+    else if(k==="freight"){const t=(L.cargo||0)+(L.teu||0)*.5;add(clamp(t/600,0,1)*.3,`เราขนสินค้าวันละ ~${Math.round(t).toLocaleString()} ตัน/ตู้`);if(t<20)add(-.2,"เรายังแทบไม่ได้ขนสินค้า")}
+    else if(k==="tourism"){const c=pid.slice(5),pax=S.routes.filter(r=>r.dest===c||r.from===c).reduce((a,r)=>a+((r.last&&r.last.pax)||0),0);add(clamp(pax/1500,0,1)*.35,`เราพาคนมา${city(c).n}วันละ ${pax.toLocaleString()} คน`);if(!pax)add(-.25,"เรายังไม่มีเที่ยวบินมาเมืองนี้")}
+    else if(k==="airport"){const c=pid.slice(4),nr=S.routes.filter(r=>r.from===c||r.dest===c).length;add(clamp(nr/10,0,1)*.3,`เรามี ${nr} เส้นทางที่สนามบินนี้`)}}
+  if(rel>=65)add(.1,"ความสัมพันธ์ดี");else if(rel<35)add(-.2,"ความสัมพันธ์ไม่ค่อยดี");
+  const st=S.rating?S.rating.overall:3;if(st>=4)add(.05,`เรตติ้ง ${st.toFixed(1)} ดาว`);else if(st<2.8)add(-.08,`เรตติ้งต่ำ ${st.toFixed(1)} ดาว`);
+  return out}
+function dealChance(k,pid,disc){return clamp(.3+dealWhy(k,pid).reduce((a,x)=>a+x[0],0)-(disc||0),.03,.97)}
+// clear-cut answers are certain: very attractive offers are always accepted, very poor ones always refused
+const dealDecide=ch=>ch>=.8?true:ch<=.2?false:Math.random()<ch;
+const chanceTxt=ch=>ch>=.8?"ตกลงแน่นอน":ch<=.2?"ไม่ตกลงแน่นอน":`โอกาสตกลง ${Math.round(ch*100)}%`;
 const dealKindsFor=p=>Object.entries(DEALS).filter(([k,d])=>d.who===p.kind).map(([k])=>k);
 function startDeal(k,pid,cost,days){S.cash-=cost;S.deals=[...(S.deals||[]).filter(d=>d.until>S.day),{k,p:pid,until:S.day+(days||DEALS[k].days),from:S.day}];relAdd(pid,8);
   if(k==="truce"){for(const r of S.routes)if(r.cmp&&("rv:"+r.cmp.rv)===pid){delete r.cmp;r.cmpCool=S.day+DEALS.truce.days}}
@@ -1028,8 +1051,9 @@ function startDeal(k,pid,cost,days){S.cash-=cost;S.deals=[...(S.deals||[]).filte
 // we ask a partner
 function proposeDeal(k,pid){const c=dealCost(k,pid);if(S.cash<c)return toast("เงินไม่พอ");
   S.dcool=S.dcool||{};if((S.dcool[pid]||0)>S.day)return toast(`${partnerOf(pid).n} ยังไม่พร้อมคุยอีก ${S.dcool[pid]-S.day} วัน`);
-  if(Math.random()<dealChance(k,pid)){startDeal(k,pid,c);celebrate("!🤝 ตกลงความร่วมมือ",`${DEALS[k].n} · ${partnerOf(pid).n}`);return true}
-  relAdd(pid,-4);S.dcool[pid]=S.day+8;addNews(`🙅 ${partnerOf(pid).n} ปฏิเสธข้อเสนอ ${DEALS[k].n} ลองใหม่ได้ใน 8 วัน`);toast(`${partnerOf(pid).n} ปฏิเสธ · ความสัมพันธ์ลดลงเล็กน้อย`);save();return false}
+  if(dealDecide(dealChance(k,pid))){startDeal(k,pid,c);celebrate("!🤝 ตกลงความร่วมมือ",`${DEALS[k].n} · ${partnerOf(pid).n}`);return true}
+  const no=dealWhy(k,pid).filter(x=>x[0]<0).map(x=>x[1]);
+  relAdd(pid,-4);S.dcool[pid]=S.day+8;addNews(`🙅 ${partnerOf(pid).n} ปฏิเสธข้อเสนอ ${DEALS[k].n}${no.length?` เพราะ${no[0]}`:""} ลองใหม่ได้ใน 8 วัน`);toast(`${partnerOf(pid).n} ปฏิเสธ · ความสัมพันธ์ลดลงเล็กน้อย`);save();return false}
 // partners ask us (a few times a month); each request can be accepted, countered (ask for a better deal) or declined
 function dealTick(){if(!has("deals"))return;S.req=(S.req||[]).filter(q=>q.until>S.day);
   if(S.req.length>=3||Math.random()>.12)return;
@@ -1041,7 +1065,7 @@ function dealTick(){if(!has("deals"))return;S.req=(S.req||[]).filter(q=>q.until>
 function answerReq(id,a){const q=(S.req||[]).find(x=>x.id===id);if(!q)return;const p=partnerOf(q.p);
   if(a==="yes"){if(S.cash<q.cost)return toast("เงินไม่พอ");startDeal(q.k,q.p,q.cost);if(q.bonus){S.cash+=q.bonus;floatCash(q.bonus)}relAdd(q.p,4);toast(`ตกลงกับ ${p.n} แล้ว`)}
   else if(a==="counter"){// ask them back for more: a longer deal for the same price, or a bigger discount
-    if(Math.random()<dealChance(q.k,q.p,.15)){startDeal(q.k,q.p,Math.round(q.cost*.8/1e5)*1e5,Math.round(DEALS[q.k].days*1.5));toast(`${p.n} ยอมตามข้อเสนอ: ถูกลง 20% และนานขึ้น 50%`)}
+    if(dealDecide(dealChance(q.k,q.p,.15))){startDeal(q.k,q.p,Math.round(q.cost*.8/1e5)*1e5,Math.round(DEALS[q.k].days*1.5));toast(`${p.n} ยอมตามข้อเสนอ: ถูกลง 20% และนานขึ้น 50%`)}
     else{relAdd(q.p,-6);addNews(`😤 ${p.n} ไม่ยอมต่อรอง ${DEALS[q.k].n} ยกเลิกคำขอ`);toast(`${p.n} ไม่ยอม ยกเลิกคำขอแล้ว`)}}
   else{relAdd(q.p,-3);toast(`ปฏิเสธ ${p.n} แล้ว`)}
   S.req=S.req.filter(x=>x!==q);save();renderView()}
@@ -1049,18 +1073,20 @@ function dealsHTML(){if(!has("deals"))return "";const reqs=(S.req||[]).filter(q=
   return secHead("🤝","ความร่วมมือ","ขอความร่วมมือกับคนอื่น หรือรับคำขอจากเขา")+
    (reqs.length?`<div class="panel stack"><span class="eyebrow">📨 คำขอที่เข้ามา · เขาอยากร่วมมือกับเรา</span>${reqs.map(q=>{const p=partnerOf(q.p),d=DEALS[q.k],full=dealCost(q.k,q.p),ch=Math.round(dealChance(q.k,q.p,.15)*100);return `<div class="dreq"><div class="row" style="gap:8px"><span class="cav">${p.e}</span><div style="min-width:0;flex:1"><b>${esc(p.n)}</b> <span class="muted small">· ${p.sub}</span><div class="small">เสนอ <b>${d.e} ${d.n}</b></div></div></div>
       <div class="dterms small"><span>ได้อะไร</span><b>${d.fx}</b><span>นานเท่าไร</span><b>${d.days} วัน</b><span>${q.bonus?"เงิน":"เราจ่าย"}</span><b class="${q.bonus?"good":""}">${q.bonus?`เขาจ่ายให้เรา ${money(q.bonus,true)} (เราไม่ต้องจ่าย)`:`${money(q.cost,true)} <span class="muted">(ถ้าเราไปขอเองต้องจ่าย ${money(full,true)})</span>`}</b><span>ตอบภายใน</span><b>${q.until-S.day} วัน</b><span>ความสัมพันธ์</span><b>${relTxt(q.p)}</b></div>
-      <div class="row" style="gap:6px"><button class="btn sm primary" data-req="${q.id}:yes" ${S.cash<q.cost?"disabled":""}>✓ ตกลง</button><button class="btn sm" data-req="${q.id}:counter">↩ ต่อรอง</button><button class="btn sm" data-req="${q.id}:no">✕ ปฏิเสธ</button></div>
-      <div class="muted small">↩ ต่อรอง = ขอให้ถูกลงอีก 20% และนานขึ้น 50% · โอกาสเขายอม ${ch}% · ถ้าไม่ยอม คำขอจะหายและความสัมพันธ์ลด · ✕ ปฏิเสธ = ความสัมพันธ์ลดเล็กน้อย</div></div>`}).join("")}</div>`:"")+
+      <div class="row" style="gap:6px"><button class="btn sm primary" data-req="${q.id}:yes" ${S.cash<q.cost?"disabled":""}>✓ ตกลง</button><button class="btn sm" data-req="${q.id}:counter">↩ ต่อรอง<br><small>${chanceTxt(dealChance(q.k,q.p,.15))}</small></button><button class="btn sm" data-req="${q.id}:no">✕ ปฏิเสธ</button></div>
+      <div class="muted small">↩ ต่อรอง = ขอให้ถูกลงอีก 20% และนานขึ้น 50% · ${ch>=80?"เขายอมแน่นอน":ch<=20?"เขาไม่ยอมแน่นอน":`โอกาสเขายอม ${ch}%`} · ถ้าไม่ยอม คำขอจะหายและความสัมพันธ์ลด · ✕ ปฏิเสธ = ความสัมพันธ์ลดเล็กน้อย</div></div>`}).join("")}</div>`:"")+
    `<div class="panel stack"><div class="row between"><span class="eyebrow">✅ ดีลที่ใช้อยู่ ${act.length}</span><button class="btn sm primary" id="dealnew">+ ขอความร่วมมือ</button></div>
      ${act.length?act.map(d=>{const p=partnerOf(d.p),D=DEALS[d.k];return `<div class="dact"><span>${D.e}</span><div style="min-width:0;flex:1"><b class="small">${D.n}</b> <span class="muted small">กับ ${esc(p.n)}</span><div class="small muted">${D.fx}</div></div><span class="num small">${d.until-S.day} วัน</span></div>`}).join(""):`<div class="muted small">ยังไม่มีดีล กด “ขอความร่วมมือ” เพื่อเลือกพันธมิตรและข้อเสนอ</div>`}</div>`}
 function dealSheet(st){const fn=()=>{const ps=partners();st.p=st.p&&ps.some(x=>x.id===st.p)?st.p:null;
    let h=head("🤝 ขอความร่วมมือ","1) เลือกพันธมิตร 2) เลือกข้อเสนอที่ด้านล่าง · เปอร์เซ็นต์บนปุ่มคือโอกาสที่เขาจะตกลง ขึ้นกับความสัมพันธ์ เรตติ้ง และชื่อเสียง");
-   h+=`<div class="muted small">แถบสีด้านขวาคือ <b>ความสัมพันธ์</b> กับแต่ละราย: เขียว = ดี · เหลือง = ปกติ · แดง = ไม่ค่อยดี · ตกลงกันได้ความสัมพันธ์เพิ่ม ถูกปฏิเสธหรือแย่งเส้นทางกันความสัมพันธ์ลด</div>`;
+   h+=`<div class="muted small">แต่ละฝ่ายตัดสินใจจากประโยชน์ที่เขาจะได้ ดูเหตุผล ＋ − ใต้ข้อเสนอแต่ละข้อ · ข้อเสนอที่ดีมากเขาตกลงแน่นอน ที่แย่มากปฏิเสธแน่นอน</div><div class="muted small">แถบสีด้านขวาคือ <b>ความสัมพันธ์</b> กับแต่ละราย: เขียว = ดี · เหลือง = ปกติ · แดง = ไม่ค่อยดี · ตกลงกันได้ความสัมพันธ์เพิ่ม ถูกปฏิเสธหรือแย่งเส้นทางกันความสัมพันธ์ลด</div>`;
    const groups=[["rv","✈️ สายการบินคู่แข่ง"],["co","🏢 บริษัท"],["tour","🏝️ เมืองท่องเที่ยว"],["apt","🛫 สนามบินสาขา"]];
    for(const [g,gn] of groups){const L=ps.filter(p=>g==="co"?ORGS[p.kind]:p.kind===g);if(!L.length)continue;
      h+=`<div class="eyebrow" style="margin-top:8px">${gn}</div><div class="pick">${L.map(p=>{const rel=relOf(p.id),cool=(S.dcool||{})[p.id]>S.day,on=dealsOn().filter(d=>d.p===p.id);return `<button data-dp="${p.id}" class="${st.p===p.id?"sel":""}"><span class="cav">${p.e}</span><span style="min-width:0"><b>${esc(p.n)}</b><br><span class="small muted">${p.sub}${on.length?` · ✅ มีดีลอยู่`:""}${cool?" · ⏳ รอคุยใหม่":""}</span></span><span class="relbar"><small>ความสัมพันธ์</small><span class="relt"><i style="width:${rel}%;background:${rel>=55?"var(--good)":rel>=35?"var(--warn)":"var(--bad)"}"></i></span><small class="num">${relTxt(p.id)}</small></span></button>`}).join("")}</div>`}
    if(st.p){const p=partnerOf(st.p);h+=`<div class="panel stack" style="position:sticky;bottom:-20px"><b>${p.e} ${esc(p.n)}</b>${dealKindsFor(p).map(k=>{const D=DEALS[k],c=dealCost(k,p.id),ch=dealChance(k,p.id),on=dealOn(k,p.id);
-       return `<div class="dopt"><div style="min-width:0;flex:1"><b class="small">${D.e} ${D.n}</b> <span class="muted small">${D.days} วัน</span><div class="small muted">${D.fx}</div></div><button class="btn sm primary" data-dk="${k}" ${on||S.cash<c?"disabled":""}>${on?"มีอยู่แล้ว":`เสนอ ${money(c,true)} · โอกาสตกลง ${Math.round(ch*100)}%`}</button></div>`}).join("")}</div>`}
+       return `<div class="dopt"><div style="min-width:0;flex:1"><b class="small">${D.e} ${D.n}</b> <span class="muted small">${D.days} วัน</span><div class="small muted">${D.fx}</div>
+         <div class="why">${dealWhy(k,p.id).map(([v,t])=>`<span class="${v>0?"good":v<0?"bad":"muted"}">${v>0?"＋":v<0?"－":"•"} ${t}</span>`).join("")}</div></div>
+       <button class="btn sm ${ch>.2?"primary":""}" data-dk="${k}" ${on||S.cash<c?"disabled":""}>${on?"มีอยู่แล้ว":`เสนอ ${money(c,true)}<br><small>${chanceTxt(ch)}</small>`}</button></div>`}).join("")}</div>`}
    return h};
  fn.bind=()=>{$$("[data-dp]").forEach(b=>b.onclick=()=>{st.p=b.dataset.dp;drawSheet()});
    $$("[data-dk]").forEach(b=>b.onclick=()=>{proposeDeal(b.dataset.dk,st.p);drawSheet()})};
