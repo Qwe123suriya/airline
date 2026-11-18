@@ -517,7 +517,7 @@ function save(){try{if(S)localStorage.setItem(KEY,JSON.stringify(S));else localS
 function migrate(s){
   s.bases??=[s.hub];s.mkt??=null;s.hedge??=null;s.ach??=[];s.autoMx??=true;s.totCargo??=0;
   s.apT??={};s.apY??={};
-  s.rivals??=RIVALS.map((n,i)=>({n,v:s.startCap*[1.5,4,12][i]}));
+  s.rivals??=RIVALS.map((n,i)=>({n,v:s.startCap*[1.5,3,6][i]}));
   for(const [n,f] of [["อันดามันแอร์",.8],["เมฆาเวย์",2.5]])if(!s.rivals.some(r=>r.n===n))s.rivals.push({n,v:s.startCap*f});
   for(const r of s.routes){r.from??=s.hub;r.h??=[]}
   for(const r of s.routes.slice()){if(r.kind)continue;r.kind="pax";
@@ -962,8 +962,8 @@ function simDay(){
   const target=(wsum?wrep/wsum:SERVICE[S.service].rep)-(avgCond<60?(60-avgCond)*.5:0);
   S.rep=clamp(S.rep+(target-S.rep)*.03,0,100);
   {const prev=standings();prev.forEach((x,i)=>{if(x.me)S.prank=i+1;else{const rv=S.rivals.find(r=>r.n===x.n);if(rv)rv.prank=i+1}})}
-  rivalTurn();leagueTick();dealTick();
-  for(const rv of S.rivals){rv.ops=(rv.ops||0)+rv.v/2e6*.07*(.6+Math.random()*.8);rv.v*=1+.0015+(Math.random()-.5)*.012;rv.st=clamp(rivalStars(rv)+(Math.random()-.5)*.06,2.5,4.8)}
+  rivalTurn();leagueTick();dealTick();catTick();
+  for(const rv of S.rivals){rv.ops=(rv.ops||0)+rvCat(rv,"pax")/70+rvCat(rv,"cargo")/1.4+rvCat(rv,"sea")/10;rv.v*=1+.0015+(Math.random()-.5)*.012;rv.st=clamp(rivalStars(rv)+(Math.random()-.5)*.06,2.5,4.8)}
   S.hist.push({d:S.day,c:S.cash,r:rev,x:cost});if(S.hist.length>365)S.hist.shift();
   {const had=suezShut();S.events=S.events.filter(e=>e.until>S.day);if(had&&!suezShut()){seaCache.clear();addNews("🚢 คลองสุเอซเปิดใช้ได้อีกครั้ง")}}
   if(S.mkt&&S.mkt.until<=S.day){addNews(`📣 แคมเปญ${S.mkt.n}จบแล้ว`);S.mkt=null}
@@ -1143,9 +1143,9 @@ function rivalTurn(){
     r.cmp.weak=sh>RV_EXIT_SHARE?(r.cmp.weak||0)+1:Math.max(0,(r.cmp.weak||0)-1);
     if(r.cmp.weak>=RV_EXIT_DAYS+Math.round(8*Math.max(0,botLv()))||(S.day-r.cmp.since>60&&sh>.5&&Math.random()<.01)){addNews(`🏳️ ${r.cmp.rv} ถอนตัวจาก ${r.from}→${r.dest} คุณครองเส้นทางนี้แล้ว`);celebrate("!ชนะศึกเส้นทาง",`${r.from}→${r.dest}`);S.rep=clamp(S.rep+2,0,100);delete r.cmp;r.cmpCool=S.day+90}}
   // rivals keep pace: they grow faster when you pull ahead and from every route they fight you on
-  const mySc=myScore();S.rivals.forEach((rv,i)=>{const fights=S.routes.filter(r=>r.cmp&&r.cmp.rv===rv.n).length,aim=rvAim(rv,i);
-    const tgt=Math.max(1,mySc)*Math.max(.4,aim+.12*botLv()),gap=(tgt-rivalScore(rv))/tgt;
-    rv.v*=1+(gap>0?.0015+.02*Math.min(1,gap*1.5):-.005*Math.min(1,-gap))+.0004*Math.min(fights,5);
+  S.rivals.forEach((rv,i)=>{const fights=S.routes.filter(r=>r.cmp&&r.cmp.rv===rv.n).length,aim=rvAim(rv,i);
+    const tgt=Math.max(S.startCap||1,myV)*Math.max(.4,aim+.12*botLv()),gap=(tgt-rv.v)/tgt;
+    rv.v*=1+(gap>0?.0015+.02*Math.min(1,gap*1.5):-.008*Math.min(1,-gap))+.0004*Math.min(fights,5);
     rv.ops=(rv.ops||0)+Math.min(fights,5)*3});
   rankNews()}
 /* Rival ambition: each airline chases its own share of your company's size (some aim to be bigger than you, some a
@@ -1158,6 +1158,57 @@ function rvAim(rv,i){if(rv.aim==null)rv.aim=RV_AIMS[(i+(S.code||"A").charCodeAt(
   return rv.aim}
 const rvStance=n=>{const rv=S.rivals.find(x=>x.n===n);if(!rv||rv.aim==null)return "";const a=rv.aim;
   return a>=1.05?' <span class="stance bad">🔥 ขยายเชิงรุก</span>':a>=.92?' <span class="stance">⚖️ โตต่อเนื่อง</span>':' <span class="stance good">🐢 ระมัดระวัง</span>'};
+/* ---------- category races ----------
+   Besides the overall table, airlines race in separate categories. Each rival has its own strengths: how its
+   business is split between passengers, air freight and shipping, and how good its service is. A rival's numbers
+   come from its size × its share in that business × what a typical fleet of that kind carries per baht. */
+const RV_PROF={
+  "นภาคราม แอร์ไลน์":{pax:.85,cargo:.1,sea:.05,st:3.7,tag:"✈️ ผู้โดยสาร"},
+  "โกลเด้นวิง":{pax:.35,cargo:.55,sea:.1,st:3.4,tag:"📦 สินค้าทางอากาศ"},
+  "สกายดราก้อน":{pax:.55,cargo:.25,sea:.2,st:3.6,tag:"⚖️ รอบด้าน"},
+  "อันดามันแอร์":{pax:.8,cargo:.15,sea:.05,st:4.5,tag:"⭐ บริการ"},
+  "เมฆาเวย์":{pax:.25,cargo:.15,sea:.6,st:3.3,tag:"🚢 เดินเรือ"}};
+const rvProf=rv=>RV_PROF[rv.n]||{pax:.6,cargo:.25,sea:.15,st:3.6,tag:"⚖️ รอบด้าน"};
+// what a typical fleet of each kind carries per day for each baht of company value (fleet ≈ 60% of value)
+let _catK=null,KX={pax:1.7,cargo:1.4,sea:1};function catK(){if(_catK)return _catK;const med=a=>{a.sort((x,y)=>x-y);return a[a.length>>1]||0};
+  const pax=med(MODELS.filter(m=>m.seats).map(m=>legsFor(m,Math.min(1500,m.range*.8))*m.seats*.85/m.price));
+  const cargo=med(MODELS.filter(m=>!m.seats).map(m=>legsFor(m,Math.min(2500,m.range*.8))*m.cargo*.75/m.price));
+  const sea=med(SHIPS.map(m=>m.teu*.75*24/(3000/m.speed+portH(m))/m.price));
+  return _catK={pax:pax*KX.pax,cargo:cargo*KX.cargo,sea:sea*KX.sea}}
+const RACES=[
+  {k:"all",e:"🏆",n:"รวม",u:"คะแนน"},
+  {k:"val",e:"💰",n:"มูลค่า",u:"บาท"},
+  {k:"pax",e:"✈️",n:"ผู้โดยสาร",u:"คน/วัน",need:()=>true},
+  {k:"cargo",e:"📦",n:"สินค้าทางอากาศ",u:"ตัน/วัน",need:()=>has("cargo")},
+  {k:"sea",e:"🚢",n:"เดินเรือ",u:"TEU/วัน",need:()=>has("sea")},
+  {k:"svc",e:"⭐",n:"บริการ",u:"ดาว"}];
+const catList=()=>RACES.filter(c=>!c.need||c.need());
+function myCat(k){const c=S.cat||{};return k==="val"?valuation():k==="svc"?(S.rating?S.rating.overall:0):k==="pax"?c.pax||0:k==="cargo"?c.cargo||0:k==="sea"?c.teu||0:myScore()}
+function rvCat(rv,k){const P=rvProf(rv);if(k==="val")return rv.v;if(k==="svc")return rivalStars(rv);
+  const w=1+.08*Math.sin(S.day/23+rv.n.length);   // busy and quiet weeks
+  return k==="pax"?rv.v*catK().pax*P.pax*w:k==="cargo"?rv.v*catK().cargo*P.cargo*w:k==="sea"?rv.v*catK().sea*P.sea*w:rivalScore(rv)}
+function catBoard(k){return [...S.rivals.map(rv=>({n:rv.n,v:rvCat(rv,k),rv})),{n:S.name,v:myCat(k),me:1}].sort((a,b)=>b.v-a.v)}
+const catRank=k=>catBoard(k).findIndex(x=>x.me)+1;
+const catFmt=(k,v)=>k==="val"?money(v,true):k==="svc"?v.toFixed(1):Math.round(v).toLocaleString();
+const medal=r=>r===1?"🥇":r===2?"🥈":r===3?"🥉":"#"+r;
+function catTick(){const L=S.last||{},e=(o,x)=>o==null?x:o+(x-o)*.2;S.cat=S.cat||{};
+  S.cat.pax=e(S.cat.pax,L.pax||0);S.cat.cargo=e(S.cat.cargo,L.cargo||0);S.cat.teu=e(S.cat.teu,L.teu||0);
+  // service-minded rivals drift toward their own level of service
+  for(const rv of S.rivals){const P=rvProf(rv);rv.st=clamp(rivalStars(rv)+(P.st-rivalStars(rv))*.03,2.5,4.9)}
+  if(!has("rank"))return;S.catTop=S.catTop||{};
+  for(const c of catList()){if(c.k==="all")continue;const B=catBoard(c.k),top=B[0],was=S.catTop[c.k];if(top.n===was)continue;S.catTop[c.k]=top.n;if(was==null)continue;
+    if(top.me){addNews(`${c.e} เราขึ้นอันดับ 1 ด้าน${c.n}แล้ว!`);celebrate("!🥇 อันดับ 1 ด้าน"+c.n,`${catFmt(c.k,top.v)} ${c.u}`)}
+    else if(was===S.name)addNews(`${c.e} ${top.n} แย่งอันดับ 1 ด้าน${c.n}ไปจากเรา`)}}
+let catSeg="all";
+function catHTML(board){const L=catList(),k=L.some(c=>c.k===catSeg)?catSeg:"all",C=RACES.find(c=>c.k===k);
+  const chips=`<div class="catchips">${L.map(c=>`<button data-race="${c.k}" class="${c.k===k?"on":""}">${c.e} ${c.n}<small>${medal(c.k==="all"?rank():catRank(c.k))}</small></button>`).join("")}</div>`;
+  const rows=k==="all"?board.map(b=>({n:b.n,me:b.me,st:b.st,txt:`${b.sc.toLocaleString()}<span class="muted small"> คะแนน</span>`}))
+    :catBoard(k).map(b=>({n:b.n,me:b.me,st:b.me?(S.rating?S.rating.overall:0):rivalStars(b.rv),txt:`${catFmt(k,b.v)}${k==="val"?"":`<span class="muted small"> ${C.u}</span>`}`}));
+  const note=k==="all"?"อันดับรวมจากขนาดบริษัท · กดหมวดด้านบนเพื่อดูการแข่งขันแต่ละด้าน คู่แข่งแต่ละเจ้าเก่งไม่เหมือนกัน":
+    k==="val"?"มูลค่ากิจการ = เงินสด + มูลค่าฝูงบินและกองเรือ − เงินกู้":k==="svc"?"เรตติ้งเฉลี่ยจากผู้โดยสาร (ความตรงเวลา บริการ สภาพเครื่อง)":
+    `ค่าเฉลี่ยต่อวันช่วงหลัง · ${k==="pax"?"เพิ่มเครื่องและเส้นทางผู้โดยสาร":k==="cargo"?"เพิ่มเครื่องบินขนสินค้าและเส้นทางสินค้า":"เพิ่มเรือและเส้นทางเดินเรือ"}เพื่อไต่อันดับด้านนี้`;
+  return `<div class="panel"><div class="eyebrow" style="margin-bottom:6px">📋 ตารางอันดับ</div>${chips}<div class="small muted" style="margin:6px 0">${note}</div>
+    <div class="board">${rows.map((b,i)=>`<div class="r ${b.me?"me":""}"><span class="num muted">${i<3?medal(i+1):"#"+(i+1)}</span><span class="nm" style="min-width:0">${esc(b.n)}<br>${starsHTML(b.st||0,11)} <span class="num muted" style="font-size:11px">${(b.st||0).toFixed(1)}</span>${b.me?"":` <span class="stance">เด่น ${rvProf(S.rivals.find(x=>x.n===b.n)).tag}</span>`+(k==="all"?rvStance(b.n):"")}</span><span class="num">${b.txt}</span></div>`).join("")}</div></div>`}
 // tell the player when the order in the table changes (rate-limited so small back-and-forth isn't spam)
 function rankNews(){if(!has("rank"))return;const B=standings().map(x=>x.n),prev=S.lastOrder;S.lastOrder=B;if(!prev)return;
   for(let i=0;i<B.length;i++){const n=B[i],j=prev.indexOf(n);if(j>i&&n!==S.name&&i<prev.length&&prev[i]!==n){const passed=prev[i];
@@ -1599,7 +1650,7 @@ function companyHTML(){
    ${has("rank")?secHead("⭐","เรตติ้งและความคิดเห็น","ลูกค้า ลูกเรือ และสื่อพูดถึงเรา")+ratingHTML()+commentsHTML():secHead("💬","ความคิดเห็น")+commentsHTML()}
    ${suggestHTML()}
    ${dealsHTML()}
-   ${has("rank")?secHead("🏆","การแข่งขัน")+competeHTML()+`<div class="panel"><div class="eyebrow" style="margin-bottom:4px">📋 ตารางอันดับ</div><div class="board">${board.map((b,i)=>`<div class="r ${b.me?"me":""}"><span class="num muted">#${i+1}</span><span class="nm" style="min-width:0">${esc(b.n)}<br>${starsHTML(b.st||0,11)} <span class="num muted" style="font-size:11px">${(b.st||0).toFixed(1)}</span>${b.me?"":rvStance(b.n)}</span><span class="num">${b.sc.toLocaleString()}<span class="muted small"> คะแนน</span></span></div>`).join("")}</div></div>`:""}
+   ${has("rank")?secHead("🏆","การแข่งขัน")+competeHTML()+catHTML(board):""}
    ${secHead("🎯","เป้าหมายบริษัท")}<div class="panel stack" style="gap:8px"><div class="row between"><div><div class="eyebrow">เป้าหมายถัดไป</div><b>${S.goal>=GOALS.length?"พิชิตครบทุกระดับแล้ว":g[1]}</b></div><span class="num muted small">${money(v,true)} / ${money(g[0],true)}</span></div><div class="bar"><i style="width:${gp}%"></i></div>
      <div class="goals">${GOALS.map((x,i)=>`<span class="${i<S.goal?"done":i===S.goal?"now":""}">${i<S.goal?"✓":i+1} ${x[1]}</span>`).join("")}</div></div>
    ${has("perks")?secHead("🔬","ศูนย์พัฒนา","อัปเกรดถาวร")+perksHTML():""}
@@ -2462,6 +2513,7 @@ function bindWishes(){
   $$("[data-wunlock]").forEach(b=>b.onclick=e=>{e.stopPropagation();openSheet(regionSheet({id:b.dataset.wunlock}))});
   $$("[data-wroute]").forEach(b=>b.onclick=e=>{e.stopPropagation();openSheet(routeSheet(+b.dataset.wroute,{}))});
   $$("[data-brnew]").forEach(b=>b.onclick=e=>{e.stopPropagation();const c=b.dataset.brnew;openBranch(c);if(S.bases.includes(c)){toast(`ตั้งสาขาที่${city(c).n}แล้ว เปิดเส้นทางจากที่นี่ได้เลย`);renderView()}});
+  $$("[data-race]").forEach(b=>b.onclick=e=>{e.stopPropagation();const y=b.getBoundingClientRect().top,sx=b.parentNode.scrollLeft;catSeg=b.dataset.race;renderView();const nb=document.querySelector(`[data-race="${catSeg}"]`);if(nb){nb.parentNode.scrollLeft=sx;window.scrollBy(0,nb.getBoundingClientRect().top-y)}});   // keep the chips where your finger is
   $$("[data-brgo]").forEach(b=>b.onclick=e=>{e.stopPropagation();tab="branch";brSeg=b.dataset.brgo;renderView(true);window.scrollTo(0,0)});
   $$("[data-req]").forEach(b=>b.onclick=e=>{e.stopPropagation();const [id,a]=b.dataset.req.split(":");answerReq(+id,a)});
   {const dn=$("#dealnew");if(dn)dn.onclick=()=>openSheet(dealSheet({}))}
@@ -3203,7 +3255,7 @@ function showOver(){const fn=()=>`<h2>${esc(S.name)} ล้มละลาย</h
   <button class="btn primary block" id="yes">สุ่มชะตาใหม่</button>`;fn.bind=resetSheet.bind;openSheet(fn)}
 
 function guideSheet(){return head("คู่มือระบบ","ทุกระบบในเกมทำงานอย่างไร")+`<div>
-<details class="g" open><summary>เป้าหมายของเกม</summary><div><p>ทำให้มูลค่ากิจการโตจนขึ้นถึงระดับ "ตำนานแห่งท้องฟ้า" และแซงคู่แข่งอีก 5 สายการบินในตารางอันดับ · คู่แข่งแต่ละเจ้ามีแผนของตัวเอง (ขยายเชิงรุก / โตต่อเนื่อง / ระมัดระวัง) และเปลี่ยนแผนได้ทุกไม่กี่สัปดาห์ เจ้าที่ตามหลังเป้าจะเร่งขยาย เจ้าที่นำเกินเป้าจะชะลอ</p><p>มูลค่ากิจการ = เงินสด + มูลค่าขายต่อของฝูงบิน − เงินกู้</p><ul>${GOALS.map(g=>`<li>${g[1]}: ${money(g[0])}</li>`).join("")}</ul></div></details>
+<details class="g" open><summary>เป้าหมายของเกม</summary><div><p>ทำให้มูลค่ากิจการโตจนขึ้นถึงระดับ "ตำนานแห่งท้องฟ้า" และแซงคู่แข่งอีก 5 สายการบินในตารางอันดับ · นอกจากอันดับรวมยังมีการแข่งแยกหมวด: มูลค่า ผู้โดยสาร สินค้าทางอากาศ เดินเรือ และบริการ คู่แข่งแต่ละเจ้าเก่งคนละด้าน (เช่น เมฆาเวย์เด่นเดินเรือ โกลเด้นวิงเด่นสินค้า อันดามันแอร์เด่นบริการ) · คู่แข่งแต่ละเจ้ามีแผนของตัวเอง (ขยายเชิงรุก / โตต่อเนื่อง / ระมัดระวัง) และเปลี่ยนแผนได้ทุกไม่กี่สัปดาห์ เจ้าที่ตามหลังเป้าจะเร่งขยาย เจ้าที่นำเกินเป้าจะชะลอ</p><p>มูลค่ากิจการ = เงินสด + มูลค่าขายต่อของฝูงบิน − เงินกู้</p><ul>${GOALS.map(g=>`<li>${g[1]}: ${money(g[0])}</li>`).join("")}</ul></div></details>
 <details class="g"><summary>เวลาและความเร็ว</summary><div><p>ที่ความเร็ว 1× เวลาในเกม 1 ชั่วโมงเท่ากับ 1.25 วินาทีจริง (1 วัน = 30 วินาที) เครื่องบินบนแผนที่ใช้เวลาบินตามระยะทางและความเร็วจริงของรุ่น กด 3×, 10× หรือ 30× เพื่อเร่ง กด ❚❚ เพื่อหยุดคิด ระบบคิดรายรับรายจ่ายทุกสิ้นวัน และเซฟอัตโนมัติในเบราว์เซอร์นี้</p></div></details>
 <details class="g"><summary>คนอยากบินกี่คน</summary><div><p>แต่ละเส้นทางมีความต้องการผู้โดยสารต่อวัน คำนวณจาก</p><ul><li><b>ขนาดเมือง</b> ทั้งต้นทางและปลายทาง เมืองใหญ่อย่างโตเกียวหรือนิวยอร์กมีคนบินเยอะ</li><li><b>ระยะทาง</b> สั้นกว่า 300 กม. คนนิยมนั่งรถมากกว่า ไกลมากคนก็บินน้อยลง</li><li><b>ราคาตั๋ว</b> ถูกกว่าราคากลางคนเพิ่มขึ้นแรง แพงกว่าคนหายเร็ว</li><li><b>ชื่อเสียง</b> 0–100 ชื่อเสียง 50 คือปกติ</li><li><b>ระดับบริการ</b> การตลาด และเหตุการณ์ เช่น เทศกาลหรือคู่แข่ง</li></ul><p>ผู้โดยสารจริง = น้อยกว่าระหว่างคนอยากบินกับที่นั่งที่มี และมีแกว่งขึ้นลงวันละ ±10%</p></div></details>
 <details class="g"><summary>เที่ยวบินต่อวันและที่นั่ง</summary><div><p>เครื่องบินจริงไม่ได้บิน 24 ชม. ต้องพักกลางคืน ซ่อมบำรุง และใช้เวลาบนพื้นระหว่างเที่ยว (ทำความสะอาด เติมน้ำมัน ขึ้นลงผู้โดยสาร) เกมจึงคิดตามประเภทเครื่อง:</p>

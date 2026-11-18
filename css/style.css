@@ -828,3 +828,10 @@ h1,h2,h3,.eyebrow{letter-spacing:0}
 
 /* rival stance chip */
 .stance{font-size:11px;padding:0 6px;border-radius:99px;background:var(--line,rgba(127,127,127,.15));white-space:nowrap}
+
+/* category races */
+.catchips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.catchips::-webkit-scrollbar{display:none}
+.catchips button{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 10px;border-radius:12px;border:1px solid var(--line,rgba(127,127,127,.25));background:transparent;color:inherit;font:inherit;font-size:12.5px;cursor:pointer}
+.catchips button small{font-size:12px;font-weight:700}
+.catchips button.on{background:var(--accent,#2563eb);border-color:transparent;color:#fff}
