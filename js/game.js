@@ -252,7 +252,7 @@ const aptChip=c=>{const k=aptKind(c),[i,t]=APT_LABEL[k];return `<span class="apt
 const BR_MAX=3;
 const blv=c=>S.bases.includes(c)?(S.blv&&S.blv[c])||1:0;
 const FEE_K=1.5;   // airport + navigation + passenger charges
-const feeOf=c=>c.fee*(1-.15*Math.max(0,blv(c.c)-1))*pk("fee")*(S.deals&&dealOn("airport","apt:"+c.c)?.75:1);
+const feeOf=c=>c.fee*(1-.15*Math.max(0,blv(c.c)-1))*pk("fee")*(S.deals&&dealOn("airport","apt:"+c.c)?1-.25*(dealsOn().find(d=>d.k==="airport"&&d.p==="apt:"+c.c).pw||1):1);
 const brBoost=c=>1+.08*Math.max(0,blv(c)-1);
 function branchCost(c){c=typeof c==="string"?city(c):c;return Math.round((30e6+c.w*8e6)*(1+.3*(S.bases.length-1))/5e6)*5e6}
 function branchUpCost(code){const c=city(code);return Math.round((20e6+c.w*6e6)*blv(code)/5e6)*5e6}
@@ -609,7 +609,7 @@ const PERKS=[["fuel","⛽","เครื่องยนต์ประหยั�
  ["fee","🤝","ดีลสนามบินและท่าเรือ","ค่าธรรมเนียมสนามบินและท่าเรือ",-.04,40e6,"ค่าลงจอด"]];
 const PERK_MAX=5,pkDef=id=>PERKS.find(x=>x[0]===id),pkLv=id=>(S&&S.perk&&S.perk[id])||0,pk=id=>1+pkDef(id)[4]*pkLv(id),pkCost=id=>Math.round(pkDef(id)[5]*Math.pow(2.1,pkLv(id))/1e6)*1e6;
 const pkPips=id=>`<span class="pkd">${Array.from({length:PERK_MAX},(_,i)=>`<i class="${i<pkLv(id)?"on":""}"></i>`).join("")}</span>`;
-const fuelNow=()=>(S.hedge&&S.hedge.until>S.day?S.hedge.price:S.fuel)*(S.deals&&dealOn("fuel")?.9:1);
+const fuelNow=()=>(S.hedge&&S.hedge.until>S.day?S.hedge.price:S.fuel)*(S.deals&&dealOn("fuel")?1-.1*dealPw("fuel"):1);
 const mktMult=()=>S.mkt&&S.mkt.until>S.day?S.mkt.mult:1;
 /* ---------- partnerships (🤝) ----------
    Partners: rival airlines, a fuel company, a logistics company, an aircraft maker, tourism boards of cities we fly to,
@@ -625,8 +625,10 @@ const DEALS={
  airport:{n:"พันธมิตรสนามบิน",e:"🛫",who:"apt",days:60,fx:"ค่าธรรมเนียมที่สนามบินนี้ −25%"}};
 const dealsOn=()=>(S.deals||[]).filter(d=>d.until>S.day);
 const dealOn=(k,p)=>dealsOn().some(d=>d.k===k&&(p==null||d.p===p));
-const dealPax=r=>(dealOn("codeshare")?1.08:1)*(dealsOn().some(d=>d.k==="tourism"&&(d.p==="tour:"+r.dest||d.p==="tour:"+r.from))?1.35:1);
-const dealCargo=()=>dealOn("freight")?1.25:1;
+// how strong a running deal is (0.8 for the last place in its field, 1.2 for first)
+const dealPw=k=>{const d=dealsOn().filter(x=>x.k===k);return d.length?Math.max(...d.map(x=>x.pw||1)):1};
+const dealPax=r=>(dealOn("codeshare")?1+.08*dealPw("codeshare"):1)*(dealsOn().some(d=>d.k==="tourism"&&(d.p==="tour:"+r.dest||d.p==="tour:"+r.from))?1+.35*dealPw("tourism"):1);
+const dealCargo=()=>dealOn("freight")?1+.25*dealPw("freight"):1;
 const CN_HUBS=["PEK","PVG","CAN","SZX","CTU","KMG","XMN","HKG","MFM"];
 function gameDate(){const x=new Date(START);x.setDate(x.getDate()+S.day);return x}
 // Cargo seasons from the game calendar
@@ -1025,7 +1027,18 @@ const relOf=id=>{S.rel=S.rel||{};if(S.rel[id]==null){let v=50;if(id.startsWith("
 const relTxt=id=>{const v=Math.round(relOf(id));return `${v}/100 · ${v>=75?"สนิทมาก 😊":v>=55?"ดี 🙂":v>=35?"ปกติ 😐":"ไม่ค่อยดี 😠"}`};
 const relAdd=(id,d)=>{S.rel=S.rel||{};S.rel[id]=clamp(relOf(id)+d,0,100)};
 // what a deal costs now (scales with the business so it stays meaningful)
-function dealCost(k,pid){const dp=Math.max(2e6,avgDailyProfit()),L=S.last||{};
+/* Each partner looks at the race that matters to them: tourism boards and airports want the airline that carries the
+   most people, logistics firms the biggest freight carrier, fuel and aircraft suppliers the biggest company.
+   A high rank there means: they say yes more easily, charge less, and the deal works harder for you. */
+const DEAL_RACE={codeshare:"pax",truce:"all",tourism:"pax",fuel:"val",freight:"frt",fleetdeal:"val",airport:"pax"};
+function dealRace(k){const r=DEAL_RACE[k]||"all";if(r!=="frt")return r;
+  const c=has("cargo")?catRank("cargo"):99,s=has("sea")?catRank("sea"):99;return s<c?"sea":"cargo"}
+const raceRank=r=>r==="all"?rank():catRank(r);
+const raceName=r=>{const C=RACES.find(x=>x.k===r);return C?C.e+" "+C.n:r};
+function dealTier(k){const r=dealRace(k),rk=raceRank(r),n=S.rivals.length+1,big=(n-rk)/(n-1);
+  return {r,rk,n,big,price:1.25-.45*big,pw:+(.8+.4*big).toFixed(2)}}
+function dealCost(k,pid){return Math.round(dealCost0(k,pid)*dealTier(k).price/1e5)*1e5}
+function dealCost0(k,pid){const dp=Math.max(2e6,avgDailyProfit()),L=S.last||{};
   return Math.round({codeshare:dp*3,truce:dp*4+2e6*S.routes.filter(r=>r.cmp&&("rv:"+r.cmp.rv)===pid).length,tourism:8e6+(pid.startsWith("tour:")?city(pid.slice(5)).w*1.5e6:0),
     fuel:Math.max(5e6,((L.fuelC||0)+(L.sfuel||0))*2.5),freight:Math.max(6e6,dp*2),fleetdeal:5e6+S.fleet.length*1e6,airport:6e6+(pid.startsWith("apt:")?city(pid.slice(4)).w*2e6:0)}[k]/1e5)*1e5}
 /* Would the partner say yes? Each partner weighs what is in it for them, and we show their reasons.
@@ -1039,8 +1052,9 @@ function dealWhy(k,pid){const out=[],add=(v,t)=>out.push([v,t]),L=S.last||{},rk=
       if(fights.length)add(-.12*Math.min(3,fights.length),`กำลังแย่งเส้นทางกับเราอยู่ ${fights.length} เส้น`)}
     else{if(losing)add(.25+.1*Math.min(3,losing),`กำลังแพ้สงครามราคากับเรา ${losing} เส้นทาง อยากหยุดเสียเงิน`);else if(fights.length)add(-.05,"กำลังแข่งกับเราแต่ยังไม่แพ้ ยังไม่อยากถอย");else add(-.25,"ไม่ได้แข่งกับเราอยู่ ไม่รู้จะสงบศึกเรื่องอะไร");
       if(ratio<.6)add(.15,"เล็กกว่าเรามาก ไม่อยากสู้ต่อ")}
-    if(rk===1)add(.1,"เราเป็นอันดับ 1 ใครๆ ก็อยากอยู่ข้างผู้นำ")}
-  else{add(.35*big,`เราอยู่อันดับ ${rk} จาก ${n}${rk===1?" เป็นลูกค้าที่ทุกคนอยากได้":""}`);
+    if(rk===1)add(.1,"เราเป็นอันดับ 1 ใครๆ ก็อยากอยู่ข้างผู้นำ");
+    if(rv&&k==="codeshare"){const mine=myCat("pax"),their=rvCat(rv,"pax");if(mine>their*1.1)add(.15,`เราขนผู้โดยสารมากกว่าเขา (${Math.round(mine).toLocaleString()} กับ ${Math.round(their).toLocaleString()} คน/วัน) เขาอยากได้เครือข่ายเรา`);else if(their>mine*1.1)add(-.15,`เขาขนผู้โดยสารมากกว่าเรา ไม่จำเป็นต้องพึ่งเรา`)}}
+  else{const T=dealTier(k);add(.45*T.big-.1,`เราอยู่อันดับ ${T.rk} จาก ${n} ด้าน ${raceName(T.r)}${T.rk===1?" เป็นเบอร์หนึ่งที่ทุกคนอยากได้":T.rk>=n-1?" ยังไม่น่าสนใจสำหรับเขา":""}`);
     if(k==="fuel"){const f=(L.fuelC||0)+(L.sfuel||0);add(clamp(f/30e6,0,1)*.3,`เราซื้อน้ำมันวันละ ${money(f,true)}`)}
     else if(k==="fleetdeal"){add(clamp(S.fleet.length/25,0,1)*.3,`เรามีเครื่องบิน ${S.fleet.length} ลำ`);if(S.cash>3e9)add(.1,"เรามีเงินพร้อมซื้อเครื่องเพิ่ม")}
     else if(k==="freight"){const t=(L.cargo||0)+(L.teu||0)*.5;add(clamp(t/600,0,1)*.3,`เราขนสินค้าวันละ ~${Math.round(t).toLocaleString()} ตัน/ตู้`);if(t<20)add(-.2,"เรายังแทบไม่ได้ขนสินค้า")}
@@ -1054,9 +1068,13 @@ function dealChance(k,pid,disc){return clamp(.3+dealWhy(k,pid).reduce((a,x)=>a+x
 const dealDecide=ch=>ch>=.8?true:ch<=.2?false:Math.random()<ch;
 const chanceTxt=ch=>ch>=.8?"ตกลงแน่นอน":ch<=.2?"ไม่ตกลงแน่นอน":`โอกาสตกลง ${Math.round(ch*100)}%`;
 const dealKindsFor=p=>Object.entries(DEALS).filter(([k,d])=>d.who===p.kind).map(([k])=>k);
-function startDeal(k,pid,cost,days){S.cash-=cost;S.deals=[...(S.deals||[]).filter(d=>d.until>S.day),{k,p:pid,until:S.day+(days||DEALS[k].days),from:S.day}];relAdd(pid,8);
+function startDeal(k,pid,cost,days){S.cash-=cost;const pw=dealTier(k).pw;S.deals=[...(S.deals||[]).filter(d=>d.until>S.day),{k,p:pid,until:S.day+(days||DEALS[k].days),from:S.day,pw}];relAdd(pid,8);
   if(k==="truce"){for(const r of S.routes)if(r.cmp&&("rv:"+r.cmp.rv)===pid){delete r.cmp;r.cmpCool=S.day+DEALS.truce.days}}
-  addNews(`🤝 ${DEALS[k].n} กับ ${partnerOf(pid).n} (${days||DEALS[k].days} วัน): ${DEALS[k].fx}`);save()}
+  addNews(`🤝 ${DEALS[k].n} กับ ${partnerOf(pid).n} (${days||DEALS[k].days} วัน): ${dealFx(k,pw)}`);save()}
+// the effect text with the real numbers for this strength
+function dealFx(k,pw){const P=x=>Math.round(x*pw);return {codeshare:`ผู้โดยสารทุกเส้นทาง +${P(8)}% และสายการบินนี้จะไม่บุกเส้นทางของเรา`,truce:DEALS.truce.fx,
+  tourism:`คนบินไป-กลับเมืองนี้ +${P(35)}%`,fuel:`ค่าน้ำมันเครื่องบินและเรือ −${P(10)}%`,freight:`สินค้าทางอากาศและทางเรือ +${P(25)}%`,
+  fleetdeal:`ซื้อเครื่องบินทุกรุ่นลด ${P(12)}%`,airport:`ค่าธรรมเนียมที่สนามบินนี้ −${P(25)}%`}[k]||DEALS[k].fx}
 // we ask a partner
 function proposeDeal(k,pid){const c=dealCost(k,pid);if(S.cash<c)return toast("เงินไม่พอ");
   S.dcool=S.dcool||{};if((S.dcool[pid]||0)>S.day)return toast(`${partnerOf(pid).n} ยังไม่พร้อมคุยอีก ${S.dcool[pid]-S.day} วัน`);
@@ -1065,7 +1083,8 @@ function proposeDeal(k,pid){const c=dealCost(k,pid);if(S.cash<c)return toast("�
   relAdd(pid,-4);S.dcool[pid]=S.day+8;addNews(`🙅 ${partnerOf(pid).n} ปฏิเสธข้อเสนอ ${DEALS[k].n}${no.length?` เพราะ${no[0]}`:""} ลองใหม่ได้ใน 8 วัน`);toast(`${partnerOf(pid).n} ปฏิเสธ · ความสัมพันธ์ลดลงเล็กน้อย`);save();return false}
 // partners ask us (a few times a month); each request can be accepted, countered (ask for a better deal) or declined
 function dealTick(){if(!has("deals"))return;S.req=(S.req||[]).filter(q=>q.until>S.day);
-  if(S.req.length>=3||Math.random()>.12)return;
+  const avgBig=["pax","val",has("cargo")?"cargo":null,has("sea")?"sea":null].filter(Boolean).reduce((a,r,_,A)=>a+(S.rivals.length+1-raceRank(r))/S.rivals.length/A.length,0);
+  if(S.req.length>=3||Math.random()>.05+.12*avgBig)return;
   const ps=partners().filter(p=>!dealsOn().some(d=>d.p===p.id)&&!S.req.some(q=>q.p===p.id));if(!ps.length)return;
   const p=rnd(ps),k=rnd(dealKindsFor(p));if(!k)return;
   const disc=.2+Math.random()*.3,cost=Math.round(dealCost(k,p.id)*(1-disc)/1e5)*1e5,bonus=p.kind==="tour"&&Math.random()<.5?Math.round(dealCost(k,p.id)*.4/1e5)*1e5:0;
@@ -1081,19 +1100,21 @@ function answerReq(id,a){const q=(S.req||[]).find(x=>x.id===id);if(!q)return;con
 function dealsHTML(){if(!has("deals"))return "";const reqs=(S.req||[]).filter(q=>q.until>S.day),act=dealsOn();
   return secHead("🤝","ความร่วมมือ","ขอความร่วมมือกับคนอื่น หรือรับคำขอจากเขา")+
    (reqs.length?`<div class="panel stack"><span class="eyebrow">📨 คำขอที่เข้ามา · เขาอยากร่วมมือกับเรา</span>${reqs.map(q=>{const p=partnerOf(q.p),d=DEALS[q.k],full=dealCost(q.k,q.p),ch=Math.round(dealChance(q.k,q.p,.15)*100);return `<div class="dreq"><div class="row" style="gap:8px"><span class="cav">${p.e}</span><div style="min-width:0;flex:1"><b>${esc(p.n)}</b> <span class="muted small">· ${p.sub}</span><div class="small">เสนอ <b>${d.e} ${d.n}</b></div></div></div>
-      <div class="dterms small"><span>ได้อะไร</span><b>${d.fx}</b><span>นานเท่าไร</span><b>${d.days} วัน</b><span>${q.bonus?"เงิน":"เราจ่าย"}</span><b class="${q.bonus?"good":""}">${q.bonus?`เขาจ่ายให้เรา ${money(q.bonus,true)} (เราไม่ต้องจ่าย)`:`${money(q.cost,true)} <span class="muted">(ถ้าเราไปขอเองต้องจ่าย ${money(full,true)})</span>`}</b><span>ตอบภายใน</span><b>${q.until-S.day} วัน</b><span>ความสัมพันธ์</span><b>${relTxt(q.p)}</b></div>
+      <div class="dterms small"><span>ได้อะไร</span><b>${dealFx(q.k,dealTier(q.k).pw)}</b><span>นานเท่าไร</span><b>${d.days} วัน</b><span>${q.bonus?"เงิน":"เราจ่าย"}</span><b class="${q.bonus?"good":""}">${q.bonus?`เขาจ่ายให้เรา ${money(q.bonus,true)} (เราไม่ต้องจ่าย)`:`${money(q.cost,true)} <span class="muted">(ถ้าเราไปขอเองต้องจ่าย ${money(full,true)})</span>`}</b><span>ตอบภายใน</span><b>${q.until-S.day} วัน</b><span>ความสัมพันธ์</span><b>${relTxt(q.p)}</b></div>
       <div class="row" style="gap:6px"><button class="btn sm primary" data-req="${q.id}:yes" ${S.cash<q.cost?"disabled":""}>✓ ตกลง</button><button class="btn sm" data-req="${q.id}:counter">↩ ต่อรอง<br><small>${chanceTxt(dealChance(q.k,q.p,.15))}</small></button><button class="btn sm" data-req="${q.id}:no">✕ ปฏิเสธ</button></div>
       <div class="muted small">↩ ต่อรอง = ขอให้ถูกลงอีก 20% และนานขึ้น 50% · ${ch>=80?"เขายอมแน่นอน":ch<=20?"เขาไม่ยอมแน่นอน":`โอกาสเขายอม ${ch}%`} · ถ้าไม่ยอม คำขอจะหายและความสัมพันธ์ลด · ✕ ปฏิเสธ = ความสัมพันธ์ลดเล็กน้อย</div></div>`}).join("")}</div>`:"")+
    `<div class="panel stack"><div class="row between"><span class="eyebrow">✅ ดีลที่ใช้อยู่ ${act.length}</span><button class="btn sm primary" id="dealnew">+ ขอความร่วมมือ</button></div>
-     ${act.length?act.map(d=>{const p=partnerOf(d.p),D=DEALS[d.k];return `<div class="dact"><span>${D.e}</span><div style="min-width:0;flex:1"><b class="small">${D.n}</b> <span class="muted small">กับ ${esc(p.n)}</span><div class="small muted">${D.fx}</div></div><span class="num small">${d.until-S.day} วัน</span></div>`}).join(""):`<div class="muted small">ยังไม่มีดีล กด “ขอความร่วมมือ” เพื่อเลือกพันธมิตรและข้อเสนอ</div>`}</div>`}
+     ${act.length?act.map(d=>{const p=partnerOf(d.p),D=DEALS[d.k];return `<div class="dact"><span>${D.e}</span><div style="min-width:0;flex:1"><b class="small">${D.n}</b> <span class="muted small">กับ ${esc(p.n)}</span><div class="small muted">${dealFx(d.k,d.pw||1)}</div></div><span class="num small">${d.until-S.day} วัน</span></div>`}).join(""):`<div class="muted small">ยังไม่มีดีล กด “ขอความร่วมมือ” เพื่อเลือกพันธมิตรและข้อเสนอ</div>`}</div>`}
 function dealSheet(st){const fn=()=>{const ps=partners();st.p=st.p&&ps.some(x=>x.id===st.p)?st.p:null;
    let h=head("🤝 ขอความร่วมมือ","1) เลือกพันธมิตร 2) เลือกข้อเสนอที่ด้านล่าง · เปอร์เซ็นต์บนปุ่มคือโอกาสที่เขาจะตกลง ขึ้นกับความสัมพันธ์ เรตติ้ง และชื่อเสียง");
-   h+=`<div class="muted small">แต่ละฝ่ายตัดสินใจจากประโยชน์ที่เขาจะได้ ดูเหตุผล ＋ − ใต้ข้อเสนอแต่ละข้อ · ข้อเสนอที่ดีมากเขาตกลงแน่นอน ที่แย่มากปฏิเสธแน่นอน</div><div class="muted small">แถบสีด้านขวาคือ <b>ความสัมพันธ์</b> กับแต่ละราย: เขียว = ดี · เหลือง = ปกติ · แดง = ไม่ค่อยดี · ตกลงกันได้ความสัมพันธ์เพิ่ม ถูกปฏิเสธหรือแย่งเส้นทางกันความสัมพันธ์ลด</div>`;
+   h+=`<div class="muted small">🏅 อันดับของเราในด้านที่พันธมิตรสนใจมีผลมาก: อันดับสูง เขาตกลงง่าย ราคาถูกลงถึง 20% และดีลได้ผลแรงขึ้นถึง ×1.2 · อันดับท้าย ราคาแพงขึ้นถึง 25% และได้ผลแค่ ×0.8</div><div class="muted small">แต่ละฝ่ายตัดสินใจจากประโยชน์ที่เขาจะได้ ดูเหตุผล ＋ − ใต้ข้อเสนอแต่ละข้อ · ข้อเสนอที่ดีมากเขาตกลงแน่นอน ที่แย่มากปฏิเสธแน่นอน</div><div class="muted small">แถบสีด้านขวาคือ <b>ความสัมพันธ์</b> กับแต่ละราย: เขียว = ดี · เหลือง = ปกติ · แดง = ไม่ค่อยดี · ตกลงกันได้ความสัมพันธ์เพิ่ม ถูกปฏิเสธหรือแย่งเส้นทางกันความสัมพันธ์ลด</div>`;
    const groups=[["rv","✈️ สายการบินคู่แข่ง"],["co","🏢 บริษัท"],["tour","🏝️ เมืองท่องเที่ยว"],["apt","🛫 สนามบินสาขา"]];
    for(const [g,gn] of groups){const L=ps.filter(p=>g==="co"?ORGS[p.kind]:p.kind===g);if(!L.length)continue;
      h+=`<div class="eyebrow" style="margin-top:8px">${gn}</div><div class="pick">${L.map(p=>{const rel=relOf(p.id),cool=(S.dcool||{})[p.id]>S.day,on=dealsOn().filter(d=>d.p===p.id);return `<button data-dp="${p.id}" class="${st.p===p.id?"sel":""}"><span class="cav">${p.e}</span><span style="min-width:0"><b>${esc(p.n)}</b><br><span class="small muted">${p.sub}${on.length?` · ✅ มีดีลอยู่`:""}${cool?" · ⏳ รอคุยใหม่":""}</span></span><span class="relbar"><small>ความสัมพันธ์</small><span class="relt"><i style="width:${rel}%;background:${rel>=55?"var(--good)":rel>=35?"var(--warn)":"var(--bad)"}"></i></span><small class="num">${relTxt(p.id)}</small></span></button>`}).join("")}</div>`}
    if(st.p){const p=partnerOf(st.p);h+=`<div class="panel stack" style="position:sticky;bottom:-20px"><b>${p.e} ${esc(p.n)}</b>${dealKindsFor(p).map(k=>{const D=DEALS[k],c=dealCost(k,p.id),ch=dealChance(k,p.id),on=dealOn(k,p.id);
-       return `<div class="dopt"><div style="min-width:0;flex:1"><b class="small">${D.e} ${D.n}</b> <span class="muted small">${D.days} วัน</span><div class="small muted">${D.fx}</div>
+       const T=dealTier(k),pct=Math.round((T.price-1)*100);
+       return `<div class="dopt"><div style="min-width:0;flex:1"><b class="small">${D.e} ${D.n}</b> <span class="muted small">${D.days} วัน</span><div class="small muted">${dealFx(k,T.pw)}</div>
+         <div class="dtier small"><span>${medal(T.rk)} ด้าน ${raceName(T.r)}</span><span class="${pct<=0?"good":"bad"}">ราคา ${pct<=0?"ลด "+(-pct):"แพงขึ้น "+pct}%</span><span class="${T.pw>=1?"good":"bad"}">ผล ×${T.pw.toFixed(2)}</span></div>
          <div class="why">${dealWhy(k,p.id).map(([v,t])=>`<span class="${v>0?"good":v<0?"bad":"muted"}">${v>0?"＋":v<0?"－":"•"} ${t}</span>`).join("")}</div></div>
        <button class="btn sm ${ch>.2?"primary":""}" data-dk="${k}" ${on||S.cash<c?"disabled":""}>${on?"มีอยู่แล้ว":`เสนอ ${money(c,true)}<br><small>${chanceTxt(ch)}</small>`}</button></div>`}).join("")}</div>`}
    return h};
@@ -1117,7 +1138,9 @@ function worldHTML(){const items=[],fu=S.fuel,today=dateOf(S.day);
   for(const n of seas)items.push(["🗓️",n,"ช่วงนี้สินค้าทางอากาศเพิ่มขึ้น"]);
   if(S.mkt&&S.mkt.until>S.day)items.push(["📣","แคมเปญการตลาดของเรา",`คนอยากบินเพิ่ม · อีก ${S.mkt.until-S.day} วัน`]);
   const fights=S.routes.filter(r=>r.cmp);if(fights.length)items.push(["⚔️",`คู่แข่งบุก ${fights.length} เส้นทาง`,fights.slice(0,3).map(r=>`${r.from}→${r.dest} (${r.cmp.rv})`).join(" · ")]);
-  if(has("rank")){const B=standings(),top=B[0];items.push(["🏆",top.me?"เราเป็นอันดับหนึ่ง":`${top.n} นำอยู่`,`เราอยู่อันดับ ${rank()} · คู่แข่งเล่นระดับ${botLvTxt()}`])}
+  if(has("rank")){const B=standings(),top=B[0];items.push(["🏆",top.me?"เราเป็นอันดับหนึ่ง":`${top.n} นำอยู่`,`เราอยู่อันดับ ${rank()} · คู่แข่งเล่นระดับ${botLvTxt()}`]);
+    items.push(["🏅","อันดับแต่ละด้าน",catList().filter(c=>c.k!=="all").map(c=>`${c.e}${medal(catRank(c.k))}`).join("  ")]);
+    const cl=closestRace();if(cl)items.push(["🔥",cl.t,cl.d])}
   for(const d of dealsOn())items.push([DEALS[d.k].e,`${DEALS[d.k].n} กับ ${partnerOf(d.p).n}`,`อีก ${d.until-S.day} วัน`]);
   const req=(S.req||[]).filter(q=>q.until>S.day).length;if(req)items.push(["📨",`มีคำขอความร่วมมือ ${req} เรื่อง`,"ตอบได้ในแท็บบริษัท"]);
   const good=ev.filter(e=>e.type==="fest"||e.type==="cboost").length,bad=ev.filter(e=>e.type==="storm"||e.type==="comp").length;
@@ -1165,8 +1188,8 @@ const rvStance=n=>{const rv=S.rivals.find(x=>x.n===n);if(!rv||rv.aim==null)retur
 const RV_PROF={
   "นภาคราม แอร์ไลน์":{pax:.85,cargo:.1,sea:.05,st:3.7,tag:"✈️ ผู้โดยสาร"},
   "โกลเด้นวิง":{pax:.35,cargo:.55,sea:.1,st:3.4,tag:"📦 สินค้าทางอากาศ"},
-  "สกายดราก้อน":{pax:.55,cargo:.25,sea:.2,st:3.6,tag:"⚖️ รอบด้าน"},
-  "อันดามันแอร์":{pax:.8,cargo:.15,sea:.05,st:4.5,tag:"⭐ บริการ"},
+  "สกายดราก้อน":{pax:.55,cargo:.25,sea:.2,st:3.6,net:1.4,tag:"🌏 เครือข่าย"},
+  "อันดามันแอร์":{pax:.8,cargo:.15,sea:.05,st:4.5,net:.7,tag:"⭐ บริการ"},
   "เมฆาเวย์":{pax:.25,cargo:.15,sea:.6,st:3.3,tag:"🚢 เดินเรือ"}};
 const rvProf=rv=>RV_PROF[rv.n]||{pax:.6,cargo:.25,sea:.15,st:3.6,tag:"⚖️ รอบด้าน"};
 // what a typical fleet of each kind carries per day for each baht of company value (fleet ≈ 60% of value)
@@ -1181,10 +1204,12 @@ const RACES=[
   {k:"pax",e:"✈️",n:"ผู้โดยสาร",u:"คน/วัน",need:()=>true},
   {k:"cargo",e:"📦",n:"สินค้าทางอากาศ",u:"ตัน/วัน",need:()=>has("cargo")},
   {k:"sea",e:"🚢",n:"เดินเรือ",u:"TEU/วัน",need:()=>has("sea")},
+  {k:"net",e:"🌏",n:"เครือข่าย",u:"จุดหมาย"},
   {k:"svc",e:"⭐",n:"บริการ",u:"ดาว"}];
 const catList=()=>RACES.filter(c=>!c.need||c.need());
-function myCat(k){const c=S.cat||{};return k==="val"?valuation():k==="svc"?(S.rating?S.rating.overall:0):k==="pax"?c.pax||0:k==="cargo"?c.cargo||0:k==="sea"?c.teu||0:myScore()}
-function rvCat(rv,k){const P=rvProf(rv);if(k==="val")return rv.v;if(k==="svc")return rivalStars(rv);
+const myNet=()=>new Set([...S.routes.filter(r=>r.planes.length).flatMap(r=>[r.from,r.dest]),...S.lanes.filter(l=>l.ships.length).flatMap(l=>[l.from,l.to])]).size;
+function myCat(k){const c=S.cat||{};if(k==="net")return myNet();return k==="val"?valuation():k==="svc"?(S.rating?S.rating.overall:0):k==="pax"?c.pax||0:k==="cargo"?c.cargo||0:k==="sea"?c.teu||0:myScore()}
+function rvCat(rv,k){const P=rvProf(rv);if(k==="val")return rv.v;if(k==="net")return Math.round(3+rv.v/1e6*.05*(P.net||1));if(k==="svc")return rivalStars(rv);
   const w=1+.08*Math.sin(S.day/23+rv.n.length);   // busy and quiet weeks
   return k==="pax"?rv.v*catK().pax*P.pax*w:k==="cargo"?rv.v*catK().cargo*P.cargo*w:k==="sea"?rv.v*catK().sea*P.sea*w:rivalScore(rv)}
 function catBoard(k){return [...S.rivals.map(rv=>({n:rv.n,v:rvCat(rv,k),rv})),{n:S.name,v:myCat(k),me:1}].sort((a,b)=>b.v-a.v)}
@@ -1199,13 +1224,18 @@ function catTick(){const L=S.last||{},e=(o,x)=>o==null?x:o+(x-o)*.2;S.cat=S.cat|
   for(const c of catList()){if(c.k==="all")continue;const B=catBoard(c.k),top=B[0],was=S.catTop[c.k];if(top.n===was)continue;S.catTop[c.k]=top.n;if(was==null)continue;
     if(top.me){addNews(`${c.e} เราขึ้นอันดับ 1 ด้าน${c.n}แล้ว!`);celebrate("!🥇 อันดับ 1 ด้าน"+c.n,`${catFmt(c.k,top.v)} ${c.u}`)}
     else if(was===S.name)addNews(`${c.e} ${top.n} แย่งอันดับ 1 ด้าน${c.n}ไปจากเรา`)}}
+// the tightest race involving us: someone right behind us, or someone we are about to pass
+function closestRace(){let best=null;for(const c of catList()){if(c.k==="all"||c.k==="svc")continue;const B=catBoard(c.k),i=B.findIndex(x=>x.me),me=B[i];if(!me||me.v<=0)continue;
+    for(const j of [i-1,i+1]){const o=B[j];if(!o)continue;const gap=Math.abs(o.v-me.v)/Math.max(o.v,me.v);if(!best||gap<best.gap)best={gap,c,o,ahead:j<i}}}
+  if(!best||best.gap>.15)return null;const {c,o,ahead,gap}=best,pc=Math.max(1,Math.round(gap*100));
+  return ahead?{t:`ใกล้แซง ${o.n} ด้าน${c.n}`,d:`ห่างแค่ ${pc}% ขึ้นอันดับ ${catRank(c.k)-1} ได้`}:{t:`${o.n} ไล่จี้ด้าน${c.n}`,d:`ตามเราอยู่แค่ ${pc}% · ระวังเสียอันดับ ${catRank(c.k)}`}}
 let catSeg="all";
 function catHTML(board){const L=catList(),k=L.some(c=>c.k===catSeg)?catSeg:"all",C=RACES.find(c=>c.k===k);
   const chips=`<div class="catchips">${L.map(c=>`<button data-race="${c.k}" class="${c.k===k?"on":""}">${c.e} ${c.n}<small>${medal(c.k==="all"?rank():catRank(c.k))}</small></button>`).join("")}</div>`;
   const rows=k==="all"?board.map(b=>({n:b.n,me:b.me,st:b.st,txt:`${b.sc.toLocaleString()}<span class="muted small"> คะแนน</span>`}))
     :catBoard(k).map(b=>({n:b.n,me:b.me,st:b.me?(S.rating?S.rating.overall:0):rivalStars(b.rv),txt:`${catFmt(k,b.v)}${k==="val"?"":`<span class="muted small"> ${C.u}</span>`}`}));
   const note=k==="all"?"อันดับรวมจากขนาดบริษัท · กดหมวดด้านบนเพื่อดูการแข่งขันแต่ละด้าน คู่แข่งแต่ละเจ้าเก่งไม่เหมือนกัน":
-    k==="val"?"มูลค่ากิจการ = เงินสด + มูลค่าฝูงบินและกองเรือ − เงินกู้":k==="svc"?"เรตติ้งเฉลี่ยจากผู้โดยสาร (ความตรงเวลา บริการ สภาพเครื่อง)":
+    k==="val"?"มูลค่ากิจการ = เงินสด + มูลค่าฝูงบินและกองเรือ − เงินกู้":k==="net"?"จำนวนเมืองและท่าเรือที่เรามีเที่ยวบินหรือเรือไปถึง · เปิดเส้นทางใหม่เพื่อไต่อันดับ":k==="svc"?"เรตติ้งเฉลี่ยจากผู้โดยสาร (ความตรงเวลา บริการ สภาพเครื่อง)":
     `ค่าเฉลี่ยต่อวันช่วงหลัง · ${k==="pax"?"เพิ่มเครื่องและเส้นทางผู้โดยสาร":k==="cargo"?"เพิ่มเครื่องบินขนสินค้าและเส้นทางสินค้า":"เพิ่มเรือและเส้นทางเดินเรือ"}เพื่อไต่อันดับด้านนี้`;
   return `<div class="panel"><div class="eyebrow" style="margin-bottom:6px">📋 ตารางอันดับ</div>${chips}<div class="small muted" style="margin:6px 0">${note}</div>
     <div class="board">${rows.map((b,i)=>`<div class="r ${b.me?"me":""}"><span class="num muted">${i<3?medal(i+1):"#"+(i+1)}</span><span class="nm" style="min-width:0">${esc(b.n)}<br>${starsHTML(b.st||0,11)} <span class="num muted" style="font-size:11px">${(b.st||0).toFixed(1)}</span>${b.me?"":` <span class="stance">เด่น ${rvProf(S.rivals.find(x=>x.n===b.n)).tag}</span>`+(k==="all"?rvStance(b.n):"")}</span><span class="num">${b.txt}</span></div>`).join("")}</div></div>`}
@@ -2213,7 +2243,7 @@ function confetti(cx,cy,n=30){if(reduce)return;const C=["#F2B33D","#E4572E","#2A
 function coinBurst(cx,cy){if(reduce)return;for(let i=0;i<14;i++){const d=document.createElement("span");d.className="coin";const a=Math.random()*Math.PI*2,r=40+Math.random()*60;
   d.style.left=cx+"px";d.style.top=cy+"px";d.style.setProperty("--dx",Math.cos(a)*r+"px");d.style.setProperty("--dy",(Math.sin(a)*r-50)+"px");d.style.animationDelay=(i*18)+"ms";document.body.appendChild(d);setTimeout(()=>d.remove(),1200)}}
 /* ---------- decisions: a choice pops up every week or two ---------- */
-const priceFor=m=>Math.round((S.deal&&S.deal.m===m.id&&S.deal.until>=S.day?m.price*(1-S.deal.off):m.price)*(S.deals&&dealOn("fleetdeal")?.88:1));
+const priceFor=m=>Math.round((S.deal&&S.deal.m===m.id&&S.deal.until>=S.day?m.price*(1-S.deal.off):m.price)*(S.deals&&dealOn("fleetdeal")?1-.12*dealPw("fleetdeal"):1));
 const DECISIONS=[
  ()=>{const ps=S.fleet.filter(p=>p.route&&model(p.m).seats&&p.down<=S.day);if(!ps.length)return null;const p=rnd(ps),m=model(p.m),pay=niceN(m.seats*9000+m.price*.006);
    return {e:"🧳",t:"บริษัททัวร์ขอเหมาลำ",d:`ขอเช่า ${m.name} (${p.reg}) 2 วัน พาคณะทัวร์ ${m.seats} คน เสนอเงิน ${money(pay)}`,c:[["รับงาน",`ได้ ${money(pay)} · เครื่องหยุดบินเส้นทางเดิม 2 วัน`,()=>{S.cash+=pay;p.down=S.day+2;return `ได้ค่าเหมาลำ ${money(pay)}`}],["ปฏิเสธ","บินตามตารางเดิม",()=>"ปฏิเสธงานเหมาลำ"]]}},
@@ -3255,7 +3285,7 @@ function showOver(){const fn=()=>`<h2>${esc(S.name)} ล้มละลาย</h
   <button class="btn primary block" id="yes">สุ่มชะตาใหม่</button>`;fn.bind=resetSheet.bind;openSheet(fn)}
 
 function guideSheet(){return head("คู่มือระบบ","ทุกระบบในเกมทำงานอย่างไร")+`<div>
-<details class="g" open><summary>เป้าหมายของเกม</summary><div><p>ทำให้มูลค่ากิจการโตจนขึ้นถึงระดับ "ตำนานแห่งท้องฟ้า" และแซงคู่แข่งอีก 5 สายการบินในตารางอันดับ · นอกจากอันดับรวมยังมีการแข่งแยกหมวด: มูลค่า ผู้โดยสาร สินค้าทางอากาศ เดินเรือ และบริการ คู่แข่งแต่ละเจ้าเก่งคนละด้าน (เช่น เมฆาเวย์เด่นเดินเรือ โกลเด้นวิงเด่นสินค้า อันดามันแอร์เด่นบริการ) · คู่แข่งแต่ละเจ้ามีแผนของตัวเอง (ขยายเชิงรุก / โตต่อเนื่อง / ระมัดระวัง) และเปลี่ยนแผนได้ทุกไม่กี่สัปดาห์ เจ้าที่ตามหลังเป้าจะเร่งขยาย เจ้าที่นำเกินเป้าจะชะลอ</p><p>มูลค่ากิจการ = เงินสด + มูลค่าขายต่อของฝูงบิน − เงินกู้</p><ul>${GOALS.map(g=>`<li>${g[1]}: ${money(g[0])}</li>`).join("")}</ul></div></details>
+<details class="g" open><summary>เป้าหมายของเกม</summary><div><p>ทำให้มูลค่ากิจการโตจนขึ้นถึงระดับ "ตำนานแห่งท้องฟ้า" และแซงคู่แข่งอีก 5 สายการบินในตารางอันดับ · อันดับแต่ละด้านมีผลกับความร่วมมือ: ด้านไหนเราอันดับสูง พันธมิตรด้านนั้นตกลงง่าย คิดราคาถูก และดีลได้ผลแรงกว่า · นอกจากอันดับรวมยังมีการแข่งแยกหมวด: มูลค่า ผู้โดยสาร สินค้าทางอากาศ เดินเรือ และบริการ คู่แข่งแต่ละเจ้าเก่งคนละด้าน (เช่น เมฆาเวย์เด่นเดินเรือ โกลเด้นวิงเด่นสินค้า อันดามันแอร์เด่นบริการ) · คู่แข่งแต่ละเจ้ามีแผนของตัวเอง (ขยายเชิงรุก / โตต่อเนื่อง / ระมัดระวัง) และเปลี่ยนแผนได้ทุกไม่กี่สัปดาห์ เจ้าที่ตามหลังเป้าจะเร่งขยาย เจ้าที่นำเกินเป้าจะชะลอ</p><p>มูลค่ากิจการ = เงินสด + มูลค่าขายต่อของฝูงบิน − เงินกู้</p><ul>${GOALS.map(g=>`<li>${g[1]}: ${money(g[0])}</li>`).join("")}</ul></div></details>
 <details class="g"><summary>เวลาและความเร็ว</summary><div><p>ที่ความเร็ว 1× เวลาในเกม 1 ชั่วโมงเท่ากับ 1.25 วินาทีจริง (1 วัน = 30 วินาที) เครื่องบินบนแผนที่ใช้เวลาบินตามระยะทางและความเร็วจริงของรุ่น กด 3×, 10× หรือ 30× เพื่อเร่ง กด ❚❚ เพื่อหยุดคิด ระบบคิดรายรับรายจ่ายทุกสิ้นวัน และเซฟอัตโนมัติในเบราว์เซอร์นี้</p></div></details>
 <details class="g"><summary>คนอยากบินกี่คน</summary><div><p>แต่ละเส้นทางมีความต้องการผู้โดยสารต่อวัน คำนวณจาก</p><ul><li><b>ขนาดเมือง</b> ทั้งต้นทางและปลายทาง เมืองใหญ่อย่างโตเกียวหรือนิวยอร์กมีคนบินเยอะ</li><li><b>ระยะทาง</b> สั้นกว่า 300 กม. คนนิยมนั่งรถมากกว่า ไกลมากคนก็บินน้อยลง</li><li><b>ราคาตั๋ว</b> ถูกกว่าราคากลางคนเพิ่มขึ้นแรง แพงกว่าคนหายเร็ว</li><li><b>ชื่อเสียง</b> 0–100 ชื่อเสียง 50 คือปกติ</li><li><b>ระดับบริการ</b> การตลาด และเหตุการณ์ เช่น เทศกาลหรือคู่แข่ง</li></ul><p>ผู้โดยสารจริง = น้อยกว่าระหว่างคนอยากบินกับที่นั่งที่มี และมีแกว่งขึ้นลงวันละ ±10%</p></div></details>
 <details class="g"><summary>เที่ยวบินต่อวันและที่นั่ง</summary><div><p>เครื่องบินจริงไม่ได้บิน 24 ชม. ต้องพักกลางคืน ซ่อมบำรุง และใช้เวลาบนพื้นระหว่างเที่ยว (ทำความสะอาด เติมน้ำมัน ขึ้นลงผู้โดยสาร) เกมจึงคิดตามประเภทเครื่อง:</p>
