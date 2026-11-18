@@ -965,7 +965,7 @@ function simDay(){
   S.rep=clamp(S.rep+(target-S.rep)*.03,0,100);
   {const prev=standings();prev.forEach((x,i)=>{if(x.me)S.prank=i+1;else{const rv=S.rivals.find(r=>r.n===x.n);if(rv)rv.prank=i+1}})}
   rivalTurn();leagueTick();dealTick();catTick();
-  for(const rv of S.rivals){rv.ops=(rv.ops||0)+rvCat(rv,"pax")/70+rvCat(rv,"cargo")/1.4+rvCat(rv,"sea")/10;rv.v*=1+.0015+(Math.random()-.5)*.012;rv.st=clamp(rivalStars(rv)+(Math.random()-.5)*.06,2.5,4.8)}
+  for(const rv of S.rivals){rv.ops=(rv.ops||0)+(rvCat(rv,"pax")/70+rvCat(rv,"cargo")/1.4+rvCat(rv,"sea")/10)*RV_OPS_K;rv.v*=1+.0015+(Math.random()-.5)*.012;rv.st=clamp(rivalStars(rv)+(Math.random()-.5)*.06,2.5,4.8)}
   S.hist.push({d:S.day,c:S.cash,r:rev,x:cost});if(S.hist.length>365)S.hist.shift();
   {const had=suezShut();S.events=S.events.filter(e=>e.until>S.day);if(had&&!suezShut()){seaCache.clear();addNews("🚢 คลองสุเอซเปิดใช้ได้อีกครั้ง")}}
   if(S.mkt&&S.mkt.until<=S.day){addNews(`📣 แคมเปญ${S.mkt.n}จบแล้ว`);S.mkt=null}
@@ -1209,15 +1209,39 @@ const RACES=[
 const catList=()=>RACES.filter(c=>!c.need||c.need());
 const myNet=()=>new Set([...S.routes.filter(r=>r.planes.length).flatMap(r=>[r.from,r.dest]),...S.lanes.filter(l=>l.ships.length).flatMap(l=>[l.from,l.to])]).size;
 function myCat(k){const c=S.cat||{};if(k==="net")return myNet();return k==="val"?valuation():k==="svc"?(S.rating?S.rating.overall:0):k==="pax"?c.pax||0:k==="cargo"?c.cargo||0:k==="sea"?c.teu||0:myScore()}
-function rvCat(rv,k){const P=rvProf(rv);if(k==="val")return rv.v;if(k==="net")return Math.round(3+rv.v/1e6*.05*(P.net||1));if(k==="svc")return rivalStars(rv);
-  const w=1+.08*Math.sin(S.day/23+rv.n.length);   // busy and quiet weeks
-  return k==="pax"?rv.v*catK().pax*P.pax*w:k==="cargo"?rv.v*catK().cargo*P.cargo*w:k==="sea"?rv.v*catK().sea*P.sea*w:rivalScore(rv)}
+/* A rival's operations (passengers, freight, containers, destinations) are tracked on their own, not read off its
+   company value: cash piling up in the bank does not fly anyone. Each one moves toward a target set by how big the
+   market is (your own numbers, or a sensible floor for the stage of the game), the rival's ambition, and how strong it
+   is in that field. Moves are gradual, and the network can never grow past the airports that exist. */
+const RV_OPS_K=.5;   // rivals bank fewer ranking points per passenger than you do (no missions, no level bonuses)
+const rvStr=(P,k)=>k==="net"?(P.net||1):clamp(.35+1.6*(P[k]||0),.35,1.4);
+function rvTarget(rv,k){const P=rvProf(rv),d=S.day,aim=rv.aim||1,my=myCat(k),K=catK(),cap=v=>Math.min(rv.v,v);
+  const floor=k==="pax"?Math.min(rv.v*K.pax,1500+d*25):k==="cargo"?Math.max(myCat("pax")*.02,Math.min(rv.v*K.cargo,40+d*.8)):
+    k==="sea"?Math.max(myCat("pax")*.025,Math.min(rv.v*K.sea,50+d)):Math.min(8+d/15,40);
+  const t=Math.max(my,floor)*aim*rvStr(P,k);return k==="net"?Math.min(t,Math.round((CITIES.length+PORTS.length)*.6)):t}
+function rvOps(rv){if(!rv.m){rv.m={};for(const k of ["pax","cargo","sea","net"])rv.m[k]=rvTarget(rv,k)*(.7+Math.random()*.2)}return rv.m}
+function rvOpsTick(){for(const rv of S.rivals){const m=rvOps(rv),before={...m};
+    for(const k of ["pax","cargo","sea","net"]){const t=rvTarget(rv,k);m[k]=Math.max(0,m[k]+(t-m[k])*(t>m[k]?.03:.012)*(.6+Math.random()*.8))}
+    rvNews(rv,before,m)}}
+// a rival's home base and fleet, for flavour and for the news
+function rvHub(rv){if(!rv.hub){const big=CITIES.filter(c=>c.w>=8&&c.c!==S.hub&&!S.rivals.some(x=>x.hub===c.c));rv.hub=(big[(rv.n.length*7+S.rivals.indexOf(rv)*13)%Math.max(1,big.length)]||CITIES[0]).c}return rv.hub}
+const rvFleet=rv=>{const m=rvOps(rv);return {air:Math.max(2,Math.round(m.pax/900+m.cargo/80)),sea:Math.round(m.sea/220)}};
+function rvNews(rv,a,b){if(!has("rank")||(rv.newsCool||0)>S.day)return;const fa=Math.round(a.pax/900+a.cargo/80),fb=Math.round(b.pax/900+b.cargo/80),sa=Math.round(a.sea/220),sb=Math.round(b.sea/220);
+  let t=null;const hub=city(rvHub(rv));
+  if(Math.floor(b.net)>Math.floor(a.net)&&Math.random()<.5){const cand=CITIES.filter(c=>c.c!==hub.c&&c.w>=3);const c=cand[(Math.floor(b.net)*31+rv.n.length)%cand.length];t=`✈️ ${rv.n} เปิดเส้นทางใหม่ ${hub.n} – ${c.n}`}
+  else if(fb>=fa+2)t=`🛬 ${rv.n} รับเครื่องบินใหม่ ${fb-fa} ลำ (ฝูงบินรวม ${fb} ลำ)`;
+  else if(sb>sa&&b.sea>0)t=`🚢 ${rv.n} รับเรือใหม่ (กองเรือรวม ${sb} ลำ)`;
+  if(t){addNews(t);rv.newsCool=S.day+20+Math.floor(Math.random()*15)}}
+function rvCat(rv,k){if(k==="val")return rv.v;if(k==="svc")return rivalStars(rv);if(!["pax","cargo","sea","net"].includes(k))return rivalScore(rv);
+  const m=rvOps(rv);if(k==="net")return Math.round(m.net);
+  return m[k]*(1+.06*Math.sin(S.day/23+rv.n.length))}   // busy and quiet weeks
 function catBoard(k){return [...S.rivals.map(rv=>({n:rv.n,v:rvCat(rv,k),rv})),{n:S.name,v:myCat(k),me:1}].sort((a,b)=>b.v-a.v)}
 const catRank=k=>catBoard(k).findIndex(x=>x.me)+1;
 const catFmt=(k,v)=>k==="val"?money(v,true):k==="svc"?v.toFixed(1):Math.round(v).toLocaleString();
 const medal=r=>r===1?"🥇":r===2?"🥈":r===3?"🥉":"#"+r;
 function catTick(){const L=S.last||{},e=(o,x)=>o==null?x:o+(x-o)*.2;S.cat=S.cat||{};
   S.cat.pax=e(S.cat.pax,L.pax||0);S.cat.cargo=e(S.cat.cargo,L.cargo||0);S.cat.teu=e(S.cat.teu,L.teu||0);
+  rvOpsTick();
   // service-minded rivals drift toward their own level of service
   for(const rv of S.rivals){const P=rvProf(rv);rv.st=clamp(rivalStars(rv)+(P.st-rivalStars(rv))*.03,2.5,4.9)}
   if(!has("rank"))return;S.catTop=S.catTop||{};
@@ -1229,6 +1253,7 @@ function closestRace(){let best=null;for(const c of catList()){if(c.k==="all"||c
     for(const j of [i-1,i+1]){const o=B[j];if(!o)continue;const gap=Math.abs(o.v-me.v)/Math.max(o.v,me.v);if(!best||gap<best.gap)best={gap,c,o,ahead:j<i}}}
   if(!best||best.gap>.15)return null;const {c,o,ahead,gap}=best,pc=Math.max(1,Math.round(gap*100));
   return ahead?{t:`ใกล้แซง ${o.n} ด้าน${c.n}`,d:`ห่างแค่ ${pc}% ขึ้นอันดับ ${catRank(c.k)-1} ได้`}:{t:`${o.n} ไล่จี้ด้าน${c.n}`,d:`ตามเราอยู่แค่ ${pc}% · ระวังเสียอันดับ ${catRank(c.k)}`}}
+const rvLine=n=>{const rv=S.rivals.find(x=>x.n===n);if(!rv)return "";const f=rvFleet(rv);return `<br><span class="muted" style="font-size:11.5px">ฐาน ${city(rvHub(rv)).n} · ✈ ${f.air} ลำ${f.sea?` · 🚢 ${f.sea} ลำ`:""} · ${Math.round(rvOps(rv).net)} จุดหมาย</span>`};
 let catSeg="all";
 function catHTML(board){const L=catList(),k=L.some(c=>c.k===catSeg)?catSeg:"all",C=RACES.find(c=>c.k===k);
   const chips=`<div class="catchips">${L.map(c=>`<button data-race="${c.k}" class="${c.k===k?"on":""}">${c.e} ${c.n}<small>${medal(c.k==="all"?rank():catRank(c.k))}</small></button>`).join("")}</div>`;
@@ -1238,7 +1263,7 @@ function catHTML(board){const L=catList(),k=L.some(c=>c.k===catSeg)?catSeg:"all"
     k==="val"?"มูลค่ากิจการ = เงินสด + มูลค่าฝูงบินและกองเรือ − เงินกู้":k==="net"?"จำนวนเมืองและท่าเรือที่เรามีเที่ยวบินหรือเรือไปถึง · เปิดเส้นทางใหม่เพื่อไต่อันดับ":k==="svc"?"เรตติ้งเฉลี่ยจากผู้โดยสาร (ความตรงเวลา บริการ สภาพเครื่อง)":
     `ค่าเฉลี่ยต่อวันช่วงหลัง · ${k==="pax"?"เพิ่มเครื่องและเส้นทางผู้โดยสาร":k==="cargo"?"เพิ่มเครื่องบินขนสินค้าและเส้นทางสินค้า":"เพิ่มเรือและเส้นทางเดินเรือ"}เพื่อไต่อันดับด้านนี้`;
   return `<div class="panel"><div class="eyebrow" style="margin-bottom:6px">📋 ตารางอันดับ</div>${chips}<div class="small muted" style="margin:6px 0">${note}</div>
-    <div class="board">${rows.map((b,i)=>`<div class="r ${b.me?"me":""}"><span class="num muted">${i<3?medal(i+1):"#"+(i+1)}</span><span class="nm" style="min-width:0">${esc(b.n)}<br>${starsHTML(b.st||0,11)} <span class="num muted" style="font-size:11px">${(b.st||0).toFixed(1)}</span>${b.me?"":` <span class="stance">เด่น ${rvProf(S.rivals.find(x=>x.n===b.n)).tag}</span>`+(k==="all"?rvStance(b.n):"")}</span><span class="num">${b.txt}</span></div>`).join("")}</div></div>`}
+    <div class="board">${rows.map((b,i)=>`<div class="r ${b.me?"me":""}"><span class="num muted">${i<3?medal(i+1):"#"+(i+1)}</span><span class="nm" style="min-width:0">${esc(b.n)}<br>${starsHTML(b.st||0,11)} <span class="num muted" style="font-size:11px">${(b.st||0).toFixed(1)}</span>${b.me?"":` <span class="stance">เด่น ${rvProf(S.rivals.find(x=>x.n===b.n)).tag}</span>`+(k==="all"?rvStance(b.n):"")+rvLine(b.n)}</span><span class="num">${b.txt}</span></div>`).join("")}</div></div>`}
 // tell the player when the order in the table changes (rate-limited so small back-and-forth isn't spam)
 function rankNews(){if(!has("rank"))return;const B=standings().map(x=>x.n),prev=S.lastOrder;S.lastOrder=B;if(!prev)return;
   for(let i=0;i<B.length;i++){const n=B[i],j=prev.indexOf(n);if(j>i&&n!==S.name&&i<prev.length&&prev[i]!==n){const passed=prev[i];
