@@ -3690,6 +3690,33 @@ function cycleTheme(){const i=THEMES.findIndex(x=>x[0]===themePref()),n=THEMES[(
   applyTheme(n[0]);const b=$("#themebtn .mi");if(b)b.innerHTML=themeIcon();const tl=$("#themelbl");if(tl)tl.textContent="โหมดแสง: "+n[2];baseKey="";fogKey="";if(S)renderView();toast(`${n[1]} โหมด${n[2]}`)}
 applyTheme(themePref());
 
+/* Keep what the reader opened and where they scrolled.
+   Many panels are redrawn every second or every game day; a redraw used to close any "▾" section that was open and
+   jump scroll boxes back to the top or left. We remember every section the player opens or closes (by its title, with
+   the changing numbers ignored) and every scroll position inside the page, and put them back after each redraw,
+   before the screen is painted. */
+const keepUI=(()=>{const openK=new Set(),closedK=new Set(),scr=new Map();
+  const norm=t=>(t||"").replace(/[\d.,%+\-−฿#▲▼▾]+/g,"").replace(/\s+/g," ").trim().slice(0,60);
+  const dkey=d=>{const sm=d.querySelector(":scope>summary");return sm?norm(sm.textContent):""};
+  // a scroll box is known by its id or classes, where it sits, and the first heading inside it (so a different sheet starts at the top)
+  const skey=el=>{const cls=typeof el.className==="string"?el.className.split(/\s+/).filter(c=>c&&!/^(on|sel|anim|open)$/.test(c)).sort().join("."):"";
+    const par=el.parentElement,pk=par?(par.id||(typeof par.className==="string"?par.className.split(" ")[0]:"")):"";
+    const h=el.querySelector("h1,h2,h3,b,summary");return (el.id?"#"+el.id:el.tagName+"."+cls)+"<"+pk+"|"+norm(h&&h.textContent).slice(0,24)};
+  document.addEventListener("toggle",e=>{const d=e.target;if(!(d instanceof HTMLDetailsElement))return;const k=dkey(d);if(!k)return;
+    if(d.open){openK.add(k);closedK.delete(k)}else{closedK.add(k);openK.delete(k)}},true);
+  document.addEventListener("scroll",e=>{const el=e.target;if(!(el instanceof Element))return;scr.set(skey(el),{t:el.scrollTop,l:el.scrollLeft,at:Date.now()})},true);
+  const fixDetails=root=>{for(const d of root.querySelectorAll?root.querySelectorAll("details"):[]){const k=dkey(d);if(!k)continue;
+      if(openK.has(k)&&!d.open)d.open=true;else if(closedK.has(k)&&d.open)d.open=false}};
+  const fixScroll=el=>{const v=scr.get(skey(el));if(!v||Date.now()-v.at>15*60e3)return;
+    if(Math.abs(el.scrollTop-v.t)>1)el.scrollTop=v.t;if(Math.abs(el.scrollLeft-v.l)>1)el.scrollLeft=v.l};
+  const mo=new MutationObserver(list=>{if(!scr.size&&!openK.size&&!closedK.size)return;const seen=new Set();
+    for(const m of list){const T=m.target;if(!(T instanceof Element)||seen.has(T)||T.closest("svg,canvas"))continue;seen.add(T);
+      if(m.type==="childList"&&m.addedNodes.length){if(T.tagName==="DETAILS")fixDetails(T.parentElement||T);fixDetails(T);
+        if(scr.size){for(let e=T;e&&e!==document.body;e=e.parentElement)fixScroll(e);
+          for(const e of T.querySelectorAll("*")){if(e.scrollHeight>e.clientHeight+2||e.scrollWidth>e.clientWidth+2)fixScroll(e)}}}}});
+  mo.observe(document.body,{childList:true,subtree:true});
+  return {openK,closedK,scr}})();
+
 S=load();if(!S)rollFate();else{dispCash=S.cash;seenNews=S.news.length?S.news[0].id:0}
 renderApp();requestAnimationFrame(frame);
 spHandleRedirect();
