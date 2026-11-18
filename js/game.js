@@ -160,6 +160,8 @@ const MODELS=[
  {id:"350f",cat:"cargo",name:"Airbus A350F",tag:"ขนสินค้ารุ่นใหม่ ประหยัดน้ำมัน",seats:0,cargo:111,range:8700,speed:900,price:950e6,cpk:290,len:70.8,a:{fw:.09,sr:1,big:1,pods:[.3],fh:21,eng:"jet",cargo:1}},
  {id:"b74f",cat:"cargo",name:"Boeing 747-8F",tag:"ขนสินค้าได้มากที่สุด",seats:0,cargo:135,range:8100,speed:910,price:1150e6,cpk:385,len:76.3,a:{fw:.085,sr:.9,big:1,pods:[.28,.6],fh:21,eng:"quad",deck:"hump",cargo:1}},
 ];
+// fuel burn per km in game baht (scaled so fuel is ~a third of airline costs, as in real airlines)
+for(const m of MODELS)m.cpk=Math.round(m.cpk*.65);
 // cargo aircraft size classes
 const CCLS=[["call","ทั้งหมด"],["cs","เล็ก · ใกล้"],["cn","ลำตัวแคบ"],["cw","ลำตัวกว้าง"],["cx","ยักษ์"]];
 const cargoCls=m=>m.cargo<=15?"cs":m.cargo<=45?"cn":m.cargo<=100?"cw":"cx";
@@ -217,7 +219,7 @@ function logoSVG(lv,size,col){const L=LOGOS[lv.logo]||LOGOS.bird;if(lv.logoCol&&
     return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="6" fill="none" style="stroke:${col}" stroke-width="2"/><path d="M5.2 18.4c4.6-.3 9.4-1.3 13.6-3.4" fill="none" style="stroke:${acc}" stroke-width="1.6" stroke-linecap="round"/><text x="12" y="13.2" text-anchor="middle" font-family="Chakra Petch,sans-serif" font-weight="700" font-size="8.6" style="fill:${col}">${esc(S?S.code:"")}</text></svg>`}
   if(!L[1])return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><text x="12" y="16.5" text-anchor="middle" font-family="Chakra Petch,sans-serif" font-weight="700" font-size="12" style="fill:${col}">${esc(S.code)}</text></svg>`;
   return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><path d="${L[1]}" style="fill:${col}"/></svg>`}
-const SERVICE=[{n:"ประหยัด",cost:60,rep:35,f:.9},{n:"มาตรฐาน",cost:220,rep:60,f:1},{n:"พรีเมียม",cost:550,rep:85,f:1.12}];
+const SERVICE=[{n:"ประหยัด",cost:80,rep:35,f:.9},{n:"มาตรฐาน",cost:280,rep:60,f:1},{n:"พรีเมียม",cost:700,rep:85,f:1.12}];
 const GOALS=[[5e8,"สายการบินภูมิภาค"],[3e9,"สายการบินระดับประเทศ"],[1.5e10,"สายการบินระดับทวีป"],[5e10,"สายการบินระดับโลก"],[1.5e11,"ตำนานแห่งท้องฟ้า"]];
 const MKT=[{id:"social",n:"โฆษณาโซเชียล",days:7,cost:5e6,mult:1.15,rep:0},{id:"tv",n:"โฆษณาทีวี",days:30,cost:40e6,mult:1.25,rep:3},{id:"global",n:"แคมเปญทั่วโลก",days:60,cost:150e6,mult:1.4,rep:6}];
 const ACH=[
@@ -249,6 +251,7 @@ const aptChip=c=>{const k=aptKind(c),[i,t]=APT_LABEL[k];return `<span class="apt
 // Branches (สาขา): every airport where you base aircraft. Routes start from a branch. Levels 1–3.
 const BR_MAX=3;
 const blv=c=>S.bases.includes(c)?(S.blv&&S.blv[c])||1:0;
+const FEE_K=1.5;   // airport + navigation + passenger charges
 const feeOf=c=>c.fee*(1-.15*Math.max(0,blv(c.c)-1))*pk("fee")*(S.deals&&dealOn("airport","apt:"+c.c)?.75:1);
 const brBoost=c=>1+.08*Math.max(0,blv(c)-1);
 function branchCost(c){c=typeof c==="string"?city(c):c;return Math.round((30e6+c.w*8e6)*(1+.3*(S.bases.length-1))/5e6)*5e6}
@@ -472,7 +475,7 @@ const isOpen=c=>S.unlocked.includes(regionOf(c).id);
 function regionCost(R){const hub=city(S.hub);const d=Math.min(...R.c.map(c=>dist(hub,city(c))));return Math.round((20e6+d*22e3)/5e6)*5e6}
 const NAMES=["สยามสกาย","ฟ้าคราม","นกยูงแอร์","จันทราเวย์","ทะเลฟ้า","ช้างเหิน","ไผ่ทองแอร์","ดาวเหนือ"];
 const RIVALS=["นภาคราม แอร์ไลน์","โกลเด้นวิง","สกายดราก้อน"];
-let CARGO_RATE=8;const KEY="airline-owner-v1", START=new Date(2027,0,1), DAY_MS=30000, SPEEDS=[1,3,10,30];
+let CARGO_RATE=8;const cgRate=d=>CARGO_RATE*(1500+.85*d);/* baht per tonne at rate 1.0 */const KEY="airline-owner-v1", START=new Date(2027,0,1), DAY_MS=30000, SPEEDS=[1,3,10,30];
 
 const $=s=>document.querySelector(s);
 const $$=s=>document.querySelectorAll(s);
@@ -486,10 +489,16 @@ function dist(a,b){const R=6371,r=Math.PI/180,dl=(b.lat-a.lat)*r,dn=(b.lon-a.lon
 const rd=r=>dist(city(r.from),city(r.dest));
 /* economy dial: scales every ticket fare and freight rate (tuned so a good route pays back its aircraft in about a year) */
 let FARE_X=.8;   // freight rate CARGO_RATE (8.0) is scaled by the same 0.8
-const baseFare=d=>Math.round(FARE_X*(700+6*Math.pow(d,.85))/10)*10;
-const legsFor=(m,d)=>clamp(Math.floor(24/(d/m.speed+1.2)),1,12);
+// fares rise almost in step with distance, as real one-way economy fares do (long-haul ~฿20k+)
+const baseFare=d=>Math.round(FARE_X*(1300+2.0*d)/10)*10;
+/* A real aircraft day: turboprops fly ~15 h with 25-min turns, narrow-bodies ~17-18 h with 45-min turns,
+   wide-bodies and big freighters up to 20 h but need ~1.8 h on the ground (cleaning, catering, loading).
+   Block time = flight time + ~30 min taxi/climb/approach. */
+const acClass=m=>m.cat==="wide"||(!m.seats&&m.cargo>=50)?"wide":m.speed<600?"prop":"narrow";
+const OPS={prop:{op:15,turn:.45},narrow:{op:17.5,turn:.75},wide:{op:20,turn:1.8}};
+const legsFor=(m,d)=>{const o=OPS[acClass(m)];return clamp(Math.floor(o.op/(d/m.speed+.5+o.turn)),1,12)};
 // planes take longer in the air on screen; the time comes out of ground time, so the number of flights per day stays the same
-const AIR_SLOW=1.7,flyFrac=(m,d,L)=>Math.min(.94,(d/m.speed+.4)*AIR_SLOW/(24/L));
+const AIR_SLOW=1.7,flyFrac=(m,d,L)=>Math.min(.94,(d/m.speed+.5)*AIR_SLOW/(24/L));
 // distance factors: passengers thin out slowly on long hauls; air cargo barely does (flying freight pays off most on long routes)
 const distF=d=>d<300?.5+d/600:1/(1+(d/13000)**2);
 const cargoDistF=d=>d<300?.5+d/600:1/(1+(Math.max(0,d-3000)/20000)**2);
@@ -824,12 +833,12 @@ function calc(r,price,crate,svc){
   for(const p of ps){const m=model(p.m);fixed+=m.price*FIX_RATE;
     if(ground||p.down>S.day)continue;
     const L=plan.get(p.id),tk=planeK(p),cc=L*m.cargo*(tk==="mix"?1:CK_LOAD[tk]);legs+=L;cap+=L*m.seats;ccap+=cc;if(tk==="mix")for(const k of CK)capK[k]+=cc*sh[k];else capK[tk]+=cc;
-    fuelC+=L*d*m.cpk*fuel;feeC+=L*(feeOf(a)+feeOf(b))/2*1000*(m.seats||m.cargo*3)/100}
+    fuelC+=L*d*m.cpk*fuel;feeC+=L*FEE_K*(feeOf(a)+feeOf(b))/2*1000*(m.seats||m.cargo*3)/100}
   fixed+=ROUTE_SLOT;
   const pax0=Math.floor(Math.min(demand,cap)),bkp=Math.max(0,Math.floor(Math.min(r.bk||0,cap-pax0))),pax=pax0+bkp;
   let cargo0=0,bkc=0,crev=0;const cK={};
   for(const t of CK){const c0=Math.min(dk[t],capK[t]),b0=Math.max(0,Math.min(B[t]||0,capK[t]-c0));cargo0+=c0;bkc+=b0;
-    crev+=(c0*crate+b0*Math.min(crate,1))*d*CARGO_RATE*pk("cargo")*CK_RATE[t]*wpen[t];cK[t]={dem:dk[t],cap:capK[t],carry:c0+b0,bk:B[t]||0}}
+    crev+=(c0*crate+b0*Math.min(crate,1))*cgRate(d)*pk("cargo")*CK_RATE[t]*wpen[t];cK[t]={dem:dk[t],cap:capK[t],carry:c0+b0,bk:B[t]||0}}
   const cargo=cargo0+bkc;
   const tix=pax0*price+bkp*Math.min(price,base),rev=tix+crev,svcC=pax*SERVICE[svc].cost,cost=fuelC+feeC+fixed+svcC;
   const xpax=demand>0?Math.round(Math.min(demand,cap)*xd/demand):0,xcargo=cdem>0?Math.min(cdem,ccap)*xc/cdem:0;
@@ -846,7 +855,7 @@ function fleetValue(){return S.fleet.reduce((s,p)=>s+resale(p),0)+(S.ships||[]).
 function resale(p){const m=model(p.m);return m.price*.6*(.5+p.cond/200)*Math.max(.5,1-p.age/3650)}
 function valuation(){return S.cash+fleetValue()-S.loan}
 // Competition score: value, traffic, cargo, containers, rating and missions all count
-function myScoreParts(){return [["มูลค่ากิจการ",valuation()/2e6],["ผู้โดยสารสะสม",S.totPax/100],["สินค้าทางอากาศ",S.totCargo/2],["ตู้ทางเรือ",(S.totTeu||0)/10],["เรตติ้ง",(S.rating?S.rating.overall:0)*1000],["ภารกิจ",(S.mdone||0)*120]]}
+function myScoreParts(){return [["มูลค่ากิจการ",valuation()/2e6],["ผู้โดยสารสะสม",S.totPax/70],["สินค้าทางอากาศ",S.totCargo/1.4],["ตู้ทางเรือ",(S.totTeu||0)/10],["เรตติ้ง",(S.rating?S.rating.overall:0)*1000],["ภารกิจ",(S.mdone||0)*120]]}
 const myScore=()=>Math.max(0,Math.round(myScoreParts().reduce((a,x)=>a+x[1],0)));
 const rivalScore=rv=>Math.max(0,Math.round(rv.v/2e6+(rv.ops||0)+rivalStars(rv)*1000));
 function standings(){return [...S.rivals.map(rv=>({n:rv.n,sc:rivalScore(rv),st:rivalStars(rv),prev:rv.prank})),{n:S.name,sc:myScore(),st:S.rating?S.rating.overall:0,me:1,prev:S.prank}].sort((a,b)=>b.sc-a.sc)}
@@ -905,10 +914,10 @@ function flyLeg(r,p,m,c,d,a,b,n){
   const tk=planeK(p),shr=tk==="mix"?ckShare(r):null,mixAvg=shr?CK.reduce((x,k)=>x+shr[k]*CK_RATE[k],0):1,   // belly cargo: mixed kinds at the old average rate; premiums are for freighters
   parts=tk==="mix"?CK.map(k=>[k,m.cargo*shr[k]]):[[tk,m.cargo*CK_LOAD[tk]]],rnd=.9+Math.random()*.2,ck={};let cargo=0,bp=0,bc=0,crev=0;
   {const B=cbkObj(r);for(const [k,pl] of parts){const q=c.cK&&c.cK[k],cl=q&&q.cap?Math.min(1,q.dem/q.cap):0;let x=pl*cl*rnd,b0=0;if(B[k]>0&&x<pl){b0=Math.min(pl-x,B[k]);B[k]-=b0}
-    crev+=(x*c.crate+b0*Math.min(c.crate,1))*d*CARGO_RATE*pk("cargo")*CK_RATE[k]/(shr?mixAvg:1)*(c.wpen?c.wpen[k]:1);ck["ck_"+k]=x+b0;cargo+=x+b0;bc+=b0}}
+    crev+=(x*c.crate+b0*Math.min(c.crate,1))*cgRate(d)*pk("cargo")*CK_RATE[k]/(shr?mixAvg:1)*(c.wpen?c.wpen[k]:1);ck["ck_"+k]=x+b0;cargo+=x+b0;bc+=b0}}
   if(r.bk>=1&&pax<m.seats){bp=Math.min(m.seats-pax,Math.floor(r.bk));r.bk-=bp;pax+=bp}
 
-  const o={tix:(pax-bp)*c.price+bp*Math.min(c.price,c.base),crev,...ck,fuelC:d*m.cpk*fuelNow()*pk("fuel"),feeC:(feeOf(a)+feeOf(b))/2*1000*(m.seats||m.cargo*3)/100,svc:pax*SERVICE[svcOf(r)].cost,pax,cargo,seats:m.seats,legs:1};
+  const o={tix:(pax-bp)*c.price+bp*Math.min(c.price,c.base),crev,...ck,fuelC:d*m.cpk*fuelNow()*pk("fuel"),feeC:FEE_K*(feeOf(a)+feeOf(b))/2*1000*(m.seats||m.cargo*3)/100,svc:pax*SERVICE[svcOf(r)].cost,pax,cargo,seats:m.seats,legs:1};
   const net=o.tix+o.crev-o.fuelC-o.feeC-o.svc;
   S.cash+=net;p.tn=(p.tn||0)+net;addT(S.today,o);r.today=r.today||blankT();addT(r.today,o);
   {const arr=(n%2===1?a:b).c,dep=(n%2===1?b:a).c;S.apT=S.apT||{};const A=S.apT[arr]=S.apT[arr]||{up:0,dn:0,cu:0,cd:0},D=S.apT[dep]=S.apT[dep]||{up:0,dn:0,cu:0,cd:0};D.up+=pax;A.dn+=pax;D.cu+=cargo;A.cd+=cargo}
@@ -2154,7 +2163,7 @@ const DECISIONS=[
    return {e:"🔧",t:"ข่าวลือเรื่องความปลอดภัย",d:`โซเชียลลือว่าเครื่องบินของ ${S.name} เก่า ตรวจเช็กทั้งฝูงใช้เงิน ${money(cost)}`,c:[["ตรวจทั้งฝูง","สภาพทุกลำ +20% · ชื่อเสียง +2",()=>{S.cash-=cost;for(const p of S.fleet)p.cond=clamp(p.cond+20,0,100);S.rep=clamp(S.rep+2,0,100);return "ตรวจเช็กเสร็จ ชื่อเสียง +2"}],["เพิกเฉย","ชื่อเสียง −4",()=>{S.rep=clamp(S.rep-4,0,100);return "ข่าวลือแพร่ ชื่อเสียง −4"}]]}},
  ()=>{const cs=pbList().filter(c=>pbl(c)<BR_MAX);if(!cs.length)return null;const c=rnd(cs),cost=niceN(pBranchUp(c)*.5);
    return {e:"⚓",t:"การท่าเรือชวนร่วมลงทุน",d:`ท่าเรือ${port(c).n}ขยายท่าใหม่ ชวนร่วมลงทุน ${money(cost)} (ครึ่งราคาอัปเกรด)`,c:[["ร่วมลงทุน","สาขาท่าเรืออัปเกรด 1 ระดับ",()=>{S.cash-=cost;S.pbr[c]=pbl(c)+1;return `สาขาท่าเรือ${port(c).n}เป็นระดับ ${S.pbr[c]}`}],["ไม่ลงทุน","",()=>"ไม่ร่วมลงทุนท่าเรือ"]]}},
- ()=>{const rs=S.routes.filter(r=>r.planes.length);if(!rs.length)return null;const r=rnd(rs),pay=niceN(rd(r)*CARGO_RATE*60*1.6),f=rd(r)*200*fuelNow();
+ ()=>{const rs=S.routes.filter(r=>r.planes.length);if(!rs.length)return null;const r=rnd(rs),pay=niceN(cgRate(rd(r))*60*1.6),f=rd(r)*200*fuelNow();
    return {e:"📦",t:"ลูกค้าขอส่งพัสดุด่วน",d:`ร้านค้าออนไลน์ขอส่งพัสดุ 60 ตันจาก ${r.from} ไป ${r.dest} ให้ค่าส่ง ${money(pay)}`,c:[["รับงาน",`กำไรราว ${money(pay-f,true)} หลังหักน้ำมัน`,()=>{S.cash+=pay-f;S.totCargo+=60;return `ส่งพัสดุด่วนเสร็จ กำไร ${money(pay-f)}`}],["ปฏิเสธ","",()=>"ปฏิเสธงานส่งด่วน"]]}},
  ()=>{const rv=rnd(S.rivals);const cost=niceN(Math.max(10e6,valuation()*.03));
    return {e:"🤝",t:`${rv.n} ขอทำโค้ดแชร์`,d:`คู่แข่งชวนขายตั๋วร่วมกัน 30 วัน ผู้โดยสารทุกเส้นทาง +12% แต่ต้องจ่ายค่าระบบ ${money(cost)}`,c:[["ตกลง","ผู้โดยสาร +12% 30 วัน",()=>{S.cash-=cost;S.mkt={n:"โค้ดแชร์",mult:1.12,until:S.day+30};return `เริ่มโค้ดแชร์กับ ${rv.n}`}],["ไม่ร่วม","คู่แข่งโตเร็วขึ้นนิดหน่อย",()=>{rv.v*=1.03;return `ไม่ร่วมโค้ดแชร์กับ ${rv.n}`}]]}},
@@ -2952,7 +2961,7 @@ function newRouteSheet(st){
     else if(sel){const d=dist(from,sel),ok=idle.filter(p=>model(p.m).range>=d);
       out+=`<div class="panel stack" style="position:sticky;bottom:-20px"><div class="row between"><b>${st.from} → ${sel.c} · ${sel.n}</b><span class="num muted">${d.toLocaleString()} กม.</span></div>
        ${(()=>{const fc=routeForecast(st.from,sel.c,st.kind),b=fc.best;return b?`<div class="selsum"><span class="${b.profit>=0?"good":"bad"} num">${b.profit>=0?"+":"−"}${money(Math.abs(b.profit),true)}/วัน</span><span>เต็มลำ ~${Math.round(b.lf*100)}%</span><span class="muted">${b.m.name}</span></div>`:""})()}
-       <div class="small muted">${KC?`สินค้าราว ${Math.round(calc({id:-9,kind:"cargo",from:st.from,dest:sel.c,price:baseFare(d),planes:[],h:[]}).cdem).toLocaleString()} ตัน/วัน · ค่าระวางราว ฿${(d*CARGO_RATE/1000).toFixed(2)}/กก.`:`ราคาตั๋วเริ่มต้น ${money(baseFare(d))} · ใช้เวลาบิน ${(d/830+.4).toFixed(1)} ชม. (A320)`}</div>
+       <div class="small muted">${KC?`สินค้าราว ${Math.round(calc({id:-9,kind:"cargo",from:st.from,dest:sel.c,price:baseFare(d),planes:[],h:[]}).cdem).toLocaleString()} ตัน/วัน · ค่าระวางราว ฿${(cgRate(d)/1000).toFixed(1)}/กก.`:`ราคาตั๋วเริ่มต้น ${money(baseFare(d))} · ใช้เวลาบิน ${(d/830+.5).toFixed(1)} ชม. (A320) · วันละ ${legsFor(model("a320"),d)} เที่ยว`}</div>
        ${idle.length?`<label class="f">ใส่เครื่องบิน<select id="np"><option value="">ยังไม่ใส่</option>${idle.map(p=>{const m=model(p.m),go=m.range>=d;return `<option value="${p.id}" ${go?"":"disabled"}>${p.reg} · ${m.name} · บินได้ ${m.range.toLocaleString()} กม.${go?"":" · ไม่สามารถบินได้"}</option>`}).join("")}</select></label>`:""}
        <button class="btn primary block" id="openr" ${S.cash<3e6||!aptTakes(st.from,st.kind)?"disabled":""}>เปิดเส้นทาง ฿3 ล้าน</button></div>`}
     return out};
@@ -3091,7 +3100,7 @@ function demandChart(cv,r,cur){if(!cv)return;const dpr=devicePixelRatio||1,W=cv.
   const best=pts.reduce((a,q)=>q.pf>a.pf?q:a,pts[0]);x.fillStyle=cssv("--accent");x.beginPath();x.arc(X(best.pr),YP(best.pf),3.5,0,7);x.fill()}
 function rangeBar(range,d){const mx=Math.max(range,d)*1.05,ok=range>=d;
   return `<span class="rbar ${ok?"":"short"}"><i style="width:${range/mx*100}%"></i><b style="left:${d/mx*100}%"></b></span><span class="num" style="font-size:11.5px;white-space:nowrap;color:${ok?"var(--muted)":"var(--bad)"}">บินได้ ${range.toLocaleString()} กม.</span>`}
-const crateText=c=>`฿${(c.d*CARGO_RATE*c.crate/1000).toFixed(2)}/กก. · ${c.crate.toFixed(2)} เท่า`;
+const crateText=c=>`฿${(cgRate(c.d)*c.crate/1000).toFixed(1)}/กก. · ${c.crate.toFixed(2)} เท่า`;
 function cargoKV(c){const ld=c.ccap?Math.min(c.cdem,c.ccap)/c.ccap:0;return `<div><div class="k">สินค้าที่ต้องการ/วัน</div><div class="v">${Math.round(c.cdem).toLocaleString()} ตัน</div></div>
  <div><div class="k">ระวาง/วัน</div><div class="v">${Math.round(c.ccap).toLocaleString()} ตัน</div></div>
  <div><div class="k">ระวางเต็ม</div><div class="v">${Math.round(ld*100)}%</div></div>
@@ -3180,10 +3189,12 @@ function guideSheet(){return head("คู่มือระบบ","ทุกร
 <details class="g" open><summary>เป้าหมายของเกม</summary><div><p>ทำให้มูลค่ากิจการโตจนขึ้นถึงระดับ "ตำนานแห่งท้องฟ้า" และแซงคู่แข่งอีก 3 สายการบินในตารางอันดับ</p><p>มูลค่ากิจการ = เงินสด + มูลค่าขายต่อของฝูงบิน − เงินกู้</p><ul>${GOALS.map(g=>`<li>${g[1]}: ${money(g[0])}</li>`).join("")}</ul></div></details>
 <details class="g"><summary>เวลาและความเร็ว</summary><div><p>ที่ความเร็ว 1× เวลาในเกม 1 ชั่วโมงเท่ากับ 1.25 วินาทีจริง (1 วัน = 30 วินาที) เครื่องบินบนแผนที่ใช้เวลาบินตามระยะทางและความเร็วจริงของรุ่น กด 3×, 10× หรือ 30× เพื่อเร่ง กด ❚❚ เพื่อหยุดคิด ระบบคิดรายรับรายจ่ายทุกสิ้นวัน และเซฟอัตโนมัติในเบราว์เซอร์นี้</p></div></details>
 <details class="g"><summary>คนอยากบินกี่คน</summary><div><p>แต่ละเส้นทางมีความต้องการผู้โดยสารต่อวัน คำนวณจาก</p><ul><li><b>ขนาดเมือง</b> ทั้งต้นทางและปลายทาง เมืองใหญ่อย่างโตเกียวหรือนิวยอร์กมีคนบินเยอะ</li><li><b>ระยะทาง</b> สั้นกว่า 300 กม. คนนิยมนั่งรถมากกว่า ไกลมากคนก็บินน้อยลง</li><li><b>ราคาตั๋ว</b> ถูกกว่าราคากลางคนเพิ่มขึ้นแรง แพงกว่าคนหายเร็ว</li><li><b>ชื่อเสียง</b> 0–100 ชื่อเสียง 50 คือปกติ</li><li><b>ระดับบริการ</b> การตลาด และเหตุการณ์ เช่น เทศกาลหรือคู่แข่ง</li></ul><p>ผู้โดยสารจริง = น้อยกว่าระหว่างคนอยากบินกับที่นั่งที่มี และมีแกว่งขึ้นลงวันละ ±10%</p></div></details>
-<details class="g"><summary>เที่ยวบินต่อวันและที่นั่ง</summary><div><p>เครื่องบินแต่ละลำบินได้วันละหลายเที่ยว ขึ้นกับระยะทางและความเร็ว โดยคิดเวลาบิน + 1.2 ชม. ต่อเที่ยวสำหรับขึ้นลงและเตรียมเครื่อง สูงสุดวันละ 12 เที่ยว</p><p><code>เที่ยว/วัน = 24 ÷ (ระยะทาง ÷ ความเร็ว + 1.2)</code></p><p>ตารางบินแบบ "ปรับตามผู้โดยสาร" (ค่าเริ่มต้น) จะลดเที่ยวบินลงเมื่อคนน้อย ให้แต่ละเที่ยวเต็มราว 85% ส่วน "บินเต็มตาราง" บินทุกเที่ยวเสมอ เหมาะตอนมีเทศกาลหรือแคมเปญ</p><p>เส้นทางสั้นใช้เครื่องลำเล็กคุ้มเพราะบินได้หลายรอบ เส้นทางไกลต้องใช้เครื่องที่พิสัยถึงและจุคนเยอะ ใส่เครื่องหลายลำในเส้นทางเดียวได้</p></div></details>
+<details class="g"><summary>เที่ยวบินต่อวันและที่นั่ง</summary><div><p>เครื่องบินจริงไม่ได้บิน 24 ชม. ต้องพักกลางคืน ซ่อมบำรุง และใช้เวลาบนพื้นระหว่างเที่ยว (ทำความสะอาด เติมน้ำมัน ขึ้นลงผู้โดยสาร) เกมจึงคิดตามประเภทเครื่อง:</p>
+<ul><li>ใบพัด: บินได้ ~15 ชม./วัน · พักระหว่างเที่ยว ~25 นาที</li><li>ลำตัวแคบ (A320, 737): ~17.5 ชม./วัน · พัก ~45 นาที</li><li>ลำตัวกว้างและเครื่องขนสินค้าใหญ่: ~20 ชม./วัน · พัก ~1.8 ชม.</li></ul>
+<p><code>เที่ยว/วัน = ชม.ทำงาน ÷ (ระยะทาง ÷ ความเร็ว + 0.5 + เวลาพัก)</code> สูงสุดวันละ 12 เที่ยว · เส้นทางไกลมาก (เช่น กรุงเทพ–ลอนดอน) บินได้วันละเที่ยวเดียว เหมือนจริง</p><p>ตารางบินแบบ "ปรับตามผู้โดยสาร" (ค่าเริ่มต้น) จะลดเที่ยวบินลงเมื่อคนน้อย ให้แต่ละเที่ยวเต็มราว 85% ส่วน "บินเต็มตาราง" บินทุกเที่ยวเสมอ เหมาะตอนมีเทศกาลหรือแคมเปญ</p><p>เส้นทางสั้นใช้เครื่องลำเล็กคุ้มเพราะบินได้หลายรอบ เส้นทางไกลต้องใช้เครื่องที่พิสัยถึงและจุคนเยอะ ใส่เครื่องหลายลำในเส้นทางเดียวได้</p></div></details>
 <details class="g"><summary>ราคาตั๋ว</summary><div><p>หน้าเส้นทางมีกล่องคาดการณ์บอกกำไรหรือขาดทุนต่อวันแบบดูง่าย ปรับราคาด้วยแถบเลื่อนหรือปุ่มลัด (−10%, ราคากลาง, +10%, กำไรสูงสุด) และเลือกบริการแยกเฉพาะเส้นทางได้ ใต้ปุ่มบริการบอกกำไรที่คาดว่าจะได้</p><p>เส้นทางใหม่ใช้ "ราคาอัตโนมัติตามคน" ระบบขึ้นราคาเมื่อคนอยากบินมากกว่าที่นั่ง (เช่น ช่วงเทศกาลหรือแคมเปญ) และลดราคาเมื่อคนน้อย ให้เครื่องเต็มราว 90% กราฟในหน้าเส้นทางแสดงว่าราคาแต่ละระดับมีคนบินกี่คนและได้กำไรเท่าไร จุดสีส้มคือราคาที่กำไรสูงสุด</p><p>ราคากลางคำนวณจากระยะทาง ตั้งได้ตั้งแต่ครึ่งหนึ่งถึงสองเท่าของราคากลาง ถ้าที่นั่งเต็มเกือบ 100% แปลว่าขึ้นราคาได้อีก ถ้าเต็มแค่ครึ่งเดียว ลองลดราคาหรือเปลี่ยนเป็นเครื่องลำเล็กลง หน้าต่างเส้นทางจะคำนวณกำไรให้ดูทันทีที่เลื่อนราคา</p></div></details>
 <details class="g"><summary>ขนส่งทางเรือ</summary><div><p>แท็บ "สินค้า" → ทางเรือ เปิดเส้นทางเรือระหว่างท่าเรือ ${PORTS.length} แห่งทั่วโลก (ต้องปลดล็อกภูมิภาคก่อน) แล้วซื้อเรือใส่ เรือวิ่งตามเส้นทางทะเลจริง ผ่านช่องแคบมะละกา คลองสุเอซ คลองปานามา หรืออ้อมแหลม</p><p>เรือแล่นราว 35–41 กม./ชม. เที่ยวยุโรป–เอเชียใช้ราว 2–3 สัปดาห์ในเกม แล้วจอดขนตู้ที่ท่า 1–2 วัน ได้เงินเมื่อเรือถึงท่า ค่าระวางต่อตู้ = ฿2,000 + ฿0.8 ต่อกม. เรือห้องเย็นได้ 1.8 เท่าแต่ตลาดเล็กกว่า เรือ ULCV ต้องใช้ท่าเรือน้ำลึกทั้งสองฝั่ง</p><p>เหตุการณ์: คลองสุเอซปิด (เรืออ้อมแหลมกู๊ดโฮป) และท่าเรือนัดหยุดงาน</p></div></details>
-<details class="g"><summary>ขนส่งสินค้า</summary><div><p><b>ระยะทางกับความต้องการ:</b> สินค้าทางอากาศและทางเรือแทบไม่ลดลงตามระยะทาง เส้นทางไกลจึงคุ้มกับเครื่องบินขนสินค้าและเรือลำใหญ่ ส่วนผู้โดยสารจะค่อย ๆ น้อยลงเมื่อไกลมาก และเมืองเล็กมีความต้องการน้อยกว่าเมืองใหญ่เสมอ</p><p>เส้นทางแบ่งเป็น 2 แบบ ใช้สาขาเดียวกัน: <b>เส้นทางผู้โดยสาร</b> ใส่ได้เฉพาะเครื่องบินโดยสาร (ขนพัสดุใต้ท้องเครื่องได้ราวครึ่งหนึ่งของตลาด) และ <b>เส้นทางขนสินค้า</b> ใส่ได้เฉพาะเครื่องบินขนสินค้า เลขเที่ยวบินขึ้นต้น 8xx เส้นบนแผนที่เป็นสีม่วง เปิดทั้งสองแบบไปเมืองเดียวกันได้</p><p>มีเครื่องขนสินค้า 7 รุ่น ตั้งแต่ ATR 72F (8 ตัน) ถึง 747-8F (135 ตัน) แต่ละเส้นทางตั้งค่าระวางได้เองหรือให้ระบบตั้งอัตโนมัติ ช่วงฤดูผลไม้ไทย ช้อปปิ้ง 11.11 และปลายปี สินค้าจะเยอะขึ้น ดูปฏิทินได้ในแท็บ "สินค้า"</p><p>ทุกเที่ยวบินขนสินค้าใต้ท้องเครื่องได้ ส่วน Boeing 777F ขนสินค้าอย่างเดียว 100 ตันต่อเที่ยว รายได้สินค้าคิด ฿${CARGO_RATE} ต่อตันต่อกิโลเมตร ความต้องการสินค้าขึ้นกับขนาดเมืองและระยะทาง สินค้าไม่สนราคาตั๋วหรือชื่อเสียง</p></div></details>
+<details class="g"><summary>ขนส่งสินค้า</summary><div><p><b>ระยะทางกับความต้องการ:</b> สินค้าทางอากาศและทางเรือแทบไม่ลดลงตามระยะทาง เส้นทางไกลจึงคุ้มกับเครื่องบินขนสินค้าและเรือลำใหญ่ ส่วนผู้โดยสารจะค่อย ๆ น้อยลงเมื่อไกลมาก และเมืองเล็กมีความต้องการน้อยกว่าเมืองใหญ่เสมอ</p><p>เส้นทางแบ่งเป็น 2 แบบ ใช้สาขาเดียวกัน: <b>เส้นทางผู้โดยสาร</b> ใส่ได้เฉพาะเครื่องบินโดยสาร (ขนพัสดุใต้ท้องเครื่องได้ราวครึ่งหนึ่งของตลาด) และ <b>เส้นทางขนสินค้า</b> ใส่ได้เฉพาะเครื่องบินขนสินค้า เลขเที่ยวบินขึ้นต้น 8xx เส้นบนแผนที่เป็นสีม่วง เปิดทั้งสองแบบไปเมืองเดียวกันได้</p><p>มีเครื่องขนสินค้า 7 รุ่น ตั้งแต่ ATR 72F (8 ตัน) ถึง 747-8F (135 ตัน) แต่ละเส้นทางตั้งค่าระวางได้เองหรือให้ระบบตั้งอัตโนมัติ ช่วงฤดูผลไม้ไทย ช้อปปิ้ง 11.11 และปลายปี สินค้าจะเยอะขึ้น ดูปฏิทินได้ในแท็บ "สินค้า"</p><p>ทุกเที่ยวบินขนสินค้าใต้ท้องเครื่องได้ ส่วน Boeing 777F ขนสินค้าอย่างเดียว 100 ตันต่อเที่ยว รายได้สินค้าคิดค่าจัดการต่อตันบวกตามระยะทาง (ราว ฿${Math.round(cgRate(1500)/1000)}/กก. ที่ 1,500 กม. และ ฿${Math.round(cgRate(9000)/1000)}/กก. ที่ 9,000 กม.) ความต้องการสินค้าขึ้นกับขนาดเมืองและระยะทาง สินค้าไม่สนราคาตั๋วหรือชื่อเสียง</p></div></details>
 <details class="g"><summary>เงินเข้าออกตอนไหน</summary><div><p>ทุกครั้งที่เครื่องบินลงจอด คุณได้ค่าตั๋วและค่าขนสินค้าของเที่ยวนั้นทันที และจ่ายค่าน้ำมัน ค่าสนามบิน และค่าบริการบนเครื่องของเที่ยวนั้นไปพร้อมกัน ตัวเลขเขียวหรือแดงจะลอยขึ้นจากสนามบินที่ลงจอดบนแผนที่</p><p>ตอนเที่ยงคืนระบบหักค่าใช้จ่ายคงที่ ได้แก่ ค่าดูแลเครื่องบิน ค่าลูกเรือ และดอกเบี้ย แล้วสรุปเป็นงบเมื่อวานในแท็บการเงิน</p></div></details>
 <details class="g"><summary>ต้นทุน</summary><div><ul><li><b>ค่าน้ำมัน</b> = จำนวนเที่ยว × ระยะทาง × ค่าบินต่อกม.ของรุ่น × ดัชนีน้ำมัน</li><li><b>ค่าสนามบิน</b> แต่ละเมืองเก็บไม่เท่ากัน ลอนดอนและนิวยอร์กแพงสุด คิดตามขนาดเครื่อง</li><li><b>ค่าดูแลเครื่องและลูกเรือ</b> 0.12% ของราคาเครื่องต่อวัน ถ้าจอดว่างเหลือ 0.06%</li><li><b>ค่าบริการ</b> ต่อผู้โดยสาร ตามระดับบริการ</li><li><b>ดอกเบี้ย</b> เงินกู้ 6–36% ต่อปี ยิ่งหนี้มากเทียบกับทรัพย์สิน ดอกเบี้ยยิ่งสูง</li></ul></div></details>
 <details class="g"><summary>สภาพเครื่องและการซ่อมบำรุง</summary><div><p>ทุกเที่ยวที่บิน สภาพเครื่องลดลง 0.035% เครื่องที่สภาพต่ำมีโอกาสขัดข้องกลางทาง ต้องจอด 3 วัน เสียเงินและชื่อเสียง ถ้าสภาพเฉลี่ยของฝูงบินต่ำกว่า 60% ชื่อเสียงจะค่อย ๆ ลด</p><p>ส่งซ่อมบำรุงได้เองหรือเปิดโหมดอัตโนมัติ ใช้เวลา 2 วันแล้วสภาพกลับเป็น 100% ราคาขายต่อลดลงตามอายุและสภาพเครื่อง</p></div></details>
