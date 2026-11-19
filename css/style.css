@@ -871,3 +871,17 @@ button.ptr{cursor:pointer}button.ptr:hover{background:var(--grid)}
 .advrow{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;border-top:1px solid var(--line);padding-top:8px}
 .adve{font-size:20px}
 .advok{border-top:1px solid var(--line);padding-top:8px}
+
+/* fleet split: parked / workshop / working, rows for big fleets */
+.fbar{display:flex;flex-direction:column;gap:6px}
+.fbar input[type=search]{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:inherit;font:inherit;min-width:0}
+.fchips button b{font-weight:700;margin-left:2px}
+.fsec{display:flex;flex-direction:column;gap:1px;margin:10px 0 6px;padding:6px 10px;border-radius:10px;background:var(--grid);border-left:4px solid var(--route)}
+.fsec.idle{border-left-color:var(--muted);background:rgba(220,150,40,.12)}.fsec.shop{border-left-color:var(--warn)}
+.fgrp{margin:8px 0 4px;color:var(--muted)}.fgrp b{color:var(--ink)}
+.prows{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.prow{display:grid;grid-template-columns:auto auto 1fr auto auto;gap:8px;align-items:center;padding:8px 10px;border:0;border-top:1px solid var(--line);background:var(--paper);color:inherit;font:inherit;text-align:left;cursor:pointer}
+.prow:first-child{border-top:0}.prow:hover{background:var(--grid)}
+.prow.idle{background:rgba(220,150,40,.08)}
+.prow .pm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+.seg.fchips{flex-wrap:wrap}.seg.fchips button{flex:1 1 auto}
