@@ -2203,7 +2203,7 @@ function seaHTML(){const lp=S.lanes.reduce((a,l)=>a+laneAvg(l),0),tpd=S.lanes.re
   ${seaXferHTML()}
   ${suezShut()?`<div class="panel small bad">คลองสุเอซปิดอยู่ เรือที่วิ่งระหว่างเอเชียกับยุโรปต้องอ้อมแหลมกู๊ดโฮป ระยะทางไกลขึ้น</div>`:""}
   ${S.lanes.length?`<div class="strips">${S.lanes.map(l=>{const c={...laneCalc(l),profit:laneAvg(l)},a=port(l.from),b=port(l.to),ld=Math.max(c.load,c.loadr),
-     days=c.km/40/24;return `<button class="strip ${!l.ships.length?"idle":c.profit<0?"loss":""}" data-lane="${l.id}" style="border-left-color:${!l.ships.length?"var(--muted)":c.profit<0?"var(--bad)":"var(--port)"}"><div class="fno">${laneNo(l)}<small>${l.ships.length} ลำ</small>${bkChip(bkSea(l),"ตู้")}</div>
+     days=c.km/40/24;return `<button class="strip ${!l.ships.length?"idle":c.profit<0?"loss":""}" data-lane="${l.id}" style="border-left-color:${!l.ships.length?"var(--muted)":c.profit<0?"var(--bad)":"var(--port)"}"><div class="fno">${laneNo(l)}<small>${l.ships.length} ลำ</small>${(bkSea(l)>=1?`<span class="bkchip">📥 สะสม ${kindsTxt({pcl:(l.bk||{}).d||0,fd:(l.bk||{}).r||0,pt:(l.bk||{}).o||0})} ตู้</span>`:"")}</div>
       <div style="min-width:0"><div class="iata" style="font-size:15px">${a.n} → ${b.n}</div><div class="sub">${c.km.toLocaleString()} กม. ทางทะเล · ราว ${Math.round(days)} วัน${viaText(c.sp).length?" · ผ่าน"+viaText(c.sp)[0]:""}</div><div class="sub">${lfTag(ld,"ระวางเต็ม")}</div></div>
       <div class="right"><div class="num ${c.profit<0?"bad":"good"}">${money(c.profit,true)}</div><div class="sub">เฉลี่ย/วัน</div></div></button>`}).join("")}</div>`:`<div class="panel muted small">ยังไม่มีเส้นทางเรือ เปิดเส้นทางระหว่างท่าเรือสองแห่งในภูมิภาคที่ปลดล็อกแล้ว แล้วซื้อเรือใส่ เรือช้ากว่าเครื่องบินมาก แต่ขนตู้สินค้าได้ครั้งละหลายพันตู้</div>`}
   ${S.ships.length?`<h2>กองเรือของคุณ</h2><div class="hangar">${S.ships.map(sh=>{const m=shipM(sh.m),l=S.lanes.find(x=>x.id===sh.lane);
@@ -2615,14 +2615,19 @@ function branchHTML(){if(bm()!=="cargo"||!has("sea"))brSeg="air";const seg=bm()!
   return seg+(brSeg==="sea"?portBranchHTML():airBranchHTML())}
 /* Containers at one port branch: every sea lane touching it, whether its containers overflow the ships
    (TEU left behind a day + backlog waiting), and the biggest container flows nobody carries yet. */
+const kindsTxt=o=>Object.entries(o).filter(([k,v])=>v>=1).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${CK_E[k]} ${CK_N[k]} ${Math.round(v).toLocaleString()}`).join(" · ");
+// a sea lane's containers left behind per kind: today's shortfall (demand over hold space) + the backlog waiting in port
+function seaLeftK(l,c){const B=l.bk||{},o={};for(const k of ["d","r","o"])o[SEA_KN[k]]=Math.max(0,(c.DK[k]||0)-(c.capK[k]||0))+(B[k]||0);return o}
+// an air freight route's tonnes left behind per kind
+function airLeftK(r,c){const B=cbkObj(r),o={};for(const k of CK){const x=c.cK&&c.cK[k];o[k]=(x?Math.max(0,x.dem-x.carry):0)+(B[k]||0)}return o}
 function seaAt(code){return S.lanes.filter(l=>l.from===code||l.to===code).map(l=>{const c=laneCalc(l),dem=(c.D||0)+(c.Dr||0)+(c.Do||0),carry=c.teu||0,bk=bkSea(l),left=Math.max(0,Math.round(dem-carry));
-    return {l,other:l.from===code?l.to:l.from,dem,carry,bk,left,ld:Math.max(c.load||0,c.loadr||0),st:!l.ships.length?"idle":(left>Math.max(10,dem*.1)||bk>=1)?"over":"ok"}}).sort((a,b)=>(b.st==="over")-(a.st==="over")||b.left+b.bk-(a.left+a.bk))}
+    return {l,other:l.from===code?l.to:l.from,dem,carry,bk,left,K:seaLeftK(l,c),ld:Math.max(c.load||0,c.loadr||0),st:!l.ships.length?"idle":(left>Math.max(10,dem*.1)||bk>=1)?"over":"ok"}}).sort((a,b)=>(b.st==="over")-(a.st==="over")||b.left+b.bk-(a.left+a.bk))}
 function seaOverAll(){return pbList().map(code=>{const L=seaAt(code).filter(x=>x.st==="over"&&x.l.from===code);return {code,n:L.length,t:L.reduce((a,x)=>a+x.left+x.bk,0)}}).filter(x=>x.n).sort((a,b)=>b.t-a.t)}
 function portBoxHTML(code){const L=seaAt(code),over=L.filter(x=>x.st==="over"),want=portOpen(code)?cargoWants(code,true).slice().sort((a,b)=>b.k.all-a.k.all).slice(0,3):[],pt=port(code);
   const say=over.length?`🚢 ตู้สินค้าที่${pt.n}<b class="warn">ล้น ${over.length} เส้นทาง</b> ค้างรวม ~${Math.round(over.reduce((a,x)=>a+x.left+x.bk,0)).toLocaleString()} TEU`:want.length&&want[0].k.all>=20?`🚢 ผู้ส่งสินค้าที่${pt.n}อยากส่งตู้ไป<b>${want[0].n}</b>มากที่สุด แต่เรายังไม่มีเส้นทางเรือ`:L.length?`🚢 ตู้สินค้าที่${pt.n}ขนได้ครบ ไม่มีค้าง 😊`:`🚢 ยังไม่มีเส้นทางเรือจาก${pt.n}`;
   const mx=Math.max(1,...L.map(x=>x.dem),...want.map(w=>w.k.all));
   const row=x=>`<div class="wish-row"><span class="wish-code">${x.other.slice(2)}</span><span class="wish-mid"><b>${port(x.other).n}</b> <span class="muted small">${laneNo(x.l)} · ${x.l.ships.length} ลำ</span><span class="wish-bar"><i style="width:${Math.max(6,x.dem/mx*100).toFixed(0)}%;background:var(--port)"></i></span>
-     <span class="small ${x.st==="ok"?"good":"warn"}">${x.st==="over"?`🚢 ล้น · ค้าง ~${(x.left+x.bk).toLocaleString()} TEU`:x.st==="idle"?"😐 ยังไม่มีเรือ":`😊 ขนได้ครบ · ระวางเต็ม ${Math.round(x.ld*100)}%`}</span></span>
+     <span class="small ${x.st==="ok"?"good":"warn"}">${x.st==="over"?`🚢 ล้น · ค้าง ${kindsTxt(x.K)||"~"+(x.left+x.bk).toLocaleString()} TEU`:x.st==="idle"?"😐 ยังไม่มีเรือ":`😊 ขนได้ครบ · ระวางเต็ม ${Math.round(x.ld*100)}%`}</span></span>
      <span class="wish-end"><b class="num">${Math.round(x.dem).toLocaleString()}</b><small>TEU/วัน</small>${x.st!=="ok"?`<button class="btn sm" data-lane="${x.l.id}">เพิ่มเรือ</button>`:""}</span></div>`;
   const wrow=w=>`<div class="wish-row"><span class="wish-code">${w.to.slice(2)}</span><span class="wish-mid"><b>${w.n}</b> <span class="muted small">${Math.round(w.d).toLocaleString()} กม. ทางทะเล</span><span class="wish-bar"><i style="width:${Math.max(6,w.k.all/mx*100).toFixed(0)}%;background:var(--port)"></i></span><span class="small muted">🙋 ยังไม่มีเส้นทางเรือ</span></span>
      <span class="wish-end"><b class="num">${Math.round(w.k.all).toLocaleString()}</b><small>TEU/วัน</small><button class="btn sm primary" data-lwish="${code}>${w.to}">เปิดเส้นทาง</button></span></div>`;
@@ -2702,7 +2707,7 @@ function bindWishes(){
    (tonnes left behind a day, backlog waiting), and the biggest freight flows nobody carries yet. */
 function cargoAt(code){const out=[];
   for(const r of S.routes.filter(r=>rkind(r)==="cargo"&&(r.from===code||r.dest===code))){const c=r.last||calc(r),dem=c.cdem||0,carry=c.cargo||0,bk=bkCargo(r),left=Math.max(0,Math.round(dem-carry));
-    out.push({r,other:r.from===code?r.dest:r.from,dem,carry,cap:c.ccap||0,bk,left,st:!r.planes.length?"idle":(left>Math.max(5,dem*.1)||bk>=1)?"over":"ok"})}
+    out.push({r,other:r.from===code?r.dest:r.from,dem,carry,cap:c.ccap||0,bk,left,K:airLeftK(r,c),st:!r.planes.length?"idle":(left>Math.max(5,dem*.1)||bk>=1)?"over":"ok"})}
   return out.sort((a,b)=>(b.st==="over")-(a.st==="over")||b.left+b.bk-(a.left+a.bk))}
 function cargoOverAll(){return S.bases.map(code=>{const L=cargoAt(code).filter(x=>x.st==="over"&&x.r.from===code);return {code,n:L.length,t:L.reduce((a,x)=>a+x.left+x.bk,0)}}).filter(x=>x.n).sort((a,b)=>b.t-a.t)}
 function cargoBranchHTML(code){const L=cargoAt(code),over=L.filter(x=>x.st==="over"),want=has("cargo")&&aptTakes(code,"cargo")?cargoWants(code,false).slice().sort((a,b)=>b.k.all-a.k.all).slice(0,3):[],c=city(code);
@@ -2710,7 +2715,7 @@ function cargoBranchHTML(code){const L=cargoAt(code),over=L.filter(x=>x.st==="ov
   const say=over.length?`📦 สินค้าที่${c.n}<b class="warn">ล้น ${over.length} เส้นทาง</b> ค้างรวม ~${Math.round(over.reduce((a,x)=>a+x.left+x.bk,0)).toLocaleString()} ตัน`:want.length&&want[0].k.all>=10?`📦 ผู้ส่งสินค้าที่${c.n}อยากส่งไป<b>${want[0].n}</b>มากที่สุด แต่เรายังไม่มีเที่ยวบิน`:L.length?`📦 สินค้าที่${c.n}ขนได้ครบ ไม่มีค้าง 😊`:`📦 ยังไม่มีเส้นทางสินค้าจาก${c.n}`;
   const mx=Math.max(1,...L.map(x=>x.dem),...want.map(w=>w.k.all));
   const row=x=>`<div class="wish-row"><span class="wish-code">${x.other}</span><span class="wish-mid"><b>${city(x.other).n}</b> <span class="muted small">${fno(x.r)}</span><span class="wish-bar"><i style="width:${Math.max(6,x.dem/mx*100).toFixed(0)}%;background:var(--cargo)"></i></span>
-     <span class="small ${x.st==="over"?"warn":x.st==="idle"?"warn":"good"}">${x.st==="over"?`📦 ล้น · ค้าง ~${(x.left+x.bk).toLocaleString()} ตัน`:x.st==="idle"?"😐 ยังไม่มีเครื่อง":`😊 ขนได้ครบ · ระวางเต็ม ${Math.round(x.cap?x.carry/x.cap*100:0)}%`}</span></span>
+     <span class="small ${x.st==="over"?"warn":x.st==="idle"?"warn":"good"}">${x.st==="over"?`📦 ล้น · ค้าง ${kindsTxt(x.K)||"~"+(x.left+x.bk).toLocaleString()} ตัน`:x.st==="idle"?"😐 ยังไม่มีเครื่อง":`😊 ขนได้ครบ · ระวางเต็ม ${Math.round(x.cap?x.carry/x.cap*100:0)}%`}</span></span>
      <span class="wish-end"><b class="num">${Math.round(x.dem).toLocaleString()}</b><small>ตัน/วัน</small>${x.st!=="ok"?`<button class="btn sm" data-route="${x.r.id}">เพิ่มเครื่อง</button>`:""}</span></div>`;
   const wrow=w=>`<div class="wish-row"><span class="wish-code">${w.to}</span><span class="wish-mid"><b>${w.n}</b> <span class="muted small">${Math.round(w.d).toLocaleString()} กม.</span><span class="wish-bar"><i style="width:${Math.max(6,w.k.all/mx*100).toFixed(0)}%;background:var(--cargo)"></i></span><span class="small muted">🙋 ยังไม่มีเที่ยวบินสินค้า</span></span>
      <span class="wish-end"><b class="num">${Math.round(w.k.all).toLocaleString()}</b><small>ตัน/วัน</small><button class="btn sm primary" data-cwish="${code}>${w.to}">เปิดเส้นทาง</button></span></div>`;
