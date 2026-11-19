@@ -1683,6 +1683,7 @@ function adviceList(){const out=[],ok=[],K=bm(),KC=K==="cargo",R=advRoutes(K),W=
   if(idle.length)out.push({e:"🅿️",t:`เครื่อง${KC?"ขนสินค้า":""}จอดว่าง ${idle.length} ลำ`,d:"ยังเสียค่าคงที่ทุกวัน ใส่เข้าเส้นที่ล้น หรือขายทิ้ง",btn:"ใส่เส้นที่ล้น",a:"move"});
   if(worn.length&&!S.autoMx)out.push({e:"🔧",t:`เครื่องสภาพต่ำกว่า 45% ${worn.length} ลำ`,d:"เสี่ยงเสียกลางทาง เปิดซ่อมอัตโนมัติไว้จะง่ายกว่า",btn:"เปิดซ่อมอัตโนมัติ",a:"amx"});
   if(KC){const ln=S.lanes.filter(l=>l.ships.length),eL=ln.filter(l=>{const c=laneCalc(l);return Math.max(c.load,c.loadr)<.5}),iS=S.ships.filter(sh=>!S.lanes.some(l=>l.id===sh.lane));
+    const so=seaOverAll();if(so.length)out.push({e:"🚢",t:`ตู้สินค้าล้นที่ท่าเรือ ${so.slice(0,3).map(x=>port(x.code).n).join(", ")}${so.length>3?"…":""} (ค้างรวม ~${Math.round(so.reduce((a,x)=>a+x.t,0)).toLocaleString()} TEU)`,d:"เรือไม่พอ ดูรายเส้นในแท็บสาขา → สาขาท่าเรือ",btn:"ดูท่าเรือ",a:"port"});
     if(eL.length)out.push({e:"🚢",t:`${eL.length} เส้นทางเรือระวางเต็มไม่ถึง 50%`,d:"ตั้งให้เรือรอสินค้าก่อนออก หรือย้ายเรือ",btn:"ดูเรือ",a:"go:fleet"});
     if(iS.length)out.push({e:"⚓",t:`เรือจอดว่าง ${iS.length} ลำ`,d:"ใส่เข้าเส้นทางเรือ หรือขายทิ้ง",btn:"ไปกองเรือ",a:"go:fleet"})}
   if(fights.length)out.push({e:"⚔️",t:`คู่แข่งบุก ${fights.length} เส้นทาง`,d:"ลดราคาสู้ หรือใช้บริการพรีเมียมบนเส้นนั้น",btn:"ดูเส้นทาง",a:"go:routes"});
@@ -2612,17 +2613,34 @@ function ratingHTML(){const R=S.rating;if(!R||!has("rank"))return "";const cats=
 let brReg=null,brSeg="air";
 function branchHTML(){if(bm()!=="cargo"||!has("sea"))brSeg="air";const seg=bm()!=="cargo"||!has("sea")?"":`<div class="seg"><button data-brseg="air" class="${brSeg==="air"?"on":""}">✈ สาขาสนามบิน <span class="num muted small">${S.bases.length}</span></button><button data-brseg="sea" class="${brSeg==="sea"?"on":""}">⚓ สาขาท่าเรือ <span class="num muted small">${pbList().length}</span></button></div>`;
   return seg+(brSeg==="sea"?portBranchHTML():airBranchHTML())}
+/* Containers at one port branch: every sea lane touching it, whether its containers overflow the ships
+   (TEU left behind a day + backlog waiting), and the biggest container flows nobody carries yet. */
+function seaAt(code){return S.lanes.filter(l=>l.from===code||l.to===code).map(l=>{const c=laneCalc(l),dem=(c.D||0)+(c.Dr||0)+(c.Do||0),carry=c.teu||0,bk=bkSea(l),left=Math.max(0,Math.round(dem-carry));
+    return {l,other:l.from===code?l.to:l.from,dem,carry,bk,left,ld:Math.max(c.load||0,c.loadr||0),st:!l.ships.length?"idle":(left>Math.max(10,dem*.1)||bk>=1)?"over":"ok"}}).sort((a,b)=>(b.st==="over")-(a.st==="over")||b.left+b.bk-(a.left+a.bk))}
+function seaOverAll(){return pbList().map(code=>{const L=seaAt(code).filter(x=>x.st==="over"&&x.l.from===code);return {code,n:L.length,t:L.reduce((a,x)=>a+x.left+x.bk,0)}}).filter(x=>x.n).sort((a,b)=>b.t-a.t)}
+function portBoxHTML(code){const L=seaAt(code),over=L.filter(x=>x.st==="over"),want=portOpen(code)?cargoWants(code,true).slice().sort((a,b)=>b.k.all-a.k.all).slice(0,3):[],pt=port(code);
+  const say=over.length?`🚢 ตู้สินค้าที่${pt.n}<b class="warn">ล้น ${over.length} เส้นทาง</b> ค้างรวม ~${Math.round(over.reduce((a,x)=>a+x.left+x.bk,0)).toLocaleString()} TEU`:want.length&&want[0].k.all>=20?`🚢 ผู้ส่งสินค้าที่${pt.n}อยากส่งตู้ไป<b>${want[0].n}</b>มากที่สุด แต่เรายังไม่มีเส้นทางเรือ`:L.length?`🚢 ตู้สินค้าที่${pt.n}ขนได้ครบ ไม่มีค้าง 😊`:`🚢 ยังไม่มีเส้นทางเรือจาก${pt.n}`;
+  const mx=Math.max(1,...L.map(x=>x.dem),...want.map(w=>w.k.all));
+  const row=x=>`<div class="wish-row"><span class="wish-code">${x.other.slice(2)}</span><span class="wish-mid"><b>${port(x.other).n}</b> <span class="muted small">${laneNo(x.l)} · ${x.l.ships.length} ลำ</span><span class="wish-bar"><i style="width:${Math.max(6,x.dem/mx*100).toFixed(0)}%;background:var(--port)"></i></span>
+     <span class="small ${x.st==="ok"?"good":"warn"}">${x.st==="over"?`🚢 ล้น · ค้าง ~${(x.left+x.bk).toLocaleString()} TEU`:x.st==="idle"?"😐 ยังไม่มีเรือ":`😊 ขนได้ครบ · ระวางเต็ม ${Math.round(x.ld*100)}%`}</span></span>
+     <span class="wish-end"><b class="num">${Math.round(x.dem).toLocaleString()}</b><small>TEU/วัน</small>${x.st!=="ok"?`<button class="btn sm" data-lane="${x.l.id}">เพิ่มเรือ</button>`:""}</span></div>`;
+  const wrow=w=>`<div class="wish-row"><span class="wish-code">${w.to.slice(2)}</span><span class="wish-mid"><b>${w.n}</b> <span class="muted small">${Math.round(w.d).toLocaleString()} กม. ทางทะเล</span><span class="wish-bar"><i style="width:${Math.max(6,w.k.all/mx*100).toFixed(0)}%;background:var(--port)"></i></span><span class="small muted">🙋 ยังไม่มีเส้นทางเรือ</span></span>
+     <span class="wish-end"><b class="num">${Math.round(w.k.all).toLocaleString()}</b><small>TEU/วัน</small><button class="btn sm primary" data-lwish="${code}>${w.to}">เปิดเส้นทาง</button></span></div>`;
+  return `<div class="wish"><div class="wish-say">${say}</div>${L.slice(0,5).map(row).join("")}${want.map(wrow).join("")}</div>`}
 function portBranchHTML(){
   const mine=pbList().map(code=>{const pt=port(code),ls=S.lanes.filter(l=>l.from===code||l.to===code),sh=ls.reduce((a,l)=>a+l.ships.length,0),pf=ls.filter(l=>l.from===code).reduce((a,l)=>a+laneAvg(l),0),lv=pbl(code);
     return `<div class="brcard" style="border-left-color:var(--port)"><div class="row between" style="align-items:flex-start"><div style="min-width:0"><div class="row" style="gap:8px"><span style="font-family:var(--f-display);font-weight:700;font-size:18px">⚓ ${pt.n}</span><span class="stars">${"★".repeat(lv)}${"☆".repeat(BR_MAX-lv)}</span></div>
       <div class="small muted">${REGIONS.find(R=>R.id===pt.reg).n}${pt.deep?" · ท่าเรือน้ำลึก":""}</div></div><button class="btn sm" data-pbroute="${code}">+ เส้นทางเรือ</button></div>
       <div class="kv" style="grid-template-columns:repeat(3,1fr)"><div><div class="k">เส้นทางเรือ</div><div class="v">${ls.length}</div></div><div><div class="k">เรือ</div><div class="v">${sh}</div></div><div><div class="k">กำไร/วัน</div><div class="v ${pf<0?"bad":"good"}">${money(pf,true)}</div></div></div>
       <div class="small muted">ตู้สินค้า +${Math.round((pBoost(code)-1)*100)}% · ค่าท่าเรือ −${Math.round(15*(lv-1))}% · ค่าดูแล ${money(pBranchUpkeep(code),true)}/วัน</div>
+      ${portBoxHTML(code)}
       <div class="row">${lv<BR_MAX?`<button class="btn sm ${S.cash>=pBranchUp(code)?"primary":""}" style="flex:1" data-pbup="${code}" ${S.cash>=pBranchUp(code)?"":"disabled"}>อัปเกรดเป็นระดับ ${lv+1} · ${money(pBranchUp(code),true)}</button>`:`<span class="small good" style="flex:1">ระดับสูงสุดแล้ว</span>`}
       <button class="btn sm danger" data-pbclose="${code}" ${S.lanes.some(l=>l.from===code)?"disabled":""}>ปิดสาขา</button></div></div>`}).join("");
   const reg=brReg&&REGIONS.find(R=>R.id===brReg)||REGIONS.find(R=>R.id===regionOf(S.hub).id);
   const cand=PORTS.filter(pt=>pt.reg===reg.id&&!pbl(pt.c)).sort((a,b)=>b.w-a.w),open=S.unlocked.includes(reg.id);
+  const ov=seaOverAll();
   return `<div class="row between"><h2>สาขาท่าเรือ <span class="muted num small">${pbList().length} แห่ง</span></h2><span class="muted small">เรือทุกลำต้องออกจากสาขาท่าเรือ</span></div>
+  ${pbList().length?`<div class="panel cgover"><b>🚢 ท่าเรือที่ตู้สินค้าล้น</b>${ov.length?`<div class="cgchips">${ov.map(x=>`<span class="chip warn">${port(x.code).n} · ล้น ${x.n} เส้น · ค้าง ~${Math.round(x.t).toLocaleString()} TEU</span>`).join("")}</div><div class="small muted">กด “เพิ่มเรือ” ในการ์ดท่าเรือด้านล่าง หรือตั้งให้เรือรอสินค้าก่อนออก</div>`:`<div class="small good">ไม่มีท่าเรือไหนที่ตู้ล้น ขนได้ครบทุกเส้น 😊</div>`}</div>`:""}
   ${mine?`<div class="brgrid">${mine}</div>`:`<div class="panel small muted">ยังไม่มีสาขาท่าเรือ เปิดสาขาแรกด้านล่าง แล้วไปซื้อเรือในแท็บสินค้า</div>`}
   <div class="row between" style="margin-top:6px"><h2>เปิดสาขาท่าเรือใหม่</h2><span class="muted small">ท่าเรือ ${PORTS.length} แห่ง</span></div>
   <div class="seg scrollx">${REGIONS.map(R=>{const n=PORTS.filter(pt=>pt.reg===R.id).length;return n?`<button data-brreg="${R.id}" class="${R===reg?"on":""}">${S.unlocked.includes(R.id)?"":"🔒 "}${R.n} <span class="num muted" style="font-size:11px">${n}</span></button>`:""}).join("")}</div>
@@ -2711,6 +2729,7 @@ function airBranchHTML(){const KC=bm()==="cargo";
   const open=S.unlocked.includes(reg.id);
   const ov=KC?cargoOverAll():[];
   return `<div class="row between"><h2>สาขาของคุณ <span class="muted num small">${S.bases.length} แห่ง</span></h2><span class="muted small num">ค่าดูแลรวม ${money(totalUpkeep(),true)}/วัน</span></div>
+  ${KC&&has("sea")&&seaOverAll().length?`<button class="panel row between cogo" data-brseg="sea"><span>🚢 ตู้สินค้าล้นที่ท่าเรือ ${seaOverAll().slice(0,3).map(x=>port(x.code).n).join(", ")}</span><span class="muted">สาขาท่าเรือ ›</span></button>`:""}
   ${KC?`<div class="panel cgover"><b>📦 สนามบินที่สินค้าล้น</b>${ov.length?`<div class="cgchips">${ov.map(x=>`<span class="chip warn">${x.code} ${city(x.code).n} · ล้น ${x.n} เส้น · ค้าง ~${Math.round(x.t).toLocaleString()} ตัน</span>`).join("")}</div><div class="small muted">กด “เพิ่มเครื่อง” ในการ์ดสาขาด้านล่าง หรือเปิด 🤖 จัดการอัตโนมัติในหน้าภาพรวม</div>`:`<div class="small good">ไม่มีสาขาไหนที่สินค้าล้น ขนได้ครบทุกเส้น 😊</div>`}</div>`:""}
   <div class="brgrid">${mine}</div>
   <div class="row between" style="margin-top:6px"><h2>เปิดสาขาใหม่</h2><span class="muted small">สนามบิน ${CITIES.length} แห่ง · ${REGIONS.length} ภูมิภาค</span></div>
@@ -3092,6 +3111,7 @@ function bindView(rest){
     if(k==="bulk")openSheet(bulkPriceSheet(v==="full"?{mode:"rel",f:1.05,flt:"full"}:v==="empty"?{mode:"rel",f:.95,flt:"empty"}:{mode:"auto",f:1,flt:"all"}));
     else if(k==="go"){tab=v;renderView(true);window.scrollTo(0,0)}else if(k==="newr")openSheet(newRouteSheet({from:S.hub,kind:bm()}));
     else if(k==="move"){const n=rebalance(10);toast(n?`ย้ายเครื่อง ${n} ลำไปเส้นที่ล้นแล้ว`:"ไม่มีเครื่องที่ย้ายได้ (เส้นที่ล้นอยู่ไกลเกินพิสัย หรือเส้นที่ว่างมีเครื่องลำเดียว) ลองซื้อเครื่องเพิ่ม");save();renderView()}
+    else if(k==="port"){tab="branch";brSeg="sea";renderView(true);window.scrollTo(0,0)}
     else if(k==="amx"){S.autoMx=true;save();toast("เปิดส่งซ่อมอัตโนมัติแล้ว");renderView()}});
   const aa=$("#autoadv");if(aa)aa.onchange=()=>{S.autoAdv=aa.checked;if(S.autoAdv){S.autoMx=true;autoAdvTick()}save();toast(S.autoAdv?"🤖 เปิดจัดการอัตโนมัติแล้ว ดูสิ่งที่ระบบทำได้ในข่าว":"ปิดจัดการอัตโนมัติแล้ว");renderView()};
   bindWishes();const nr=$("#newr");if(nr)nr.onclick=()=>openSheet(newRouteSheet({from:S.hub,kind:rseg}));const bp=$("#bulkp");if(bp)bp.onclick=()=>openSheet(bulkPriceSheet({mode:"auto",f:1,flt:"all"}));
