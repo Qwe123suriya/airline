@@ -885,3 +885,9 @@ button.ptr{cursor:pointer}button.ptr:hover{background:var(--grid)}
 .prow.idle{background:rgba(220,150,40,.08)}
 .prow .pm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
 .seg.fchips{flex-wrap:wrap}.seg.fchips button{flex:1 1 auto}
+
+/* advice box: full-width rows on wide screens too */
+.advice{align-items:stretch;text-align:left}.advice>*{width:100%;box-sizing:border-box}
+.advice .advhead{justify-content:space-between}
+.advauto{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:10px;background:var(--grid);margin:0}
+.advauto input{margin-top:4px}
