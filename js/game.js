@@ -129,20 +129,29 @@ const CITIES=[
 ].map(([c,n,lat,lon,w,fee])=>({c,n,lat,lon,w,fee}));
 const MODELS=[
  {id:"c208",cat:"prop",name:"Cessna 208 Caravan",tag:"ใบพัดเดี่ยว ลงสนามบินเล็กได้",seats:12,cargo:.4,range:1700,speed:340,price:12e6,cpk:16,len:12.7,a:{fw:.13,sr:1.25,prop:1,pods:[],fh:9,hw:1,eng:"nose"}},
+ {id:"b19",cat:"prop",name:"Beechcraft 1900D",tag:"ใบพัดคู่ 19 ที่นั่ง เส้นทางสั้นมาก",seats:19,cargo:.5,range:1000,speed:500,price:22e6,cpk:22,len:17.6,a:{fw:.12,sr:1.1,prop:1,pods:[.34],fh:9,hw:1,eng:"prop"}},
  {id:"atr42",cat:"prop",name:"ATR 42-600",tag:"ใบพัดคู่ขนาดเล็ก",seats:48,cargo:.7,range:1300,speed:500,price:50e6,cpk:45,len:22.7,a:{fw:.12,sr:1.08,prop:1,pods:[.34],fh:11,hw:1,tt:1,eng:"prop"}},
  {id:"atr",cat:"prop",name:"ATR 72-600",tag:"ใบพัดภูมิภาค ประหยัดน้ำมัน",seats:70,cargo:1,range:1500,speed:510,price:70e6,cpk:60,len:27.2,a:{fw:.1,sr:1,prop:1,pods:[.34],fh:12,hw:1,tt:1,eng:"prop"}},
  {id:"q400",cat:"prop",name:"Dash 8-400",tag:"ใบพัดที่เร็วที่สุด",seats:78,cargo:1.2,range:2000,speed:660,price:95e6,cpk:72,len:32.8,a:{fw:.083,sr:.86,prop:1,pods:[.3],fh:12,hw:1,tt:1,eng:"prop"}},
+ {id:"crj9",cat:"narrow",name:"Bombardier CRJ900",tag:"เจ็ตภูมิภาค 90 ที่นั่ง ราคาถูก",seats:90,cargo:1.2,range:2900,speed:830,price:110e6,cpk:82,len:36.2,a:{fw:.07,sr:.85,pods:[.62],fh:12,eng:"jet"}},
+ {id:"e175",cat:"narrow",name:"Embraer E175",tag:"เจ็ตภูมิภาค 80 ที่นั่ง บินได้ไกลกว่าใบพัด",seats:80,cargo:1.2,range:3700,speed:830,price:120e6,cpk:76,len:31.7,a:{fw:.085,sr:.95,pods:[.3],fh:12,eng:"jet"}},
  {id:"e190",cat:"narrow",name:"Embraer E190-E2",tag:"เจ็ตภูมิภาค 100 ที่นั่ง",seats:106,cargo:1.5,range:5200,speed:830,price:150e6,cpk:92,len:36.2,a:{fw:.083,sr:.93,pods:[.3],fh:13,eng:"jet"}},
  {id:"a220",cat:"narrow",name:"Airbus A220-300",tag:"ลำตัวแคบรุ่นใหม่ เงียบ ประหยัด",seats:140,cargo:2,range:6300,speed:830,price:200e6,cpk:108,len:38.7,a:{fw:.09,sr:.9,pods:[.3],fh:14,eng:"jet"}},
  {id:"b738",cat:"narrow",name:"Boeing 737-800",tag:"รุ่นยอดนิยม ราคาถูก กินน้ำมันกว่า",seats:189,cargo:2.5,range:5400,speed:840,price:230e6,cpk:152,len:39.5,a:{fw:.095,sr:.9,pods:[.32],fh:15,eng:"jet"}},
+ {id:"b38m",cat:"narrow",name:"Boeing 737 MAX 8",tag:"737 รุ่นใหม่ ประหยัดน้ำมันกว่า 737-800",seats:178,cargo:2.5,range:6500,speed:840,price:250e6,cpk:134,len:39.5,a:{fw:.095,sr:.9,pods:[.32],fh:15,eng:"jet"}},
  {id:"a320",cat:"narrow",name:"Airbus A320neo",tag:"ลำตัวแคบ งานหลักของสายการบิน",seats:180,cargo:2.5,range:6300,speed:830,price:260e6,cpk:140,len:37.6,a:{fw:.105,sr:.95,pods:[.33],fh:15,eng:"jet"}},
  {id:"a321",cat:"narrow",name:"Airbus A321neo",tag:"ลำตัวแคบยืด จุคนมาก",seats:220,cargo:3,range:7400,speed:830,price:320e6,cpk:165,len:44.5,a:{fw:.089,sr:.8,pods:[.33],fh:15,eng:"jet"}},
+ {id:"b3mx",cat:"narrow",name:"Boeing 737 MAX 10",tag:"737 ที่จุคนมากที่สุด",seats:204,cargo:2.8,range:5700,speed:840,price:285e6,cpk:150,len:43.8,a:{fw:.088,sr:.84,pods:[.32],fh:15,eng:"jet"}},
+ {id:"a21x",cat:"narrow",name:"Airbus A321XLR",tag:"ลำตัวแคบบินไกล เปิดเส้นทางข้ามทวีปที่คนไม่มากพอสำหรับลำตัวกว้าง",seats:200,cargo:2.5,range:8700,speed:830,price:360e6,cpk:160,len:44.5,a:{fw:.089,sr:.8,pods:[.33],fh:15,eng:"jet"}},
+ {id:"b763",cat:"wide",name:"Boeing 767-300ER",tag:"ลำตัวกว้างรุ่นเก่า ราคาถูก กินน้ำมันกว่า",seats:218,cargo:10,range:11000,speed:850,price:420e6,cpk:235,len:54.9,a:{fw:.09,sr:.95,big:1,pods:[.3],fh:18,eng:"jet"}},
+ {id:"b788",cat:"wide",name:"Boeing 787-8",tag:"ลำตัวกว้างเล็กที่สุด บินไกล",seats:242,cargo:10,range:13500,speed:900,price:600e6,cpk:215,len:56.7,a:{fw:.095,sr:1,big:1,pods:[.3],fh:19,eng:"jet"}},
  {id:"a339",cat:"wide",name:"Airbus A330-900",tag:"ลำตัวกว้าง ราคาคุ้ม",seats:300,cargo:14,range:13300,speed:870,price:650e6,cpk:258,len:63.7,a:{fw:.088,sr:1,big:1,pods:[.3],fh:20,eng:"jet"}},
  {id:"b789",cat:"wide",name:"Boeing 787-9",tag:"ลำตัวกว้าง บินข้ามทวีป",seats:290,cargo:12,range:14000,speed:900,price:720e6,cpk:250,len:62.8,a:{fw:.092,sr:.96,big:1,pods:[.3],fh:20,eng:"jet"}},
  {id:"b78x",cat:"wide",name:"Boeing 787-10",tag:"787 ยืด จุคนมากขึ้น",seats:336,cargo:14,range:11900,speed:900,price:820e6,cpk:282,len:68.3,a:{fw:.085,sr:.88,big:1,pods:[.3],fh:20,eng:"jet"}},
  {id:"a359",cat:"wide",name:"Airbus A350-900",tag:"บินไกลมาก ประหยัดน้ำมัน",seats:315,cargo:14,range:15000,speed:910,price:820e6,cpk:268,len:66.8,a:{fw:.09,sr:1,big:1,pods:[.3],fh:21,eng:"jet"}},
  {id:"a35k",cat:"wide",name:"Airbus A350-1000",tag:"ลำตัวกว้าง ระยะไกลมาก",seats:360,cargo:15,range:16000,speed:910,price:950e6,cpk:300,len:73.8,a:{fw:.081,sr:.88,big:1,pods:[.3],fh:21,eng:"jet"}},
  {id:"b77w",cat:"wide",name:"Boeing 777-300ER",tag:"สองเครื่องยนต์ที่ใหญ่ที่สุด",seats:396,cargo:18,range:13600,speed:905,price:1000e6,cpk:345,len:73.9,a:{fw:.084,sr:.88,big:1,pods:[.32],fh:21,eng:"jet"}},
+ {id:"b779",cat:"wide",name:"Boeing 777-9",tag:"สองเครื่องยนต์รุ่นใหม่ ใหญ่และประหยัด",seats:426,cargo:20,range:13500,speed:905,price:1150e6,cpk:350,len:76.7,a:{fw:.082,sr:.86,big:1,pods:[.32],fh:22,eng:"jet"}},
  {id:"b748",cat:"wide",name:"Boeing 747-8",tag:"ราชินีแห่งท้องฟ้า มีโหนก",seats:410,cargo:20,range:14300,speed:920,price:1250e6,cpk:425,len:76.3,a:{fw:.085,sr:.9,big:1,pods:[.28,.6],fh:21,eng:"quad",deck:"hump"}},
  {id:"a388",cat:"wide",name:"Airbus A380",tag:"ยักษ์สองชั้น จุคนสูงสุด",seats:520,cargo:12,range:15000,speed:900,price:1400e6,cpk:470,len:72.7,a:{fw:.098,sr:1.1,big:1,pods:[.27,.58],fh:26,eng:"quad",deck:"double"}},
  {id:"b77f",cat:"cargo",name:"Boeing 777F",tag:"เครื่องบินขนส่งสินค้าล้วน",seats:0,cargo:100,range:9000,speed:890,price:800e6,cpk:280,len:63.7,a:{fw:.097,sr:1,big:1,pods:[.32],fh:21,eng:"jet",cargo:1}},
@@ -545,7 +554,7 @@ function rollFate(keepName){
   const hub=rnd(CITIES.filter(c=>aptKind(c.c)!=="cargo"&&c.w>=2&&!HARD_HUBS.has(c.c)));   // tiny island airports can still be picked by hand
   const cap0=rnd(START_CAPS),cap=fairCap(hub.c,cap0);
   const fuel=+(0.8+Math.random()*0.5).toFixed(2);
-  fate={hub:hub.c,cap,cap0,fuel,name:keepName&&fate?fate.name:rnd(NAMES),code:keepName&&fate?fate.code:String.fromCharCode(65+Math.random()*26|0,65+Math.random()*26|0)};
+  fate={hub:hub.c,cap,cap0,fuel,name:keepName&&fate?fate.name:rnd(NAMES),code:keepName&&fate?fate.code:String.fromCharCode(65+Math.random()*26|0,65+Math.random()*26|0),diff:fate&&fate.diff};
   justRolled=true;
 }
 function difficulty(f){let s=0;const h=city(f.hub);s+=h.w>=16?0:h.w>=12?1:h.w>=8?2:3;s+=f.cap>=130e6?0:f.cap>=75e6?1:2;s+=f.fuel>1.1?1:0;return clamp(s,0,4)+1}
@@ -576,6 +585,7 @@ function renderStart(){
      <div class="tb perf">
        <label class="f full">ชื่อสายการบิน<input id="nm" type="text" maxlength="24" value="${esc(fate.name)}"></label>
        <label class="f">รหัส 2 ตัวอักษร<input id="cd" type="text" maxlength="2" value="${esc(fate.code)}" style="text-transform:uppercase"></label>
+       <div class="full"><div class="k">ความเก่งของคู่แข่ง (เปลี่ยนได้ตลอดในแท็บบริษัท)</div><div class="seg" style="margin-top:4px">${DIFFS.map(([k,n])=>`<button type="button" data-sdiff="${k}" class="${(fate.diff||"normal")===k?"on":""}">${n}</button>`).join("")}</div><div class="small muted" style="margin-top:3px">${DIFFS.find(x=>x[0]===(fate.diff||"normal"))[2]}</div></div>
        <label class="f">หรือเลือกฐานเอง<select id="hb">${CITIES.filter(c=>aptKind(c.c)!=="cargo").map(c=>`<option value="${c.c}" ${c.c===fate.hub?"selected":""}>${c.c} · ${c.n}</option>`).join("")}</select></label>
      </div>
    </div>
@@ -586,12 +596,13 @@ function renderStart(){
   const keep=()=>{fate.name=$("#nm").value.trim()||fate.name;fate.code=($("#cd").value.replace(/[^a-z]/gi,"").toUpperCase()+"XX").slice(0,2)};
   $("#re").onclick=()=>{keep();rollFate(true);renderStart()};
   $("#hb").onchange=e=>{keep();fate.hub=e.target.value;fate.cap0??=fate.cap;fate.cap=fairCap(fate.hub,fate.cap0);justRolled=true;renderStart()};
+  $$("[data-sdiff]").forEach(b=>b.onclick=()=>{keep();fate.diff=b.dataset.sdiff;renderStart()});
   $("#go").onclick=()=>{keep();newGame()};
   $("#hlp").onclick=()=>openSheet(guideSheet);
 }
 function newGame(){
   S=migrate({name:fate.name,code:fate.code,hub:fate.hub,cash:fate.cap,startCap:fate.cap,fuel:fate.fuel,day:0,rep:50,service:1,loan:0,
-     fleet:[],routes:[],events:[],news:[],hist:[{d:0,c:fate.cap,r:0,x:0}],nid:1,goal:0,neg:0,over:false,last:null,totPax:0});
+     fleet:[],routes:[],events:[],news:[],hist:[{d:0,c:fate.cap,r:0,x:0}],nid:1,goal:0,neg:0,over:false,last:null,totPax:0,diff:fate.diff||"normal"});
   S.unlocked=[regionOf(S.hub).id];S.prog=[];S.progDay=-1;dispCash=S.cash;view=null;camMode="world";
   addNews(`${S.name} เปิดกิจการที่ ${city(S.hub).n} ด้วยทุน ${money(S.cash)} แผนที่ภูมิภาค${regionOf(S.hub).n}ปลดล็อกแล้ว ซื้อเครื่องบินลำแรกในแท็บฝูงบินได้เลย`);
   paused=false;tab="fleet";save();renderApp();
@@ -998,17 +1009,25 @@ const tierOf=sr=>{let t=TIERS[0],i=0;TIERS.forEach((x,k)=>{if(sr>=x[0]){t=x;i=k}
 /* Rival difficulty follows the ranking table: the further ahead of #2 you are, the harder rivals play (faster growth,
    more route attacks, deeper price cuts, slower to give up); when you are behind the leader they ease off.
    It moves gradually (a little each day) so it never jumps. -0.6 easy .. 0 normal .. +1.6 hardest */
-const botLv=()=>has("rank")?clamp(S.dlv||0,-.6,1.6):0;
+/* Rival difficulty. The player picks it (new game screen, or the competition section): easy, normal and hard are
+   fixed; "follow my skill" is the old behaviour (rivals push harder the further you lead). Easy rivals also aim lower,
+   start attacking routes later and cut prices less. Old saves keep "follow my skill". */
+const DIFFS=[["easy","😊 ง่าย","คู่แข่งโตช้า บุกน้อย เหมาะกับมือใหม่"],["normal","🙂 ปกติ","คู่แข่งพอสู้ได้"],["hard","😤 ยาก","คู่แข่งโตเร็ว บุกบ่อย ตัดราคาแรง"],["auto","🎯 ตามฝีมือ","ยิ่งเรานำ คู่แข่งยิ่งเก่งขึ้น"]];
+const diffOf=()=>S&&S.diff||"auto";
+const DIFF_AIM={easy:.72,normal:.88,hard:1.05,auto:1};
+const botLv=()=>{if(!has("rank"))return diffOf()==="easy"?-.4:0;const d=diffOf();return d==="auto"?clamp(S.dlv||0,-.6,1.6):{easy:-.5,normal:0,hard:.8}[d]};
 function leadInfo(){const B=standings(),me=B.findIndex(x=>x.me),my=B[me].sc;
   if(me===0){const second=B[1]?B[1].sc:my;return {rank:1,pct:Math.round((my/Math.max(1,second)-1)*100),vs:B[1]?B[1].n:""}}
   return {rank:me+1,pct:Math.round((my/Math.max(1,B[0].sc)-1)*100),vs:B[0].n}}
 const diffTarget=()=>{const L=leadInfo();return L.rank===1?clamp(L.pct/100*1.5,0,1.6):clamp(L.pct/100*1.2,-.6,0)};
 const botLvTxt=()=>{const d=botLv();return d<-.3?"ง่าย":d<.15?"ปกติ":d<.5?"ยากขึ้น":d<.9?"ยาก":d<1.3?"ยากมาก":"โหดสุด"};
 function leagueTick(){if(!has("rank")||!S.rivals||!S.rivals.length)return;if(S.dlv==null)S.dlv=S.sr!=null?clamp((S.sr-1000)/500,-.6,1.6):0;
+  if(diffOf()!=="auto")return;
   const before=botLvTxt();S.dlv=(S.dlv||0)+(diffTarget()-(S.dlv||0))*.12;const after=botLvTxt();
   if(after!==before){const L=leadInfo();addNews(L.rank===1?`⚔️ คู่แข่งปรับตัวเป็นระดับ “${after}” เพราะคุณนำอันดับ 2 อยู่ ${L.pct}%`:`🙂 คู่แข่งผ่อนลงเป็นระดับ “${after}” คุณตามหลังอันดับ 1 อยู่ ${Math.abs(L.pct)}%`)}}
+const diffPickHTML=()=>`<div class="stack" style="gap:4px"><span class="eyebrow">⚙️ ความยากของคู่แข่ง</span><div class="seg">${DIFFS.map(([k,n])=>`<button data-diff="${k}" class="${diffOf()===k?"on":""}">${n}</button>`).join("")}</div><div class="muted small">${DIFFS.find(x=>x[0]===diffOf())[2]} · เปลี่ยนได้ตลอด</div></div>`;
 function competeHTML(){const L=leadInfo(),n=S.rivals.length+1,d=botLv(),pc=clamp((d+.6)/2.2,0,1)*100;
-  return `<div class="panel stack"><div class="row between"><div><span class="eyebrow">📋 อันดับของเรา</span><div class="cbig num">#${L.rank}<small> / ${n}</small></div></div>
+  return `<div class="panel stack">${diffPickHTML()}<div class="row between"><div><span class="eyebrow">📋 อันดับของเรา</span><div class="cbig num">#${L.rank}<small> / ${n}</small></div></div>
      <div style="text-align:right"><span class="eyebrow">⚔️ คู่แข่งเล่นระดับ</span><div class="cbig">${botLvTxt()}</div></div></div>
     <div class="diffbar"><i style="left:${pc}%"></i></div><div class="row between small muted"><span>ง่าย</span><span>ปกติ</span><span>โหดสุด</span></div>
     <div class="small">${L.rank===1?`คุณนำ <b>${esc(L.vs)}</b> (อันดับ 2) อยู่ <b>${L.pct}%</b>`:`คุณตามหลัง <b>${esc(L.vs)}</b> (อันดับ 1) อยู่ <b>${Math.abs(L.pct)}%</b>`} · ยิ่งนำห่าง คู่แข่งยิ่งเก่งขึ้น: โตเร็วขึ้น บุกเส้นทางบ่อยขึ้น ตัดราคาแรงขึ้น · ถ้าตามหลัง คู่แข่งจะผ่อนลง</div>
@@ -1152,7 +1171,7 @@ function rivalTurn(){
   const contested=pax.filter(r=>r.cmp).length,lead=rank()===1;
   for(const r of pax){const base=baseFare(dist(city(r.from),city(r.dest)));
     if(!r.cmp){
-      if(S.day<RV_GRACE||contested>=Math.ceil(pax.length*.5)||(r.cmpCool||0)>S.day)continue;
+      if(S.day<RV_GRACE*(diffOf()==="easy"?3:diffOf()==="normal"?1.5:1)||contested>=Math.ceil(pax.length*.5)||(r.cmpCool||0)>S.day)continue;
       const margin=clamp(r.last.profit/Math.max(1,r.last.rev),0,1);
       if(Math.random()<(.002+.016*margin)*(lead?1.6:1)*(pax.length<2?.4:1)*Math.max(.3,1+.6*botLv())){
         const tot=S.rivals.reduce((a,x)=>a+x.v,0);let k=Math.random()*tot,rv=S.rivals[0];for(const x of S.rivals){k-=x.v;if(k<=0){rv=x;break}}
@@ -1167,7 +1186,7 @@ function rivalTurn(){
     if(r.cmp.weak>=RV_EXIT_DAYS+Math.round(8*Math.max(0,botLv()))||(S.day-r.cmp.since>60&&sh>.5&&Math.random()<.01)){addNews(`🏳️ ${r.cmp.rv} ถอนตัวจาก ${r.from}→${r.dest} คุณครองเส้นทางนี้แล้ว`);celebrate("!ชนะศึกเส้นทาง",`${r.from}→${r.dest}`);S.rep=clamp(S.rep+2,0,100);delete r.cmp;r.cmpCool=S.day+90}}
   // rivals keep pace: they grow faster when you pull ahead and from every route they fight you on
   S.rivals.forEach((rv,i)=>{const fights=S.routes.filter(r=>r.cmp&&r.cmp.rv===rv.n).length,aim=rvAim(rv,i);
-    const tgt=Math.max(S.startCap||1,myV)*Math.max(.4,aim+.12*botLv()),gap=(tgt-rv.v)/tgt;
+    const tgt=Math.max(S.startCap||1,myV)*Math.max(.4,aim*DIFF_AIM[diffOf()]+.12*botLv()),gap=(tgt-rv.v)/tgt;
     rv.v*=1+(gap>0?.0015+.02*Math.min(1,gap*1.5):-.008*Math.min(1,-gap))+.0004*Math.min(fights,5);
     rv.ops=(rv.ops||0)+Math.min(fights,5)*3});
   rankNews()}
@@ -1218,7 +1237,7 @@ const rvStr=(P,k)=>k==="net"?(P.net||1):clamp(.35+1.6*(P[k]||0),.35,1.4);
 function rvTarget(rv,k){const P=rvProf(rv),d=S.day,aim=rv.aim||1,my=myCat(k),K=catK(),cap=v=>Math.min(rv.v,v);
   const floor=k==="pax"?Math.min(rv.v*K.pax,1500+d*25):k==="cargo"?Math.max(myCat("pax")*.02,Math.min(rv.v*K.cargo,40+d*.8)):
     k==="sea"?Math.max(myCat("pax")*.025,Math.min(rv.v*K.sea,50+d)):Math.min(8+d/15,40);
-  const t=Math.max(my,floor)*aim*rvStr(P,k);return k==="net"?Math.min(t,Math.round((CITIES.length+PORTS.length)*.6)):t}
+  const t=Math.max(my,floor)*aim*DIFF_AIM[diffOf()]*rvStr(P,k);return k==="net"?Math.min(t,Math.round((CITIES.length+PORTS.length)*.6)):t}
 function rvOps(rv){if(!rv.m){rv.m={};for(const k of ["pax","cargo","sea","net"])rv.m[k]=rvTarget(rv,k)*(.7+Math.random()*.2)}return rv.m}
 function rvOpsTick(){for(const rv of S.rivals){const m=rvOps(rv),before={...m};
     for(const k of ["pax","cargo","sea","net"]){const t=rvTarget(rv,k);m[k]=Math.max(0,m[k]+(t-m[k])*(t>m[k]?.03:.012)*(.6+Math.random()*.8))}
@@ -1622,6 +1641,30 @@ function movingNow(F){let n=F.filter(f=>f.air).length;if(bm()==="cargo"&&vmode()
 function msLineHTML(){const k=bm(),M=MS[k],i=(S.ms&&S.ms[k])||0,v=M.v(),prev=i?M.L[i-1]:0,nx=M.L[i];
   if(nx==null)return `<span>${M.e} ${M.nm} <b class="num">${Math.round(v).toLocaleString()}</b> ${M.u}</span>`;
   return `<span>${M.e} ${M.nm} <b class="num">${Math.round(v).toLocaleString()}</b> / ${nx.toLocaleString()} ${M.u}</span><span class="rw">🎁 ${money(msReward(k,nx),true)}</span><i class="hbar"><i style="width:${clamp((v-prev)/(nx-prev)*100,0,100)}%"></i></i>`}
+/* The overview's advice box: the main numbers at a glance, then what needs a change (with a button that does it) and
+   what is fine and should be left alone. */
+function adviceList(){const out=[],ok=[];const pax=S.routes.filter(r=>rkind(r)==="pax"&&r.planes.length&&r.last),cg=S.routes.filter(r=>rkind(r)==="cargo"&&r.planes.length&&r.last);
+  const full=pax.filter(r=>r.last.lf>=.95),empty=pax.filter(r=>r.last.lf<.6),loss=S.routes.filter(r=>r.planes.length&&r.last&&r.last.profit<0);
+  const idle=S.fleet.filter(p=>!p.route&&p.down<=S.day),worn=S.fleet.filter(p=>p.cond<45&&p.down<=S.day),fights=S.routes.filter(r=>r.cmp);
+  if(full.length)out.push({e:"📈",t:`${full.length} เส้นทางที่นั่งเต็มเกือบ 100% (${full.slice(0,3).map(r=>r.dest).join(", ")}${full.length>3?"…":""})`,d:"คนอยากบินมากกว่าที่นั่ง ขึ้นราคาได้อีก หรือเพิ่มเครื่องบิน",btn:"ขึ้นราคา 5%",a:"bulk:full"});
+  if(empty.length)out.push({e:"📉",t:`${empty.length} เส้นทางที่นั่งเต็มไม่ถึง 60% (${empty.slice(0,3).map(r=>r.dest).join(", ")}${empty.length>3?"…":""})`,d:"ที่นั่งว่างเยอะ ลดราคาเพื่อดึงคน หรือย้ายเครื่องไปเส้นที่คนเยอะ",btn:"ลดราคา 5%",a:"bulk:empty"});
+  if(loss.length)out.push({e:"🔻",t:`${loss.length} เส้นทางขาดทุนเมื่อวาน (${loss.slice(0,3).map(r=>r.dest).join(", ")})`,d:"ลองตั้งราคา “กำไรสูงสุด” เปลี่ยนเครื่องให้เล็กลง หรือปิดเส้นทาง",btn:"ดูเส้นทาง",a:"go:routes"});
+  if(idle.length)out.push({e:"🅿️",t:`เครื่องจอดว่าง ${idle.length} ลำ`,d:"เครื่องที่ไม่ได้บินยังเสียค่าคงที่ทุกวัน ใส่เข้าเส้นทางหรือขายทิ้ง",btn:"ไปฝูงบิน",a:"go:fleet"});
+  if(worn.length)out.push({e:"🔧",t:`เครื่องสภาพต่ำกว่า 45% ${worn.length} ลำ`,d:"เสี่ยงเสียกลางทางและผู้โดยสารไม่พอใจ ควรส่งซ่อม",btn:"ไปฝูงบิน",a:"go:fleet"});
+  if(fights.length)out.push({e:"⚔️",t:`คู่แข่งบุก ${fights.length} เส้นทาง`,d:"ลดราคาสู้ หรือเพิ่มบริการพรีเมียมบนเส้นนั้น",btn:"ดูเส้นทาง",a:"go:routes"});
+  const dp=avgDailyProfit();if(S.cash>Math.max(3e8,dp*20)&&pax.length)out.push({e:"💰",t:`เงินสดเหลือ ${money(S.cash,true)}`,d:"เงินที่จอดไว้เฉยๆ ไม่ทำกำไร ซื้อเครื่องเพิ่มในเส้นที่เต็ม หรือเปิดเส้นทางใหม่",btn:"เปิดเส้นทาง",a:"newr"});
+  const good=pax.filter(r=>r.last.lf>=.6&&r.last.lf<.95&&r.last.profit>0).length+cg.filter(r=>r.last.profit>0).length;
+  if(good)ok.push(`${good} เส้นทางที่นั่งเต็มพอดีและมีกำไร`);
+  const fineP=S.fleet.filter(p=>p.route&&p.cond>=60).length;if(fineP)ok.push(`เครื่องบิน ${fineP} ลำสภาพดี`);
+  if(S.loan===0&&S.fleet.length)ok.push("ไม่มีหนี้");
+  return {out,ok}}
+function adviceHTML(){if(!S.routes.some(r=>r.planes.length&&r.last))return "";const {out,ok}=adviceList(),L=S.last||{},pax=S.routes.filter(r=>rkind(r)==="pax"&&r.planes.length);
+  const tiles=[["กำไรเมื่อวาน",`${L.rev-L.cost>=0?"+":""}${money((L.rev||0)-(L.cost||0),true)}`,(L.rev||0)>=(L.cost||0)?"good":"bad"],["ที่นั่งเต็มเฉลี่ย",`${Math.round((L.lf||0)*100)}%`,(L.lf||0)>=.75?"good":(L.lf||0)>=.5?"warn":"bad"],
+    ["เส้นทาง / เครื่อง",`${S.routes.filter(r=>r.planes.length).length} / ${S.fleet.length}`,""],has("rank")?["อันดับ",`#${rank()} จาก ${S.rivals.length+1}`,rank()===1?"good":""]:["เงินสด",money(S.cash,true),""]];
+  return `<div class="panel stack advice"><div class="row between"><b>💡 ควรปรับอะไรบ้าง</b>${pax.length>1?`<button class="btn sm" data-adv="bulk:all">🏷️ ปรับราคาตั๋วทุกเส้น</button>`:""}</div>
+    <div class="advtiles">${tiles.map(([k,v,c])=>`<div><span class="muted small">${k}</span><b class="num ${c}">${v}</b></div>`).join("")}</div>
+    ${out.length?out.slice(0,5).map(x=>`<div class="advrow"><span class="adve">${x.e}</span><div style="min-width:0"><b class="small">${x.t}</b><div class="small muted">${x.d}</div></div><button class="btn sm primary" data-adv="${x.a}">${x.btn}</button></div>`).join(""):`<div class="small good">ทุกอย่างเรียบร้อยดี ยังไม่มีอะไรต้องปรับ</div>`}
+    ${ok.length?`<div class="small advok">✅ <b>ไม่ต้องปรับ:</b> ${ok.join(" · ")}</div>`:""}</div>`}
 function heroHTML(F){const T=S.today||blankT(),net=todayNet(T),K=bm()==="cargo";
   return `<div class="hero ${K?"cg":""}"><div class="hk"><span>ทำเงินวันนี้ · ทั้งบริษัท</span><span class="live"><i></i>สด</span></div>
    <div class="hv num" id="heroNet">${net>=0?"+":""}${money(net,true)}</div><div class="hnote">ก่อนหักค่าคงที่ตอนเที่ยงคืน${S.last&&S.day>0?` · เมื่อวานสุทธิ <b class="num">${S.last.rev-S.last.cost>=0?"+":""}${money(S.last.rev-S.last.cost,true)}</b>`:""}</div>
@@ -1662,6 +1705,7 @@ function homeRestHTML(){
   const out=`${heroHTML(F)}
   ${S.fleet.length===0?`<div class="panel row between"><span>ยังไม่มีเครื่องบินเลย เริ่มจากซื้อลำแรก</span><button class="btn primary sm" data-go="fleet">ไปซื้อ</button></div>`:
     !S.routes.some(r=>r.planes.length)?`<div class="panel row between"><span>มีเครื่องแล้ว ต่อไปเปิดเส้นทางแล้วใส่เครื่องบิน</span><button class="btn primary sm" data-go="routes">ไปเส้นทาง</button></div>`:""}
+  ${adviceHTML()}
   ${boardHTML(F)}
   ${missionsHTML()}
   <div class="panel stack" id="aplist">${airportListHTML()}</div>
@@ -2590,6 +2634,7 @@ function bindWishes(){
   $$("[data-wunlock]").forEach(b=>b.onclick=e=>{e.stopPropagation();openSheet(regionSheet({id:b.dataset.wunlock}))});
   $$("[data-wroute]").forEach(b=>b.onclick=e=>{e.stopPropagation();openSheet(routeSheet(+b.dataset.wroute,{}))});
   $$("[data-brnew]").forEach(b=>b.onclick=e=>{e.stopPropagation();const c=b.dataset.brnew;openBranch(c);if(S.bases.includes(c)){toast(`ตั้งสาขาที่${city(c).n}แล้ว เปิดเส้นทางจากที่นี่ได้เลย`);renderView()}});
+  $$("[data-diff]").forEach(b=>b.onclick=e=>{e.stopPropagation();S.diff=b.dataset.diff;if(S.diff!=="auto")S.dlv=botLv();save();toast(`ความยากคู่แข่ง: ${DIFFS.find(x=>x[0]===S.diff)[1]}`);renderView()});
   $$("[data-race]").forEach(b=>b.onclick=e=>{e.stopPropagation();const y=b.getBoundingClientRect().top,sx=b.parentNode.scrollLeft;catSeg=b.dataset.race;renderView();const nb=document.querySelector(`[data-race="${catSeg}"]`);if(nb){nb.parentNode.scrollLeft=sx;window.scrollBy(0,nb.getBoundingClientRect().top-y)}});   // keep the chips where your finger is
   $$("[data-brgo]").forEach(b=>b.onclick=e=>{e.stopPropagation();tab="branch";brSeg=b.dataset.brgo;renderView(true);window.scrollTo(0,0)});
   $$("[data-req]").forEach(b=>b.onclick=e=>{e.stopPropagation();const [id,a]=b.dataset.req.split(":");answerReq(+id,a)});
@@ -2621,6 +2666,8 @@ function airBranchHTML(){
 function bindBranch(){bindWishes();
   $$("[data-brreg]").forEach(b=>b.onclick=()=>{brReg=b.dataset.brreg;renderView()});
   $$("[data-brseg]").forEach(b=>b.onclick=()=>{brSeg=b.dataset.brseg;renderView()});
+  // the routes tab's passenger / cargo switch is the same thing as the mode switch at the top
+  $$("[data-rseg]").forEach(b=>b.onclick=()=>{const k=b.dataset.rseg;if(k==="cargo"&&!has("cargo"))return toast("ยังไม่ปลดล็อกการขนสินค้า");setBM(k)});
   $$("[data-pbopen]").forEach(b=>b.onclick=()=>{if(openPortBranch(b.dataset.pbopen))renderView()});
   $$("[data-pbroute]").forEach(b=>b.onclick=()=>openSheet(newLaneSheet({from:b.dataset.pbroute})));
   $$("[data-pbup]").forEach(b=>b.onclick=()=>{const c=b.dataset.pbup,cost=pBranchUp(c);if(S.cash<cost)return;S.cash-=cost;S.pbr[c]=pbl(c)+1;addNews(`⚓ อัปเกรดสาขาท่าเรือ${port(c).n}เป็นระดับ ${S.pbr[c]}`);toast(`สาขาท่าเรือระดับ ${S.pbr[c]} แล้ว`);save();renderView()});
@@ -2947,6 +2994,9 @@ function bindView(rest){
   $$("[data-claim]").forEach(b=>b.onclick=()=>claimMission(+b.dataset.claim,b));
   {const pb=$("#perkbtn");if(pb)pb.onclick=()=>openSheet(perkSheet())}
   $$("[data-go]").forEach(b=>b.onclick=()=>{tab=b.dataset.go;renderView(true)});
+  $$("[data-adv]").forEach(b=>b.onclick=()=>{const [k,v]=b.dataset.adv.split(":");
+    if(k==="bulk")openSheet(bulkPriceSheet(v==="full"?{mode:"rel",f:1.05,flt:"full"}:v==="empty"?{mode:"rel",f:.95,flt:"empty"}:{mode:"auto",f:1,flt:"all"}));
+    else if(k==="go"){tab=v;renderView(true);window.scrollTo(0,0)}else if(k==="newr")openSheet(newRouteSheet({from:S.hub,kind:"pax"}))});
   bindWishes();const nr=$("#newr");if(nr)nr.onclick=()=>openSheet(newRouteSheet({from:S.hub,kind:rseg}));const bp=$("#bulkp");if(bp)bp.onclick=()=>openSheet(bulkPriceSheet({mode:"auto",f:1,flt:"all"}));
   $$("[data-rseg]").forEach(b=>b.onclick=()=>setBM(b.dataset.rseg));
   const gb=$("#gobranch");if(gb)gb.onclick=()=>{tab="branch";renderView(true);window.scrollTo(0,0)};

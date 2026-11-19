@@ -861,3 +861,13 @@ button.ptr{cursor:pointer}button.ptr:hover{background:var(--grid)}
 .ptr.ph{border-top:0;font-size:11.5px;color:var(--muted);background:var(--grid)}
 .ptr.cur{background:rgba(232,140,40,.14);font-weight:700}
 .ptr small{font-size:11px;font-weight:500}
+
+/* overview advice */
+.advice{gap:8px}
+.advtiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.advtiles>div{display:flex;flex-direction:column;gap:1px;background:var(--grid);border-radius:10px;padding:6px 8px;min-width:0}
+.advtiles b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:420px){.advtiles{grid-template-columns:repeat(2,1fr)}}
+.advrow{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;border-top:1px solid var(--line);padding-top:8px}
+.adve{font-size:20px}
+.advok{border-top:1px solid var(--line);padding-top:8px}
