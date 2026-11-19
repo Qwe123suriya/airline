@@ -3194,9 +3194,12 @@ function fcLine(o,KC){const b=o.best;if(!b)return `<span class="muted">ไม่
 /* Value of adding one more aircraft (or ship) of a model to an existing route (or lane):
    extra profit a day after fixed costs, and days to earn back its price. */
 function planeGain(r,mid,ck){const m=model(mid),d=dist(city(r.from),city(r.dest));if(m.range<d||!fitsKind(m,r)||!mOpen(m))return null;
+  const ev0=S.events;S.events=ev0.filter(e=>e.type!=="storm");r._apk=null;
+  try{return planeGain0(r,m,mid,ck)}finally{S.events=ev0;r._apk=null}}
+function planeGain0(r,m,mid,ck){
   const pr0=rkind(r)==="cargo"?undefined:priceOf(r),p0=calc(r,pr0).profit,fake={id:-77,m:mid,route:r.id,down:0,cond:100,age:0};if(ck&&ck!=="auto"&&!m.seats&&!isSpecAir(m))fake.ck=ck;
   S.fleet.push(fake);r.planes.push(-77);
-  try{const pr1=rkind(r)==="cargo"?undefined:(r.pmode==="auto"?autoPrice(r):r.price),f=calc(r,pr1),gain=f.profit-p0;return {gain,lf:f.lf,pay:gain>0?Math.ceil(priceFor(m)/gain):Infinity}}
+  try{const pr1=rkind(r)==="cargo"?undefined:(r.pmode==="auto"?autoPrice(r):r.price),f=calc(r,pr1),gain=f.profit-p0;return {gain,lf:rkind(r)==="cargo"||!m.seats?(f.ccap?(f.cargo||0)/f.ccap:0):f.lf,pay:gain>0?Math.ceil(priceFor(m)/gain):Infinity}}
   finally{r.planes.pop();S.fleet.pop();r._apk=null}}
 function shipGain(l,sid,ck){const m=shipM(sid);if(!canDock(m,l)||!sOpen(m))return null;const p0=laneCalc(l).profit,fake={id:-78,m:sid,lane:l.id,down:0,off:0,age:0};if(ck&&ck!=="auto"&&!shipSpec(m))fake.ck=ck;
   S.ships.push(fake);l.ships.push(-78);
@@ -3365,7 +3368,8 @@ function routeSheet(rid,st){
      </div></div>
      ${(()=>{const {opts,bd}=airBuys(r,cg?st.bk:null);
       const rec=bd.fast&&opts.find(o=>o.id===bd.fast);
-      return `<details class="more buyhere" ${st.buy?"open":""} id="buyhere"><summary>+ ซื้อเครื่องใหม่ใส่เส้นทางนี้${rec?` · <span class="good">แนะนำ ${rec.m.name}${rec.ck?` ขน${rec.ck==="auto"?"อัตโนมัติ":CK_N[rec.ck]}`:""} คืนทุน ${rec.v.pay} วัน</span>`:` · <span class="muted">${cg?"ระวางพอแล้ว":"ที่นั่งพอแล้ว"}</span>`} ▾</summary>
+      const gnd=grounded(r.from)||grounded(r.dest);
+      return `${gnd?`<div class="small warn">🌀 ช่วงนี้มีพายุ เส้นนี้งดบินชั่วคราว · ตัวเลขด้านล่างคิดจากวันปกติ</div>`:""}<details class="more buyhere" ${st.buy?"open":""} id="buyhere"><summary>+ ซื้อเครื่องใหม่ใส่เส้นทางนี้${rec?` · <span class="good">แนะนำ ${rec.m.name}${rec.ck?` ขน${rec.ck==="auto"?"อัตโนมัติ":CK_N[rec.ck]}`:""} คืนทุน ${rec.v.pay} วัน</span>`:` · <span class="muted">${cg?"ระวางพอแล้ว":"ที่นั่งพอแล้ว"}</span>`} ▾</summary>
       ${cg?buyKindSeg("bk",st.bk,false)+`<div class="muted small">เครื่องขนสินค้าขนได้ทีละประเภท เลือกดูทีละประเภท หรือให้เกมหาประเภทที่คุ้มที่สุดของแต่ละรุ่น · ซื้อแล้วเครื่องจะถูกตั้งให้ขนตามป้าย</div>`:""}
       ${rec?"":cg?`<div class="enough">✅ <b>${st.bk&&st.bk!=="all"&&st.bk!=="auto"?`ระวางขน${CK_N[st.bk]}พอกับสินค้าแล้ว`:"ระวางพอกับสินค้าแล้ว"}</b> หรือเครื่องที่เพิ่มได้คืนทุนนานเกิน ${PAY_MAX.toLocaleString()} วัน ลองดูประเภทอื่น หรือเปิดเส้นทางสินค้าใหม่</div>`:`<div class="enough">✅ <b>เส้นทางนี้ที่นั่งพอกับคนที่อยากบินแล้ว</b> ใส่เครื่องเพิ่มตอนนี้กำไรจะไม่เพิ่ม ลองเปิดเส้นทางใหม่ หรือรอให้คนอยากบินมากขึ้น (เทศกาล ชื่อเสียง โฆษณา)</div>`}
       <div class="muted small" style="margin:6px 0">ตัวเลขสีคือกำไรที่<b>เพิ่มขึ้น</b>ต่อวันถ้าใส่ลำนี้เพิ่มในเส้นทางนี้ (หักค่าดูแลและค่าเช่าช่องจอดแล้ว) และกี่วันจะได้ค่าเครื่องคืน · เขียว ≤200 วัน · เหลือง ≤400 วัน · แดง นานกว่านั้น</div>
