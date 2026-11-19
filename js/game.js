@@ -1675,6 +1675,7 @@ function adviceList(){const out=[],ok=[],K=bm(),KC=K==="cargo",R=advRoutes(K),W=
   const loss=R.filter(r=>r.last.profit<0),mine=p=>(KC)===!model(p.m).seats,idle=S.fleet.filter(p=>mine(p)&&!p.route&&p.down<=S.day),worn=S.fleet.filter(p=>mine(p)&&p.cond<45&&p.down<=S.day),fights=KC?[]:S.routes.filter(r=>r.cmp);
   const names=L=>L.slice(0,3).map(r=>r.dest).join(", ")+(L.length>3?"…":"");
   if(fullM.length)out.push({e:"📈",t:`${fullM.length} เส้นทางตั้งราคาเอง ${W}เต็มเกือบ 100% (${names(fullM)})`,d:`${unit}ล้น ขึ้นราคาได้อีก หรือเปลี่ยนเป็นราคาอัตโนมัติ`,btn:"ขึ้นราคา 5%",a:"bulk:full"});
+  if(KC){const ov=cargoOverAll();if(ov.length)out.push({e:"📦",t:`สินค้าล้นที่ ${ov.slice(0,3).map(x=>x.code).join(", ")}${ov.length>3?"…":""} (ค้างรวม ~${Math.round(ov.reduce((a,x)=>a+x.t,0)).toLocaleString()} ตัน)`,d:"เครื่องขนสินค้าไม่พอ ดูรายเส้นในแท็บสาขา",btn:"ดูสาขา",a:"go:branch"})}
   if(fullA.length)out.push({e:"🛫",t:`${fullA.length} เส้นทาง${W}เต็มเกือบ 100% (${names(fullA)})`,d:KC?`${unit}ล้น ควรเพิ่มเครื่องขนสินค้า หรือย้ายเครื่องจากเส้นที่ว่าง`:`ระบบตั้งราคาให้อัตโนมัติอยู่แล้ว แต่${unit}ยังล้น ควรเพิ่มเครื่อง หรือย้ายเครื่องจากเส้นที่ว่างมาช่วย`,btn:"ย้ายเครื่องมาช่วย",a:"move"});
   if(emptyM.length)out.push({e:"📉",t:`${emptyM.length} เส้นทางตั้งราคาเอง ${W}เต็มไม่ถึง 60% (${names(emptyM)})`,d:"ราคาแพงไป ลดราคาเพื่อดึงคน หรือเปลี่ยนเป็นราคาอัตโนมัติ",btn:"ลดราคา 5%",a:"bulk:empty"});
   if(emptyA.length)out.push({e:"🪑",t:`${emptyA.length} เส้นทาง${W}เต็มไม่ถึง 60% (${names(emptyA)})`,d:`${unit}น้อยกว่าเครื่องที่ใส่ไว้ ย้ายเครื่องส่วนเกินไปเส้นที่${unit}ล้น`,btn:"ย้ายเครื่อง",a:"move"});
@@ -2679,19 +2680,38 @@ function bindWishes(){
   const rw=()=>{const wp=$("#wishpanel");if(wp){wp.innerHTML=mapWishHTML();bindWishes()}};
   $$("[data-cwm]").forEach(b=>b.onclick=e=>{e.stopPropagation();S.ui_cwm=b.dataset.cwm;save();rw()});
   $$("[data-cwk]").forEach(b=>b.onclick=e=>{e.stopPropagation();S.ui_cwk=b.dataset.cwk;save();rw()})}
-function airBranchHTML(){
-  const mine=S.bases.map(code=>{const c=city(code),rs=S.routes.filter(r=>r.from===code),pf=rs.reduce((a,r)=>a+(r.last?r.last.profit:0),0),pl=rs.reduce((a,r)=>a+r.planes.length,0),lv=blv(code);
+/* Freight at one airport (cargo mode): every freight route touching it, whether its freight overflows the aircraft
+   (tonnes left behind a day, backlog waiting), and the biggest freight flows nobody carries yet. */
+function cargoAt(code){const out=[];
+  for(const r of S.routes.filter(r=>rkind(r)==="cargo"&&(r.from===code||r.dest===code))){const c=r.last||calc(r),dem=c.cdem||0,carry=c.cargo||0,bk=bkCargo(r),left=Math.max(0,Math.round(dem-carry));
+    out.push({r,other:r.from===code?r.dest:r.from,dem,carry,cap:c.ccap||0,bk,left,st:!r.planes.length?"idle":(left>Math.max(5,dem*.1)||bk>=1)?"over":"ok"})}
+  return out.sort((a,b)=>(b.st==="over")-(a.st==="over")||b.left+b.bk-(a.left+a.bk))}
+function cargoOverAll(){return S.bases.map(code=>{const L=cargoAt(code).filter(x=>x.st==="over"&&x.r.from===code);return {code,n:L.length,t:L.reduce((a,x)=>a+x.left+x.bk,0)}}).filter(x=>x.n).sort((a,b)=>b.t-a.t)}
+function cargoBranchHTML(code){const L=cargoAt(code),over=L.filter(x=>x.st==="over"),want=has("cargo")&&aptTakes(code,"cargo")?cargoWants(code,false).slice().sort((a,b)=>b.k.all-a.k.all).slice(0,3):[],c=city(code);
+  if(!aptTakes(code,"cargo"))return `<div class="wish"><div class="wish-say">📦 สนามบิน${c.n}รับเฉพาะผู้โดยสาร</div></div>`;
+  const say=over.length?`📦 สินค้าที่${c.n}<b class="warn">ล้น ${over.length} เส้นทาง</b> ค้างรวม ~${Math.round(over.reduce((a,x)=>a+x.left+x.bk,0)).toLocaleString()} ตัน`:want.length&&want[0].k.all>=10?`📦 ผู้ส่งสินค้าที่${c.n}อยากส่งไป<b>${want[0].n}</b>มากที่สุด แต่เรายังไม่มีเที่ยวบิน`:L.length?`📦 สินค้าที่${c.n}ขนได้ครบ ไม่มีค้าง 😊`:`📦 ยังไม่มีเส้นทางสินค้าจาก${c.n}`;
+  const mx=Math.max(1,...L.map(x=>x.dem),...want.map(w=>w.k.all));
+  const row=x=>`<div class="wish-row"><span class="wish-code">${x.other}</span><span class="wish-mid"><b>${city(x.other).n}</b> <span class="muted small">${fno(x.r)}</span><span class="wish-bar"><i style="width:${Math.max(6,x.dem/mx*100).toFixed(0)}%;background:var(--cargo)"></i></span>
+     <span class="small ${x.st==="over"?"warn":x.st==="idle"?"warn":"good"}">${x.st==="over"?`📦 ล้น · ค้าง ~${(x.left+x.bk).toLocaleString()} ตัน`:x.st==="idle"?"😐 ยังไม่มีเครื่อง":`😊 ขนได้ครบ · ระวางเต็ม ${Math.round(x.cap?x.carry/x.cap*100:0)}%`}</span></span>
+     <span class="wish-end"><b class="num">${Math.round(x.dem).toLocaleString()}</b><small>ตัน/วัน</small>${x.st!=="ok"?`<button class="btn sm" data-route="${x.r.id}">เพิ่มเครื่อง</button>`:""}</span></div>`;
+  const wrow=w=>`<div class="wish-row"><span class="wish-code">${w.to}</span><span class="wish-mid"><b>${w.n}</b> <span class="muted small">${Math.round(w.d).toLocaleString()} กม.</span><span class="wish-bar"><i style="width:${Math.max(6,w.k.all/mx*100).toFixed(0)}%;background:var(--cargo)"></i></span><span class="small muted">🙋 ยังไม่มีเที่ยวบินสินค้า</span></span>
+     <span class="wish-end"><b class="num">${Math.round(w.k.all).toLocaleString()}</b><small>ตัน/วัน</small><button class="btn sm primary" data-cwish="${code}>${w.to}">เปิดเส้นทาง</button></span></div>`;
+  return `<div class="wish"><div class="wish-say">${say}</div>${L.slice(0,5).map(row).join("")}${want.map(wrow).join("")}</div>`}
+function airBranchHTML(){const KC=bm()==="cargo";
+  const mine=S.bases.map(code=>{const c=city(code),rs=S.routes.filter(r=>r.from===code&&(rkind(r)==="cargo")===KC),pf=rs.reduce((a,r)=>a+(r.last?r.last.profit:0),0),pl=rs.reduce((a,r)=>a+r.planes.length,0),lv=blv(code);
     return `<div class="brcard ${code===S.hub?"hub":""}"><div class="row between" style="align-items:flex-start"><div style="min-width:0"><div class="row" style="gap:8px"><span class="iata" style="font-family:var(--f-display);font-weight:700;font-size:20px">${code}</span><span class="stars">${"★".repeat(lv)}${"☆".repeat(BR_MAX-lv)}</span></div>
       <div class="small muted">${c.n} · ${regionOf(code).n}${code===S.hub?" · สำนักงานใหญ่":""}</div></div><button class="btn sm" data-brroute="${code}">+ เส้นทาง</button></div>
-      <div class="kv" style="grid-template-columns:repeat(3,1fr)"><div><div class="k">เส้นทาง</div><div class="v">${rs.length}</div></div><div><div class="k">เครื่องบิน</div><div class="v">${pl}</div></div><div><div class="k">กำไรเมื่อวาน</div><div class="v ${pf<0?"bad":"good"}">${money(pf,true)}</div></div></div>
-      <div class="small muted">ผู้โดยสาร +${Math.round((brBoost(code)-1)*100)}% · ค่าสนามบิน −${Math.round(15*(lv-1))}% · ค่าดูแล ${branchUpkeep(code)?money(branchUpkeep(code),true)+"/วัน":"ฟรี"}</div>
-      ${wishesHTML(code,6)}
+      <div class="kv" style="grid-template-columns:repeat(3,1fr)"><div><div class="k">${KC?"เส้นสินค้า":"เส้นทาง"}</div><div class="v">${rs.length}</div></div><div><div class="k">${KC?"เครื่องขนสินค้า":"เครื่องบิน"}</div><div class="v">${pl}</div></div><div><div class="k">กำไรเมื่อวาน</div><div class="v ${pf<0?"bad":"good"}">${money(pf,true)}</div></div></div>
+      <div class="small muted">${KC?"สินค้า":"ผู้โดยสาร"} +${Math.round((brBoost(code)-1)*100)}% · ค่าสนามบิน −${Math.round(15*(lv-1))}% · ค่าดูแล ${branchUpkeep(code)?money(branchUpkeep(code),true)+"/วัน":"ฟรี"}</div>
+      ${KC?cargoBranchHTML(code):wishesHTML(code,6)}
       <div class="row">${lv<BR_MAX?`<button class="btn sm ${S.cash>=branchUpCost(code)?"primary":""}" style="flex:1" data-brup="${code}" ${S.cash>=branchUpCost(code)?"":"disabled"}>อัปเกรดเป็นระดับ ${lv+1} · ${money(branchUpCost(code),true)}</button>`:`<span class="small good" style="flex:1">ระดับสูงสุดแล้ว</span>`}
       ${code!==S.hub?`<button class="btn sm danger" data-brclose="${code}" ${rs.length?"disabled":""} title="${rs.length?"ปิดเส้นทางจากสาขานี้ก่อน":""}">ปิดสาขา</button>`:""}</div></div>`}).join("");
   const reg=brReg&&REGIONS.find(R=>R.id===brReg)||REGIONS.find(R=>R.id===regionOf(S.hub).id);
   const cand=reg.c.map(city).filter(c=>!S.bases.includes(c.c)).sort((a,b)=>b.w-a.w);
   const open=S.unlocked.includes(reg.id);
+  const ov=KC?cargoOverAll():[];
   return `<div class="row between"><h2>สาขาของคุณ <span class="muted num small">${S.bases.length} แห่ง</span></h2><span class="muted small num">ค่าดูแลรวม ${money(totalUpkeep(),true)}/วัน</span></div>
+  ${KC?`<div class="panel cgover"><b>📦 สนามบินที่สินค้าล้น</b>${ov.length?`<div class="cgchips">${ov.map(x=>`<span class="chip warn">${x.code} ${city(x.code).n} · ล้น ${x.n} เส้น · ค้าง ~${Math.round(x.t).toLocaleString()} ตัน</span>`).join("")}</div><div class="small muted">กด “เพิ่มเครื่อง” ในการ์ดสาขาด้านล่าง หรือเปิด 🤖 จัดการอัตโนมัติในหน้าภาพรวม</div>`:`<div class="small good">ไม่มีสาขาไหนที่สินค้าล้น ขนได้ครบทุกเส้น 😊</div>`}</div>`:""}
   <div class="brgrid">${mine}</div>
   <div class="row between" style="margin-top:6px"><h2>เปิดสาขาใหม่</h2><span class="muted small">สนามบิน ${CITIES.length} แห่ง · ${REGIONS.length} ภูมิภาค</span></div>
   <div class="seg scrollx">${REGIONS.map(R=>`<button data-brreg="${R.id}" class="${R===reg?"on":""}">${S.unlocked.includes(R.id)?"":"🔒 "}${R.n} <span class="num muted" style="font-size:11px">${R.c.length}</span></button>`).join("")}</div>
