@@ -508,8 +508,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.36";
+const GAME_VERSION="1.37";
 const CHANGELOG=[
+ ["1.37","21 พ.ย. 2569",["ฝูงบิน: เลือกหลายลำเพื่อขายทีเดียว ทั้งเครื่องบินและเรือในหน้าเดียว (โหมดสินค้า) พร้อมปุ่มเลือกด่วน: จอดว่างทั้งหมด / สภาพต่ำ / อายุเกิน 10 ปี และบอกเงินที่จะได้ก่อนยืนยัน"]],
  ["1.36","21 พ.ย. 2569",["⚔️ ฝูงพิเศษสู้คู่แข่ง (ปลดล็อกสูงกว่าตัวช่วยพิเศษ: 80 เส้นทาง + เครื่อง 200 ลำ): Phoenix Raider, Leviathan 1600, Quantum Jump, Behemoth 600F, Bolt Courier, เรือ WIG 300 กม./ชม., อาร์กติกเอ็กซ์เพรส, เลวีอาธาน 60,000 TEU","ข้อแลกเปลี่ยน: ค่าดูแล 3 เท่า สึกเร็ว 3 เท่า และการแข่งขันอาวุธ: ยิ่งมีมาก คู่แข่งยิ่งตั้งเป้าสูง (สูงสุด +40%) เกมจึงไม่จบเร็วเกินไป","เครื่องผู้โดยสารฝูงพิเศษบนเส้นที่ถูกบุก ผู้โดยสารเลือกเรามากขึ้น 40%"]],
  ["1.35","21 พ.ย. 2569",["เส้นทางขนสินค้าทางอากาศ: การออกเดินทางกับการรอสินค้ารวมเป็นปุ่มเดียวแบบเดียวกับเรือ พร้อมบรรทัดบอกว่าการรอช่วยไหม","🚀 เครื่องบินและเรือแห่งอนาคต (ปลดล็อกหลังตัวช่วยพิเศษ): เครื่องไฟฟ้า เครื่องเหนือเสียง ไฮเปอร์โซนิก เครื่องยักษ์ 1,000 ที่นั่ง เครื่องขนสินค้า 300 ตัน และเครื่องขนสินค้าเหนือเสียง · เรือไฮโดรฟอยล์ เรือห้องเย็นยักษ์ และเรือ 40,000 TEU"]],
  ["1.34","21 พ.ย. 2569",["🧰 ตัวช่วยพิเศษปลดล็อกช่วงท้ายสุดของเกม: ต้องมีเส้นทางที่บินอยู่ 50 เส้น และเครื่องบิน 100 ลำ"]],
@@ -2359,7 +2360,7 @@ function bindCargo(){
   $$("[data-cseg]").forEach(b=>b.onclick=()=>{cargoSeg=b.dataset.cseg;renderView()});
   const nl=$("#newlane");if(nl)nl.onclick=()=>openSheet(newLaneSheet({}));
   $$("[data-lane]").forEach(b=>b.onclick=()=>openSheet(laneSheet(+b.dataset.lane,{})));
-  $$("[data-ship]").forEach(b=>b.onclick=()=>openSheet(shipSheet(+b.dataset.ship,{})));
+  $$("[data-ship]").forEach(b=>b.onclick=()=>tapShip(+b.dataset.ship));
   $$("[data-buyship]").forEach(b=>b.onclick=()=>{if(buyShip(b.dataset.buyship))renderView()})}
 function newLaneSheet(st){
   const fn=()=>{const open=PORTS.filter(p=>pbl(p.c)&&portOpen(p.c));
@@ -3121,10 +3122,30 @@ function planeArt0(m,lv,fly){lv=lv||S.livery;const A=m.a,id="pa"+(artSeq++);
 let mktCat="all";
 /* Fleet tab: only what you own (aircraft of the current mode; in cargo mode also your ships) with buttons that
    open the market. The market itself lives in a sheet (shopSheet). */
+/* Sell many at once: in the fleet tab, pick aircraft and ships (both on the same page in cargo mode), see what
+   they fetch, and sell them in one go. Keys: "p<id>" for aircraft, "s<id>" for ships. */
+let fSelMode=false,fSellOk=false;const fSel=new Set();
+const fPick=(k)=>{if(fSel.has(k))fSel.delete(k);else fSel.add(k);fSellOk=false;renderView()};
+const tapPlane=id=>{if(fSelMode&&tab==="fleet")return fPick("p"+id);openSheet(planeSheet(id,{}))};
+const tapShip=id=>{if(fSelMode&&tab==="fleet")return fPick("s"+id);openSheet(shipSheet(id,{}))};
+function selValue(){let v=0,n=0;for(const k of fSel){if(k[0]==="p"){const p=plane(+k.slice(1));if(p){v+=resale(p);n++}}else{const sh=shipById(+k.slice(1));if(sh){v+=shipResale(sh);n++}}}return {v,n}}
+function sellSelected(){let n=0,v=0;
+  for(const k of [...fSel]){if(k[0]==="p"){const p=plane(+k.slice(1));if(!p)continue;const r=S.routes.find(x=>x.id===p.route);if(r){r.planes=r.planes.filter(x=>x!==p.id);r.last=null}const val=resale(p);S.cash+=val;v+=val;S.fleet=S.fleet.filter(x=>x!==p);n++}
+    else{const sh=shipById(+k.slice(1));if(!sh)continue;const l=S.lanes.find(x=>x.id===sh.lane);if(l)l.ships=l.ships.filter(x=>x!==sh.id);const val=shipResale(sh);S.cash+=val;v+=val;S.ships=S.ships.filter(x=>x!==sh);n++}}
+  fSel.clear();fSellOk=false;addNews(`💸 ขายเครื่องบิน/เรือ ${n} ลำ ได้ ${money(v)}`);save();toast(`ขาย ${n} ลำ ได้ ${money(v,true)}`);renderView()}
+function sellBarHTML(){const KC=bm()==="cargo";
+  if(!fSelMode)return `<div class="toolbar"><button class="btn sm" id="fselon">☑ เลือกหลายลำเพื่อขาย${KC&&has("sea")?" (เครื่องบินและเรือ)":""}</button></div>`;
+  const {v,n}=selValue(),mine=p=>KC===!model(p.m).seats,onRoute=[...fSel].filter(k=>k[0]==="p"?(plane(+k.slice(1))||{}).route:(shipById(+k.slice(1))||{}).lane).length;
+  return `<div class="toolbar sel sellbar"><b class="small">☑ เลือกแล้ว ${n} ลำ · ขายได้ราว <span class="good">${money(v,true)}</span></b>
+    <div class="row" style="gap:4px;flex-wrap:wrap"><button class="btn sm" data-fq="idle">🅿️ จอดว่างทั้งหมด</button><button class="btn sm" data-fq="worn">⚠️ สภาพต่ำกว่า 40%</button><button class="btn sm" data-fq="old">⏳ อายุเกิน 10 ปี</button><button class="btn sm" data-fq="none">ล้าง</button></div>
+    ${onRoute?`<div class="small warn">${onRoute} ลำในที่เลือกกำลังทำงานอยู่ ขายแล้วเส้นทางนั้นจะมีเครื่อง/เรือน้อยลง</div>`:""}
+    <div class="row" style="gap:6px"><button class="btn sm danger" id="fsell" ${n?"":"disabled"}>${fSellOk?`ยืนยันขาย ${n} ลำ · ${money(v,true)}`:`💸 ขาย ${n} ลำ`}</button><button class="btn sm" id="fseloff">เสร็จ</button></div>
+    <div class="muted small">แตะเครื่องบินหรือเรือเพื่อเลือก/เอาออก · ขายได้ราว 30–60% ของราคาซื้อ ตามอายุและสภาพ</div></div>`}
 function fleetHTML(){
   const FK=bm(),KC=FK==="cargo";
   const nP=S.fleet.filter(p=>model(p.m).seats).length,nC=S.fleet.length-nP,mine=KC?nC:nP;
   return `${firstStepsHTML()}<div class="row between"><h2>${KC?"ฝูงบินขนสินค้า":"ฝูงบินโดยสาร"} <span class="muted num small">${mine} ลำ</span></h2><button class="btn sm" id="livery"><span class="dotlv" style="background:${S.livery.tail}"></span>ลายและโลโก้</button></div>
+  ${(S.fleet.length||S.ships.length)?sellBarHTML():""}
   ${mine?fleetBoxHTML(FK):`<div class="panel muted">${KC?`ยังไม่มีเครื่องบินขนสินค้า ลำที่ถูกที่สุดคือ ${(()=>{const m=MODELS.filter(x=>!x.seats&&mOpen(x)).sort((a,b)=>a.price-b.price)[0];return m?`${m.name} ราคา ${money(m.price)}`:"—"})()}`:"ยังไม่มีเครื่องบินโดยสาร"} · กดปุ่มซื้อด้านล่าง</div>`}
   ${S.fleet.length?`<label class="tg panel"><input type="checkbox" id="amx" ${S.autoMx?"checked":""}> ส่งซ่อมบำรุงอัตโนมัติเมื่อสภาพต่ำกว่า 50%</label>`:""}
   ${has("tools")&&S.fleet.length?(()=>{const worn=S.fleet.filter(p=>p.cond<60&&p.down<=S.day),wc=worn.reduce((a,p)=>a+mxCost(p),0),idle=S.fleet.filter(p=>!p.route&&p.down<=S.day).length;
@@ -3140,12 +3161,12 @@ const planeState=p=>p.down>S.day?"shop":p.route&&S.routes.some(r=>r.id===p.route
 function planeCardHTML(p){const m=model(p.m),r=S.routes.find(x=>x.id===p.route),shop=p.down>S.day;
     const st=shop?`<span class="warn">ในโรงซ่อม ${p.down-S.day} วัน</span>`:r?`บิน ${r.from} → ${r.dest}`:'<span class="muted">จอดว่าง</span>';
     const cc=p.cond<40?"low":p.cond<70?"mid":"";
-    return `<button class="pcard ${shop?"shop":r?"":"idle"}" data-plane="${p.id}">${planeArt(m)}
+    return `<button class="pcard ${shop?"shop":r?"":"idle"}${fSelMode?(fSel.has("p"+p.id)?" picked":" pickable"):""}" data-plane="${p.id}">${planeArt(m)}
       <div class="row between"><b class="num">${p.reg}</b><span class="small">${st}</span></div>
       <div class="small muted">${m.name} · ${m.seats?m.seats+" ที่นั่ง":m.cargo+" ตัน"}</div>${m.seats?"":`<div>${carryPlane(p)}</div>`}${r&&p.yn!=null?`<div class="small">${earnTxt(p.yn)}</div>`:""}
       <div class="row" style="gap:8px"><div class="lf cond ${cc}" style="flex:1;margin:0;max-width:none"><i style="width:${p.cond}%"></i></div><span class="num small ${p.cond<40?"bad":"muted"}">${Math.round(p.cond)}%</span></div></button>`}
 function planeRowHTML(p){const m=model(p.m),r=S.routes.find(x=>x.id===p.route),st=planeState(p);
-  return `<button class="prow ${st}" data-plane="${p.id}"><span class="pst">${st==="idle"?"🅿️":st==="shop"?"🔧":"✈"}</span><b class="num">${p.reg}</b><span class="small pm">${m.name}</span>
+  return `<button class="prow ${st}${fSelMode?(fSel.has("p"+p.id)?" picked":" pickable"):""}" data-plane="${p.id}"><span class="pst">${st==="idle"?"🅿️":st==="shop"?"🔧":"✈"}</span><b class="num">${p.reg}</b><span class="small pm">${m.name}</span>
     <span class="small">${st==="shop"?`<span class="warn">ซ่อม ${p.down-S.day} วัน</span>`:r?`${r.from}→${r.dest}`:'<span class="muted">จอดว่าง</span>'}</span><span class="num small ${p.cond<40?"bad":p.cond<70?"warn":"muted"}">${Math.round(p.cond)}%</span></button>`}
 function fleetListHTML(k){const big=S.ui_fview?S.ui_fview==="row":S.fleet.length>24,q=fQ.trim().toLowerCase();
   let L=S.fleet.filter(p=>(k==="cargo")===!model(p.m).seats);
@@ -3172,8 +3193,8 @@ function shipListHTML(){const q=sQ.trim().toLowerCase();let L=S.ships.slice();
   if(sFilt==="idle")L=L.filter(sh=>!S.lanes.some(x=>x.id===sh.lane));else if(sFilt==="work")L=L.filter(sh=>S.lanes.some(x=>x.id===sh.lane));
   if(!L.length)return `<div class="panel muted small">ไม่มีเรือที่ตรงกับตัวกรอง</div>`;
   const big=S.ui_fview?S.ui_fview==="row":S.ships.length>16;
-  const one=sh=>{const m=shipM(sh.m),l=S.lanes.find(x=>x.id===sh.lane);return big?`<button class="prow ${l?"fly":"idle"}" data-ship="${sh.id}"><span class="pst">${l?"🚢":"🅿️"}</span><b class="num">${sh.reg}</b><span class="small pm">${m.name}</span><span class="small">${l?`${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:'<span class="muted">จอดว่าง</span>'}</span><span></span></button>`:
-    `<button class="pcard ${l?"":"idle"}" data-ship="${sh.id}" style="border-bottom-color:${l?"var(--port)":"var(--muted)"}">${shipArt(m)}<div class="row between"><b class="num">${sh.reg}</b><span class="small">${l?`${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:'<span class="muted">จอดว่าง</span>'}</span></div><div class="small muted">${m.name}</div><div>${carryShip(sh)}</div>${l&&sh.yn!=null?`<div class="small">${earnTxt(sh.yn)}</div>`:""}</button>`};
+  const one=sh=>{const m=shipM(sh.m),l=S.lanes.find(x=>x.id===sh.lane);return big?`<button class="prow ${l?"fly":"idle"}${fSelMode?(fSel.has("s"+sh.id)?" picked":" pickable"):""}" data-ship="${sh.id}"><span class="pst">${l?"🚢":"🅿️"}</span><b class="num">${sh.reg}</b><span class="small pm">${m.name}</span><span class="small">${l?`${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:'<span class="muted">จอดว่าง</span>'}</span><span></span></button>`:
+    `<button class="pcard ${l?"":"idle"}${fSelMode?(fSel.has("s"+sh.id)?" picked":" pickable"):""}" data-ship="${sh.id}" style="border-bottom-color:${l?"var(--port)":"var(--muted)"}">${shipArt(m)}<div class="row between"><b class="num">${sh.reg}</b><span class="small">${l?`${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:'<span class="muted">จอดว่าง</span>'}</span></div><div class="small muted">${m.name}</div><div>${carryShip(sh)}</div>${l&&sh.yn!=null?`<div class="small">${earnTxt(sh.yn)}</div>`:""}</button>`};
   const wrap=a=>big?`<div class="prows">${a.map(one).join("")}</div>`:`<div class="hangar">${a.map(one).join("")}</div>`;
   const idle=L.filter(sh=>!S.lanes.some(x=>x.id===sh.lane)),work=L.filter(sh=>S.lanes.some(x=>x.id===sh.lane));
   return (idle.length?`<div class="fsec idle"><b>🅿️ จอดว่าง ${idle.length} ลำ</b><span class="small muted">แตะเพื่อใส่เข้าเส้นทางเรือ</span></div>${wrap(idle)}`:"")+(work.length?`<div class="fsec fly"><b>🚢 แล่นอยู่ ${work.length} ลำ</b></div>${wrap(work)}`:"")}
@@ -3318,12 +3339,17 @@ function bindView(rest){
    const go=$("#selgo");if(go)go.onclick=()=>openSheet(multiSheet({}));
    $$("[data-selq]").forEach(b=>b.onclick=()=>{const k=b.dataset.selq,RL=S.routes.filter(r=>rkind(r)===bm());if(k==="none"){rSel.clear()}else{const f=selFilters.find(x=>x[0]===k)[2];rSel.clear();for(const r of RL)if(f(r))rSel.add(r.id)}renderView()});
    const pa=$("#planall");if(pa)pa.onclick=()=>{rSel.clear();for(const r of S.routes.filter(r=>rkind(r)===bm()&&r.planes.length))if(fleetPlan(r))rSel.add(r.id);if(!rSel.size)return toast("ไม่มีเส้นที่ล้นจนต้องเพิ่มเครื่อง");rSelMode=true;renderView();openSheet(multiSheet({}))}}
-  $$("[data-plane]").forEach(b=>b.onclick=()=>openSheet(planeSheet(+b.dataset.plane,{})));
+  $$("[data-plane]").forEach(b=>b.onclick=()=>tapPlane(+b.dataset.plane));
+  {const on=$("#fselon");if(on)on.onclick=()=>{fSelMode=true;fSel.clear();fSellOk=false;renderView()};const off=$("#fseloff");if(off)off.onclick=()=>{fSelMode=false;fSel.clear();fSellOk=false;renderView()};
+   const sl=$("#fsell");if(sl)sl.onclick=()=>{if(!fSellOk){fSellOk=true;renderView();return}sellSelected()};
+   $$("[data-fq]").forEach(b=>b.onclick=()=>{const k=b.dataset.fq,KC=bm()==="cargo";if(k==="none"){fSel.clear()}else{
+     for(const p of S.fleet.filter(p=>KC===!model(p.m).seats))if(k==="idle"?!p.route&&p.down<=S.day:k==="worn"?p.cond<40:p.age>3650)fSel.add("p"+p.id);
+     if(KC)for(const sh of S.ships)if(k==="idle"?!S.lanes.some(l=>l.id===sh.lane):k==="old"?sh.age>3650:false)fSel.add("s"+sh.id)}fSellOk=false;renderView()})}
   $$("[data-ff]").forEach(b=>b.onclick=()=>{fFilt=b.dataset.ff;renderView()});
   $$("[data-sf]").forEach(b=>b.onclick=()=>{sFilt=b.dataset.sf;renderView()});
   const fv=$("#fview");if(fv)fv.onclick=()=>{const big=S.ui_fview?S.ui_fview==="row":S.fleet.length>24;S.ui_fview=big?"card":"row";save();renderView()};
-  const fq=$("#fq");if(fq)fq.oninput=()=>{fQ=fq.value;const fl=$("#flist");fl.innerHTML=fleetListHTML(bm());fl.querySelectorAll("[data-plane]").forEach(b=>b.onclick=()=>openSheet(planeSheet(+b.dataset.plane,{})))};
-  const sq=$("#sq");if(sq)sq.oninput=()=>{sQ=sq.value;const sl=$("#slist");sl.innerHTML=shipListHTML();sl.querySelectorAll("[data-ship]").forEach(b=>b.onclick=()=>openSheet(shipSheet(+b.dataset.ship,{})))};
+  const fq=$("#fq");if(fq)fq.oninput=()=>{fQ=fq.value;const fl=$("#flist");fl.innerHTML=fleetListHTML(bm());fl.querySelectorAll("[data-plane]").forEach(b=>b.onclick=()=>tapPlane(+b.dataset.plane))};
+  const sq=$("#sq");if(sq)sq.oninput=()=>{sQ=sq.value;const sl=$("#slist");sl.innerHTML=shipListHTML();sl.querySelectorAll("[data-ship]").forEach(b=>b.onclick=()=>tapShip(+b.dataset.ship))};
   $$("[data-buy]").forEach(b=>b.onclick=()=>buy(b.dataset.buy));
   $$("[data-cat]").forEach(b=>b.onclick=()=>{mktCat=b.dataset.cat;renderView()});
   $$("[data-ccls]").forEach(b=>b.onclick=()=>{ccls=b.dataset.ccls;renderView()});

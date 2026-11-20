@@ -909,3 +909,5 @@ button.ptr{cursor:pointer}button.ptr:hover{background:var(--grid)}
 .strip.pickable{opacity:.75}
 .strip.picked{outline:2px solid var(--accent);outline-offset:-2px;opacity:1}
 .strip.picked .fno::before{content:"✔ ";color:var(--accent)}
+.prow.pickable,.pcard.pickable{opacity:.7}.prow.picked,.pcard.picked{outline:2px solid var(--accent);outline-offset:-2px;opacity:1}.prow.picked .pst::after,.pcard.picked b.num::before{content:"✔ ";color:var(--accent)}
+.sellbar{position:sticky;top:calc(var(--barh,8px) + 4px);z-index:5;background:var(--paper)}
