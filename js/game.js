@@ -168,6 +168,14 @@ const MODELS=[
  {id:"763f",cat:"cargo",name:"Boeing 767-300F",tag:"ลำตัวกว้างขนาดกลาง",seats:0,cargo:52,range:6000,speed:850,price:420e6,cpk:210,len:54.9,a:{fw:.095,sr:.95,big:1,pods:[.3],fh:18,eng:"jet",cargo:1}},
  {id:"350f",cat:"cargo",name:"Airbus A350F",tag:"ขนสินค้ารุ่นใหม่ ประหยัดน้ำมัน",seats:0,cargo:111,range:8700,speed:900,price:950e6,cpk:290,len:70.8,a:{fw:.09,sr:1,big:1,pods:[.3],fh:21,eng:"jet",cargo:1}},
  {id:"b74f",cat:"cargo",name:"Boeing 747-8F",tag:"ขนสินค้าได้มากที่สุด",seats:0,cargo:135,range:8100,speed:910,price:1150e6,cpk:385,len:76.3,a:{fw:.085,sr:.9,big:1,pods:[.28,.6],fh:21,eng:"quad",deck:"hump",cargo:1}},
+
+ // ---- future models: not real aircraft, unlocked at the very end ("future") ----
+ {id:"fx_ev",future:1,cat:"prop",name:"Electra E-90 (ไฟฟ้า)",tag:"✨ แห่งอนาคต · เครื่องไฟฟ้า 90 ที่นั่ง ค่าบินแทบเป็นศูนย์ แต่บินได้ใกล้",seats:90,cargo:1,range:1400,speed:620,price:120e6,cpk:10,len:30,a:{fw:.1,sr:1,prop:1,pods:[.34],fh:12,hw:1,tt:1,eng:"prop"}},
+ {id:"fx_sst",future:1,cat:"narrow",name:"Aurora SST-120",tag:"✨ แห่งอนาคต · ความเร็วเหนือเสียง 2,100 กม./ชม. บินเส้นไกลได้หลายเที่ยวต่อวัน",seats:120,cargo:2,range:9000,speed:2100,price:6e8,cpk:110,len:62,a:{fw:.06,sr:.72,pods:[.62],fh:12,eng:"jet"}},
+ {id:"fx_hyp",future:1,cat:"wide",name:"Hyperion HX-300",tag:"✨ แห่งอนาคต · ไฮเปอร์โซนิก 5,000 กม./ชม. ข้ามโลกในไม่กี่ชั่วโมง",seats:300,cargo:8,range:16000,speed:5000,price:1.4e9,cpk:230,len:80,a:{fw:.055,sr:.7,big:1,pods:[.6],fh:18,eng:"jet"}},
+ {id:"fx_titan",future:1,cat:"wide",name:"Titan MegaLiner 1000",tag:"✨ แห่งอนาคต · ยักษ์สามชั้น 1,000 ที่นั่ง ต้นทุนต่อที่นั่งต่ำที่สุด",seats:1000,cargo:30,range:16000,speed:930,price:1.2e9,cpk:560,len:90,a:{fw:.11,sr:1.2,big:1,pods:[.27,.58],fh:30,eng:"quad",deck:"double"}},
+ {id:"fx_atlas",future:1,cat:"cargo",name:"Atlas Heavy 300F",tag:"✨ แห่งอนาคต · เครื่องขนสินค้า 300 ตัน ใหญ่ที่สุดในเกม",seats:0,cargo:300,range:12000,speed:880,price:1e9,cpk:480,len:95,a:{fw:.1,sr:1.1,big:1,pods:[.27,.58],fh:28,eng:"quad",cargo:1}},
+ {id:"fx_cssf",future:1,cat:"cargo",name:"Comet Express SSF",tag:"✨ แห่งอนาคต · เครื่องขนสินค้าเหนือเสียง 40 ตัน ของถึงเร็วมาก",seats:0,cargo:40,range:9000,speed:2000,price:5.5e8,cpk:170,len:60,a:{fw:.06,sr:.72,pods:[.62],fh:12,eng:"jet",cargo:1}},
 ];
 // fuel burn per km in game baht (scaled so fuel is ~a third of airline costs, as in real airlines)
 for(const m of MODELS)m.cpk=Math.round(m.cpk*.65);
@@ -382,6 +390,9 @@ const SHIPS=[
  {id:"vlc",name:"VLCS 18,000 TEU",tag:"ยักษ์ใหญ่ เทียบได้เฉพาะท่าเรือน้ำลึก",teu:18000,speed:40,price:4.9e9,cpk:2300,len:395,deep:1},
  {id:"ulc",name:"ULCV 24,000 TEU",tag:"ใหญ่ที่สุด เทียบได้เฉพาะท่าเรือน้ำลึก",teu:24000,speed:39,price:6.2e9,cpk:2600,len:400,deep:1},
  {id:"ult",name:"ULCV อีโค 24,300 TEU",tag:"เรือธงรุ่นใหม่ ใหญ่ที่สุดและประหยัดน้ำมันที่สุด",teu:24300,speed:40,price:7.8e9,cpk:2000,len:400,deep:1,eco:1},
+ {id:"fs_hydro",future:1,name:"✨ ไฮโดรฟอยล์ 3,000 TEU",tag:"✨ แห่งอนาคต · ความเร็ว 90 กม./ชม. เร็วกว่าเรือทั่วไปสองเท่า",teu:3000,speed:90,price:2.6e9,cpk:1500,len:220},
+ {id:"fs_polar",future:1,name:"✨ ห้องเย็นยักษ์ 6,000 TEU",tag:"✨ แห่งอนาคต · เรือห้องเย็นใหญ่และเร็ว ค่าระวาง 1.8 เท่า",teu:6000,speed:55,price:4.2e9,cpk:1700,len:300,reefer:1},
+ {id:"fs_nova",future:1,name:"✨ โนวา 40,000 TEU",tag:"✨ แห่งอนาคต · เรือยักษ์ที่สุดในเกม เทียบได้เฉพาะท่าน้ำลึก",teu:40000,speed:44,price:9.5e9,cpk:3200,len:480,deep:1},
 ];
 /* How far each ship can sail between two ports without refuelling (km of sea route). Small coastal / feeder ships
    stay in their region; long lanes (Asia–Europe ~18,000 km, round the Cape ~25,000 km) need ocean-going ships. */
@@ -487,8 +498,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.34";
+const GAME_VERSION="1.35";
 const CHANGELOG=[
+ ["1.35","21 พ.ย. 2569",["เส้นทางขนสินค้าทางอากาศ: การออกเดินทางกับการรอสินค้ารวมเป็นปุ่มเดียวแบบเดียวกับเรือ พร้อมบรรทัดบอกว่าการรอช่วยไหม","🚀 เครื่องบินและเรือแห่งอนาคต (ปลดล็อกหลังตัวช่วยพิเศษ): เครื่องไฟฟ้า เครื่องเหนือเสียง ไฮเปอร์โซนิก เครื่องยักษ์ 1,000 ที่นั่ง เครื่องขนสินค้า 300 ตัน และเครื่องขนสินค้าเหนือเสียง · เรือไฮโดรฟอยล์ เรือห้องเย็นยักษ์ และเรือ 40,000 TEU"]],
  ["1.34","21 พ.ย. 2569",["🧰 ตัวช่วยพิเศษปลดล็อกช่วงท้ายสุดของเกม: ต้องมีเส้นทางที่บินอยู่ 50 เส้น และเครื่องบิน 100 ลำ"]],
  ["1.33","21 พ.ย. 2569",["ปีในเกมเริ่มที่ปีที่ 0 (ด้านบนแสดง “ปีที่ 0 · 1 ม.ค.”)","🧰 ตัวช่วยพิเศษ (ปลดล็อกช่วงท้ายสุดของเกม): เลือกหลายเส้นแล้วปรับราคา บริการ ตารางบิน การออกเดินทางพร้อมกัน, ซื้อเครื่องตามแผนทุกเส้นที่ล้นทีเดียว, ปิดเส้นที่ไม่มีเครื่อง, ซ่อมทุกลำที่สภาพต่ำ, ใส่เครื่องจอดว่างทั้งหมดในปุ่มเดียว"]],
  ["1.32","21 พ.ย. 2569",["แก้เกมพังกลางวันตอน 🤖 จัดการอัตโนมัติย้ายเครื่อง (และข่าวเขียนว่า “ว่าง” ทั้งที่เป็นตัวเลขเต็ม)","ซ่อมอัตโนมัติส่งเข้าซ่อมทีละลำต่อเส้นทาง เส้นทางไม่หยุดบินทั้งเส้น","เครื่องขนสินค้าไม่ขนเกินระวางอีก (เดิมเกินได้ถึง 10%)","ที่นั่ง/ระวางของเมื่อวานเป็นของที่บินจริง ไม่ใช่ตัวเลขคาดการณ์","กล่องคำแนะนำเตือนเส้นทางที่ไม่มีเครื่องแต่ยังเสียค่าเช่าช่องจอด","คู่มือ: แก้ตัวเลขที่ไม่ตรงกับเกม (ค่าดูแลเครื่อง คะแนนอันดับ ค่าระวางเรือ ความเร็วเรือ รุ่นเครื่องขนสินค้า ความยากคู่แข่ง ดีลตามอันดับ ตารางราคา)","ข้อความเครื่องขนสินค้าลำที่ถูกที่สุดถูกต้อง"]],
@@ -828,7 +840,7 @@ const svcOf=r=>r.svc??S.service;
    direct. This is how far places no aircraft can reach directly get served. Recomputed when the network changes. */
 const XF_PAX={2:.25,3:.14},XF_CGO={2:.35,3:.2},XF_CAP=.4;
 const AIR_MAX=k=>k==="cargo"?AIR_MAX_C:AIR_MAX_P;
-const AIR_MAX_P=Math.max(...MODELS.filter(m=>m.seats).map(m=>m.range)),AIR_MAX_C=Math.max(...MODELS.filter(m=>!m.seats).map(m=>m.range));
+const AIR_MAX_P=Math.max(...MODELS.filter(m=>m.seats&&!m.future).map(m=>m.range)),AIR_MAX_C=Math.max(...MODELS.filter(m=>!m.seats&&!m.future).map(m=>m.range));
 let xfCache={k:null};
 const XF0={pax:0,cargo:0};
 function xferNet(){let sig=S.day*1e6+S.bases.length*7919+S.routes.length;for(const r of S.routes)sig+=r.id*31+r.planes.length*(r.kind==="cargo"?7:3);
@@ -1502,10 +1514,11 @@ const FEATS=[
  {id:"sea_reefer",n:"❄ เรือห้องเย็น",d:"ซื้อเรือห้องเย็นได้ และรับตู้อาหารทางเรือ ค่าระวาง 1.8 เท่า",ok:()=>opLanes()>=2&&lanesOK(),go:"fleet",mode:"cargo",after:["sea"],need:"เส้นทางเรือ 2 เส้นที่ทำกำไร"},
  {id:"sea_big",n:"⚓ เรือใหญ่",d:"ซื้อเรือพานาแมกซ์ขึ้นไปจนถึงเรือยักษ์ ULCV ได้แล้ว วิ่งข้ามทวีปได้",ok:()=>opLanes()>=3&&lanesOK()&&lv()>=8,go:"fleet",mode:"cargo",after:["sea_reefer"],need:"เส้นทางเรือ 3 เส้นที่ทำกำไร และ Lv 8"},
  {id:"tools",n:"🧰 ตัวช่วยพิเศษ",d:"สำหรับสายการบินใหญ่: เลือกหลายเส้นทางแล้วปรับราคา บริการ ตารางบิน การออกเดินทางพร้อมกัน · ซื้อเครื่องตามแผนให้ทุกเส้นที่ล้นทีเดียว · ซ่อมทุกลำที่สภาพต่ำ และใส่เครื่องจอดว่างทั้งหมดในปุ่มเดียว",ok:()=>opRoutes()>=50&&S.fleet.length>=100,go:"routes",need:"เส้นทางที่บินอยู่ 50 เส้น และเครื่องบิน 100 ลำ"},
+ {id:"future",n:"🚀 เครื่องบินและเรือแห่งอนาคต",d:"รุ่นที่ยังไม่มีในโลกจริง: เครื่องบินความเร็วเหนือเสียงและไฮเปอร์โซนิก เครื่องยักษ์ 1,000 ที่นั่ง เครื่องไฟฟ้าต้นทุนต่ำ เครื่องขนสินค้า 300 ตัน เรือยักษ์ 40,000 TEU และเรือไฮโดรฟอยล์ความเร็วสูง",ok:()=>true,after:["tools"],go:"fleet",need:"ปลดล็อกตัวช่วยพิเศษก่อน"},
  {id:"sea_roro",n:"🚢 เรือขนรถ",d:"ซื้อเรือขนรถ Ro-Ro/PCTC และรับตู้ชิ้นส่วน/รถทางเรือ ค่าระวาง 1.5 เท่า",ok:()=>opLanes()>=4&&lanesOK()&&lv()>=9,go:"fleet",mode:"cargo",after:["sea_big"],need:"เส้นทางเรือ 4 เส้นที่ทำกำไร และ Lv 9"}];
 // what is open: aircraft / ship models and cargo kinds
-const mOpen=m=>m.seats?true:has("cargo")&&(cargoCls(m)==="cs"||cargoCls(m)==="cn"||has("cargo_big"))&&(!SPEC_AIR[m.id]||has("cargo_pt"));
-const sOpen=m=>has("sea")&&(m.reefer?has("sea_reefer"):m.roro?has("sea_roro"):m.teu<=3500||has("sea_big"));
+const mOpen=m=>m.future?has("future")&&(m.seats||has("cargo")):m.seats?true:has("cargo")&&(cargoCls(m)==="cs"||cargoCls(m)==="cn"||has("cargo_big"))&&(!SPEC_AIR[m.id]||has("cargo_pt"));
+const sOpen=m=>m.future?has("future")&&has("sea"):has("sea")&&(m.reefer?has("sea_reefer"):m.roro?has("sea_roro"):m.teu<=3500||has("sea_big"));
 const ckOpen=t=>t==="pcl"||(t==="fd"?has("cargo_fd"):has("cargo_pt"));
 const skOpen=k=>k==="d"||(k==="r"?has("sea_reefer"):has("sea_roro"));
 const has=id=>!S||!S.prog||S.prog.includes(id);
@@ -3515,12 +3528,9 @@ function routeSheet(rid,st){
       <div class="row qprice" style="gap:6px;margin-top:6px">${[["−10%",.9],["ราคากลาง",0],["+10%",1.1],["กำไรสูงสุด",-1]].map(([n,f])=>`<button class="btn sm" data-qp="${f}">${n}</button>`).join("")}</div>
       <div id="ptab">${priceTableHTML(r,price)}</div>
 </div>
-`}     <div class="stack" style="gap:6px"><span class="eyebrow">การออกเดินทาง</span><div class="seg"><button data-spread="1" class="${r.spread!==false&&!(r.wait>0)?"on":""}">⏱ เว้นระยะเท่ากัน</button><button data-spread="0" class="${r.spread===false&&!(r.wait>0)?"on":""}">🎲 ออกตามสะดวก</button></div>
-      <div class="muted small">${(()=>{const gh=spreadGapH(r);if(r.wait>0)return `ตอนนี้เครื่องรอสินค้าเต็ม ${Math.round(r.wait*100)}% แล้วค่อยบิน จึงออกเมื่อของเต็ม ไม่ได้เว้นระยะตามตาราง · กด “เว้นระยะเท่ากัน” จะกลับไปบินตามตาราง`;if(gh==null)return "มีเครื่องบินลำเดียวในเส้นทางนี้ ยังไม่ต้องเว้นระยะ";
-        return r.spread!==false?`เครื่อง ${r.planes.length} ลำออกจาก ${r.from} สลับกันทุก ~${gh<1?Math.round(gh*60)+" นาที":gh.toFixed(1)+" ชม."} ครึ่งหนึ่งรอที่ ${r.dest} ไม่ออกพร้อมกัน · จำนวนเที่ยวและรายได้เท่าเดิม`:"แต่ละลำออกตามเวลาของตัวเอง อาจออกติดๆ กันได้ · จำนวนเที่ยวและรายได้เท่าเดิม"})()}</div></div>
-     <div class="stack" style="gap:6px"><span class="eyebrow">ตารางบิน</span><div class="seg"><button data-freq="auto" class="${r.freq!=="max"?"on":""}">${cg?"ปรับตามสินค้า":"ปรับตามผู้โดยสาร"}</button><button data-freq="max" class="${r.freq==="max"?"on":""}">บินเต็มตาราง</button></div>
+`}${cg?airDepartHTML(r,c):paxDepartHTML(r)}     <div class="stack" style="gap:6px"><span class="eyebrow">ตารางบิน</span><div class="seg"><button data-freq="auto" class="${r.freq!=="max"?"on":""}">${cg?"ปรับตามสินค้า":"ปรับตามผู้โดยสาร"}</button><button data-freq="max" class="${r.freq==="max"?"on":""}">บินเต็มตาราง</button></div>
       <div class="muted small">${r.freq==="max"?"เครื่องบินทุกลำบินจำนวนเที่ยวสูงสุดทุกวัน แม้ที่นั่งจะว่าง":"ลดจำนวนเที่ยวลงเมื่อคนน้อย ให้แต่ละเที่ยวเต็มประมาณ 85% ประหยัดน้ำมันและค่าสนามบิน"}</div></div>
-     ${cg?airWaitHTML(r,c):""}
+
      ${cg?"":`<div class="kv" id="kv">${kvHTML(c)}</div>`}
      <div id="bd">${breakdownHTML(c)}</div>
      ${cg||c.ccap?`<div class="panel stack cargo"><div class="row between"><span class="eyebrow">ขนส่งสินค้าทางอากาศ</span>${(()=>{const ss=[...cargoSeasons(r.from),...cargoSeasons(r.dest)];return ss.length?`<span class="chips">${[...new Set(ss.map(x=>x[0]))].map(n=>`<span class="chip got">${n}</span>`).join("")}</span>`:""})()}</div>
@@ -3563,6 +3573,8 @@ function routeSheet(rid,st){
       else if(a.act.buy){st.buy=1;if(a.act.ck)st.bk=a.act.ck;drawSheet();const bh=$("#buyhere");if(bh){bh.open=true;bh.scrollIntoView({block:"start"})}}}}
     $$("[data-pck]").forEach(sl=>sl.onchange=()=>{const p=plane(+sl.dataset.pck);if(!p)return;p.ck=sl.value;r.last=null;save();toast(`${p.reg} ขน ${sl.options[sl.selectedIndex].text}`);drawSheet()});
     $$("[data-spread]").forEach(b=>b.onclick=()=>{r.spread=b.dataset.spread==="1";if(r.spread&&r.wait){r.wait=0;r.last=null}syncSpread(r);save();toast(r.spread?"เว้นระยะการออกเดินทางแล้ว":"ให้ออกตามสะดวกแล้ว");drawSheet()});
+    $$("[data-rdep]").forEach(b=>b.onclick=()=>{const k=b.dataset.rdep;if(k[0]==="w"){r.wait=+k.slice(1);r.spread=false}else{r.wait=0;r.spread=k==="even"}syncSpread(r);r.last=null;save();
+      toast(r.wait?`เครื่องจะรอจนระวางเต็ม ${Math.round(r.wait*100)}% ก่อนบิน`:r.spread?"บินตามตาราง เว้นระยะเท่ากัน":"บินตามตาราง ตามสะดวก");drawSheet()});
     $$("[data-rwait]").forEach(b=>b.onclick=()=>{r.wait=+b.dataset.rwait;if(r.wait>0){r.spread=false;syncSpread(r)}r.last=null;save();toast(r.wait?`เครื่องจะรอจนระวางเต็ม ${Math.round(r.wait*100)}% ก่อนบิน`:"เครื่องบินตามตารางแล้ว");drawSheet()});
     $$("[data-cmode]").forEach(b=>b.onclick=()=>{if(b.dataset.cmode==="manual"){r.crate=crateOf(r);r.cmode="manual"}else r.cmode="auto";r.last=null;save();drawSheet()});
     const crs=$("#crs");if(crs){crs.oninput=()=>{const c=calc(r,st.price??priceOf(r),+crs.value);$("#crv").textContent=crateText(c);$("#ckv").innerHTML=cargoKV(c);const kv=$("#kv");if(kv)kv.innerHTML=kvHTML(c);$("#bd").innerHTML=breakdownHTML(c);$("#fc").innerHTML=forecastHTML(r,c)};
@@ -3576,6 +3588,24 @@ function routeSheet(rid,st){
       r.planes.forEach(id=>plane(id).route=null);S.routes=S.routes.filter(x=>x!==r);addNews(`ปิดเส้นทาง ${r.from} → ${r.dest}`);save();closeSheet()};
     if($("#sp"))spark($("#sp"),r.h)};
   return fn}
+// passenger routes: departure spacing only (same markup as before, moved into a function)
+function paxDepartHTML(r){return `<div class="stack" style="gap:6px"><span class="eyebrow">การออกเดินทาง</span><div class="seg"><button data-spread="1" class="${r.spread!==false&&!(r.wait>0)?"on":""}">⏱ เว้นระยะเท่ากัน</button><button data-spread="0" class="${r.spread===false&&!(r.wait>0)?"on":""}">🎲 ออกตามสะดวก</button></div>
+      <div class="muted small">${(()=>{const gh=spreadGapH(r);if(r.wait>0)return `ตอนนี้เครื่องรอสินค้าเต็ม ${Math.round(r.wait*100)}% แล้วค่อยบิน จึงออกเมื่อของเต็ม ไม่ได้เว้นระยะตามตาราง · กด “เว้นระยะเท่ากัน” จะกลับไปบินตามตาราง`;if(gh==null)return "มีเครื่องบินลำเดียวในเส้นทางนี้ ยังไม่ต้องเว้นระยะ";
+        return r.spread!==false?`เครื่อง ${r.planes.length} ลำออกจาก ${r.from} สลับกันทุก ~${gh<1?Math.round(gh*60)+" นาที":gh.toFixed(1)+" ชม."} ครึ่งหนึ่งรอที่ ${r.dest} ไม่ออกพร้อมกัน · จำนวนเที่ยวและรายได้เท่าเดิม`:"แต่ละลำออกตามเวลาของตัวเอง อาจออกติดๆ กันได้ · จำนวนเที่ยวและรายได้เท่าเดิม"})()}</div></div>`}
+/* Freight flights: one choice for how aircraft leave, like ships: on schedule evenly spaced / in their own time,
+   or wait until the hold is 50/75/95% full (waiting turns spacing off). A line says whether waiting can help now. */
+function airDepartHTML(r,c){if(!r.planes.length)return "";
+  const cur=(r.wait||0)>0?"w"+r.wait:r.spread===false?"free":"even",gh=spreadGapH(r);
+  const opts=[{k:"even",n:"⏱ ตามตาราง<br>เว้นระยะเท่ากัน",w:0},{k:"free",n:"🎲 ตามตาราง<br>ออกตามสะดวก",w:0},...WAITS.filter(([w])=>w>0).map(([w,n])=>({k:"w"+w,n:"⏳ "+n,w}))]
+    .map(o=>({...o,c:o.w===(r.wait||0)?c:calc({...r,wait:o.w})}));
+  const best=opts.reduce((a,b)=>b.c.profit>a.c.profit+1?b:a),ld=c.ccap?Math.min(1,(c.cargo||0)/c.ccap):0,over=(c.cdem||0)>(c.ccap||0)*1.05||bkCargo(r)>=1;
+  const situ=over?`📦 ตอนนี้สินค้าล้นอยู่แล้ว (ระวางเต็ม ${Math.round(ld*100)}%) เครื่องบินเต็มทุกเที่ยว การรอไม่ช่วยอะไร · เลือก “ตามตาราง” แล้วเพิ่มเครื่องดีกว่า`:
+    ld<.6?`🪫 ระวางเต็มแค่ ${Math.round(ld*100)}% · การรอให้เต็มก่อนบินช่วยประหยัดน้ำมันและค่าสนามบินได้ แต่ของถึงช้าลง`:`✅ ระวางเต็ม ${Math.round(ld*100)}% กำลังดี · บินตามตารางก็ได้ผลดี`;
+  const how=cur==="even"?(gh==null?"มีเครื่องลำเดียว ยังไม่ต้องเว้นระยะ":`เครื่อง ${r.planes.length} ลำออกสลับกันทุก ~${gh<1?Math.round(gh*60)+" นาที":gh.toFixed(1)+" ชม."}`):
+    cur==="free"?"เครื่องแต่ละลำออกตามเวลาของตัวเอง อาจออกติดๆ กันได้":`เครื่องรอที่สนามบินจนระวางเต็ม ${Math.round(r.wait*100)}% แล้วค่อยบิน (จึงไม่ได้เว้นระยะตามตาราง)`;
+  return `<div class="stack" style="gap:6px"><span class="eyebrow">🛫 การออกเดินทาง</span><div class="small depsitu">${situ}</div>
+    <div class="seg waitseg depseg">${opts.map(o=>`<button data-rdep="${o.k}" class="${cur===o.k?"on":""}">${o.n}${o===best&&best.k!==cur&&best.c.profit>c.profit+1?" ⭐":""}<br><span class="num ${o.c.profit<0?"bad":"good"}" style="font-size:12px;font-weight:700">${o.c.profit>=0?"+":""}${money(o.c.profit,true)}</span></button>`).join("")}</div>
+    <div class="muted small">${how} · ตัวเลขใต้ปุ่มคือกำไร/วันถ้าเลือกแบบนั้น${best.c.profit>c.profit+1?" · ⭐ คือแบบที่กำไรดีกว่าตอนนี้":""}</div></div>`}
 function airWaitHTML(r,c){if(!r.planes.some(id=>{const p=plane(id);return p&&!model(p.m).seats}))return "";
   const cur=r.wait||0,opts=WAITS.map(([w,n])=>({w,n:w?n:"✈ บินตามตาราง",c:w===cur?c:calc({...r,wait:w})})),best=opts.reduce((a,b)=>b.c.profit>a.c.profit+1?b:a),c0=opts[0].c;
   const saved=c0.fuelC+c0.feeC-(c.fuelC+c.feeC),lost=c0.crev-c.crev;
