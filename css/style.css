@@ -902,3 +902,10 @@ button.ptr{cursor:pointer}button.ptr:hover{background:var(--grid)}
 .chlog ul{margin:0;padding-left:18px}.chlog.new{border-color:var(--accent)}
 .depsitu{padding:6px 10px;border-radius:8px;background:var(--grid)}
 .depseg{flex-wrap:wrap}.depseg button{flex:1 1 30%}
+
+/* helpers toolbar and route picking */
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 10px;border:1px dashed var(--line);border-radius:10px}
+.toolbar.sel{flex-direction:column;align-items:stretch;border-style:solid;border-color:var(--accent);background:rgba(232,140,40,.06)}
+.strip.pickable{opacity:.75}
+.strip.picked{outline:2px solid var(--accent);outline-offset:-2px;opacity:1}
+.strip.picked .fno::before{content:"✔ ";color:var(--accent)}
