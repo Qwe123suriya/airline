@@ -484,6 +484,42 @@ const isOpen=c=>S.unlocked.includes(regionOf(c).id);
 function regionCost(R){const hub=city(S.hub);const d=Math.min(...R.c.map(c=>dist(hub,city(c))));return Math.round((20e6+d*22e3)/5e6)*5e6}
 const NAMES=["สยามสกาย","ฟ้าคราม","นกยูงแอร์","จันทราเวย์","ทะเลฟ้า","ช้างเหิน","ไผ่ทองแอร์","ดาวเหนือ"];
 const RIVALS=["นภาคราม แอร์ไลน์","โกลเด้นวิง","สกายดราก้อน"];
+/* ---------- version and updates ----------
+   GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
+   has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
+const GAME_VERSION="1.30";
+const CHANGELOG=[
+ ["1.30","20 พ.ย. 2569",["ระบบอัปเดต: บอกเวอร์ชันที่เล่นอยู่ แจ้งเมื่อมีเวอร์ชันใหม่ และสรุปว่ามีอะไรใหม่","เรือมีแผนแนะนำ “ซื้อกี่ลำ” แบบเดียวกับเครื่องบิน ผสมหลายรุ่นได้ตามประเภทสินค้าที่ค้าง","หน้าเปิดเส้นทางสินค้าเขียนว่า “สินค้าเยอะสุด” แทน “คนเยอะสุด”"]],
+ ["1.29","20 พ.ย. 2569",["กล่องเส้นทางบนแผนที่แนะนำว่าควรซื้อเครื่องรุ่นไหนกี่ลำถึงจะรับคนที่รอได้หมด"]],
+ ["1.28","19 พ.ย. 2569",["ช่วงพายุไม่ทำให้ทุกรุ่นขึ้น “ไม่คุ้ม” อีก","เต็มลำ % ของเครื่องขนสินค้าแสดงระวางที่ถูกต้อง","โหลดไฟล์ใหม่ทันทีหลังอัปเดต"]],
+ ["1.27","19 พ.ย. 2569",["บอกแยกประเภทว่าค้างอะไร (พัสดุ อาหาร รถ)","ท่าเรือบอกว่าตู้ล้นที่ไหน","สาขาสนามบินในโหมดสินค้าบอกว่าสินค้าล้นที่ไหน","แก้ปุ่มส้มยักษ์ในกล่องคำแนะนำ"]],
+ ["1.26","19 พ.ย. 2569",["🤖 จัดการอัตโนมัติทุกวัน ในกล่องคำแนะนำหน้าภาพรวม","สนามบินขนสินค้าล้วนมีสินค้ามากขึ้น 3 เท่า"]],
+ ["1.25","19 พ.ย. 2569",["ฝูงบินแยกจอดว่าง / ซ่อม / ทำงาน พร้อมช่องค้นหา","เลือกความยากของคู่แข่งได้","เครื่องบินโดยสารใหม่ 9 รุ่น"]],
+ ["1.24","18 พ.ย. 2569",["ปรับราคาตั๋วทุกเส้นทีเดียว","ที่นั่งเต็มเป็นตัวเลขแทนกราฟ"]],
+ ["1.23","18 พ.ย. 2569",["หัวข้อที่เปิดไว้ไม่ปิดเอง ที่เลื่อนไว้ไม่เด้งกลับ"]],
+ ["1.22","18 พ.ย. 2569",["การแข่งขันแยก 7 หมวด คู่แข่งเก่งคนละด้าน","ความร่วมมือขึ้นกับอันดับในด้านนั้น"]],
+ ["1.21","18 พ.ย. 2569",["เศรษฐกิจสมจริงขึ้น: เที่ยวบินต่อวัน ราคาตั๋ว ต้นทุน ค่าระวาง"]]];
+const verNum=v=>v.split(".").map(Number).reduce((a,x)=>a*1000+x,0);
+let updAvail=null;
+function checkUpdate(manual){if(!/^https?:/.test(location.protocol)){if(manual)toast("ตรวจอัปเดตได้เฉพาะตอนเล่นบนเว็บ");return Promise.resolve(null)}
+  return fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{
+    if(j&&j.v&&verNum(j.v)>verNum(GAME_VERSION)){updAvail=j.v;showUpdBar()}else if(manual)toast(`เป็นเวอร์ชันล่าสุดแล้ว (v${GAME_VERSION})`);return j}).catch(()=>{if(manual)toast("ตรวจอัปเดตไม่ได้ ลองใหม่เมื่อต่อเน็ต");return null})}
+function showUpdBar(){if(!updAvail||document.getElementById("updbar"))return;const b=document.createElement("button");b.id="updbar";b.className="updbar";
+  b.innerHTML=`🔄 มีอัปเดตใหม่ v${updAvail} (ตอนนี้ v${GAME_VERSION}) · <b>แตะเพื่อโหลด</b> เกมบันทึกไว้แล้ว`;b.onclick=loadUpdate;document.body.appendChild(b)}
+function loadUpdate(){try{if(S)save()}catch(e){}
+  // a fresh address skips a cached copy of the page itself
+  const go=()=>location.replace(location.pathname+"?u="+encodeURIComponent(updAvail||GAME_VERSION)+location.hash);
+  if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration)navigator.serviceWorker.getRegistration().then(r=>r?r.update().catch(()=>{}).then(go):go()).catch(go);else go()}
+// after an update has been loaded: say so once, with what changed since the version played before
+function afterUpdate(){let last=null;try{last=localStorage.getItem("airline-ver")}catch(e){}
+  try{localStorage.setItem("airline-ver",GAME_VERSION)}catch(e){}
+  if(!last||last===GAME_VERSION||!S)return;const news=CHANGELOG.filter(([v])=>verNum(v)>verNum(last));if(!news.length)return;
+  setTimeout(()=>openSheet(changelogSheet(last)),900)}
+function changelogSheet(from){const fn=()=>{let h=head(from?`🎉 อัปเดตเป็น v${GAME_VERSION} แล้ว`:`ℹ️ เวอร์ชัน v${GAME_VERSION}`,from?`จากเวอร์ชัน v${from} ที่เล่นครั้งก่อน`:"เวอร์ชันที่เล่นอยู่ และมีอะไรใหม่");
+   h+=`<div class="panel row between"><span>เวอร์ชันที่เล่นอยู่ <b class="num">v${GAME_VERSION}</b>${updAvail?` · <span class="warn">มีใหม่ v${updAvail}</span>`:""}</span>${updAvail?`<button class="btn sm primary" id="updnow">โหลดอัปเดต</button>`:`<button class="btn sm" id="updchk">ตรวจหาอัปเดต</button>`}</div>`;
+   h+=CHANGELOG.map(([v,d,items])=>`<div class="panel stack chlog ${from&&verNum(v)>verNum(from)?"new":""}"><div class="row between"><b>v${v}${v===GAME_VERSION?" · ตอนนี้":""}${from&&verNum(v)>verNum(from)?' <span class="chip got">ใหม่</span>':""}</b><span class="muted small">${d}</span></div><ul class="small">${items.map(t=>`<li>${t}</li>`).join("")}</ul></div>`).join("");
+   h+=`<div class="muted small">ถ้าเห็นหน้าตาแปลกๆ หลังอัปเดต ให้รีโหลดหน้าเว็บอีกครั้ง · เกมบันทึกอัตโนมัติ อัปเดตแล้วเซฟไม่หาย</div>`;return h};
+ fn.bind=()=>{const c=$("#updchk");if(c)c.onclick=()=>checkUpdate(true).then(()=>drawSheet());const u=$("#updnow");if(u)u.onclick=loadUpdate};return fn}
 let CARGO_RATE=8;const cgRate=d=>CARGO_RATE*(1500+.85*d);/* baht per tonne at rate 1.0 */const KEY="airline-owner-v1", START=new Date(2027,0,1), DAY_MS=30000, SPEEDS=[1,3,10,30];
 
 const $=s=>document.querySelector(s);
@@ -590,7 +626,7 @@ function renderStart(){
      </div>
    </div>
    <div class="row"><button class="btn" id="re" style="flex:1">สุ่มชะตาใหม่</button><button class="btn primary" id="go" style="flex:1.4">เริ่มกิจการ</button></div>
-   <button class="btn sm" id="hlp" style="align-self:flex-start">อ่านคู่มือระบบในเกม</button>
+   <div class="row between"><button class="btn sm" id="hlp">อ่านคู่มือระบบในเกม</button><button class="btn sm" id="sver">ℹ️ v${GAME_VERSION} · มีอะไรใหม่</button></div>
   </div></div><div id="sheet"></div>`;
   flap($("#fh"),h.c,justRolled?900:1);justRolled=false;
   const keep=()=>{fate.name=$("#nm").value.trim()||fate.name;fate.code=($("#cd").value.replace(/[^a-z]/gi,"").toUpperCase()+"XX").slice(0,2)};
@@ -599,6 +635,7 @@ function renderStart(){
   $$("[data-sdiff]").forEach(b=>b.onclick=()=>{keep();fate.diff=b.dataset.sdiff;renderStart()});
   $("#go").onclick=()=>{keep();newGame()};
   $("#hlp").onclick=()=>openSheet(guideSheet);
+  $("#sver").onclick=()=>openSheet(changelogSheet(null));
 }
 function newGame(){
   S=migrate({name:fate.name,code:fate.code,hub:fate.hub,cash:fate.cap,startCap:fate.cap,fuel:fate.fuel,day:0,rep:50,service:1,loan:0,
@@ -1363,6 +1400,7 @@ function renderApp(){
         <button role="menuitem" id="themebtn"><span class="mi">${themeIcon()}</span><span id="themelbl">โหมดแสง</span></button>
         <button role="menuitem" id="celtg"><span class="mi">🎉</span><span id="cellbl"></span></button>
         <button role="menuitem" id="haptg"><span class="mi">📳</span><span id="haplbl">${S.haptic===false?"สั่นเมื่อซื้อ/ได้รางวัล: ปิดอยู่":"สั่นเมื่อซื้อ/ได้รางวัล: เปิดอยู่"}</span></button>
+        <button role="menuitem" id="verbtn"><span class="mi">ℹ️</span>เวอร์ชัน v${GAME_VERSION} · มีอะไรใหม่${updAvail?` <b class="warn">มีอัปเดต</b>`:""}</button>
         <button role="menuitem" id="help"><span class="mi">?</span>คู่มือระบบ</button>
         <button role="menuitem" id="fsbtn"><span class="mi">⛶</span><span id="fslbl">เต็มจอ (ซ่อนแถบเบราว์เซอร์)</span></button>
         <button role="menuitem" id="spotbtn"><span class="mi">🎵</span>เชื่อม Spotify</button>
@@ -1378,6 +1416,7 @@ function renderApp(){
   if(!window._moreDoc){window._moreDoc=1;document.addEventListener("click",e=>{if(!e.target.closest(".moreb")){const m=$("#moremenu");if(m&&!m.hidden){m.hidden=true;$("#morebtn").setAttribute("aria-expanded","false")}}})}
   $("#spdc").onclick=()=>{const i=SPEEDS.indexOf(speed);speed=SPEEDS[(i+1)%SPEEDS.length];paused=false;updateTop()};
   $("#help").onclick=()=>{closeMore();openSheet(guideSheet)};
+  $("#verbtn").onclick=()=>{closeMore();openSheet(changelogSheet(null))};
   $$("[data-bm]").forEach(b=>b.onclick=()=>setBM(b.dataset.bm));
   $("#barmin").onclick=()=>{S.ui_barmin=!S.ui_barmin;save();applyBarMin()};applyBarMin();
   $("#restart").onclick=()=>{closeMore();openSheet(resetSheet)};
@@ -3989,6 +4028,8 @@ const keepUI=(()=>{const openK=new Set(),closedK=new Set(),scr=new Map();
 
 S=load();if(!S)rollFate();else{dispCash=S.cash;seenNews=S.news.length?S.news[0].id:0}
 renderApp();requestAnimationFrame(frame);
+afterUpdate();setTimeout(()=>checkUpdate(),4000);setInterval(()=>checkUpdate(),3*60e3);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkUpdate()});
 spHandleRedirect();
 if(S)setTimeout(()=>awayCheck(S.seen),400);
 let hiddenAt=0;

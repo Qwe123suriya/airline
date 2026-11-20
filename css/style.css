@@ -896,3 +896,7 @@ button.ptr{cursor:pointer}button.ptr:hover{background:var(--grid)}
 /* map pop-up: how many aircraft to buy */
 .fplan{display:flex;flex-direction:column;gap:4px;padding:8px 10px;border:1px solid var(--accent);border-radius:10px;background:rgba(232,140,40,.08)}
 .fplan .btn{align-self:flex-start;margin-top:2px}
+
+/* update bar and changelog */
+.updbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:60;max-width:calc(100% - 24px);border:0;border-radius:999px;padding:10px 16px;background:var(--accent);color:var(--accent-ink,#fff);font:inherit;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.3);cursor:pointer;animation:popin .2s both}
+.chlog ul{margin:0;padding-left:18px}.chlog.new{border-color:var(--accent)}
