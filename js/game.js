@@ -1937,8 +1937,33 @@ function routeAt(mx,my){let best=null,bd=16;
 let pop=null,routeArcs=new Map(),laneScrG=new Map();
 function closePop(){pop=null;const el=$("#mappop");if(el)el.remove()}
 function showPop(p){pop={...p,add:false};renderPop()}
-function whatIf(r,add){const tmp=[];for(const a of add){if(typeof a==="string"){const fp={id:-1-tmp.length,m:a,cond:100,down:0,age:0,route:r.id};S.fleet.push(fp);tmp.push(fp.id)}else tmp.push(a)}
+function whatIf(r,add){const tmp=[];for(const a of add){if(typeof a==="string"||(a&&a.m)){const mid=typeof a==="string"?a:a.m,fp={id:-1-tmp.length,m:mid,cond:100,down:0,age:0,route:r.id};if(a.ck&&a.ck!=="auto"&&!isSpecAir(model(mid)))fp.ck=a.ck;S.fleet.push(fp);tmp.push(fp.id)}else tmp.push(a)}
   const c=calc({...r,planes:[...r.planes,...tmp]});S.fleet=S.fleet.filter(p=>p.id>0);return c}
+/* How many of which aircraft to buy so everyone waiting gets a seat (or all freight gets carried) — without paying
+   for it in value: only plans whose payback is close to the best-value single aircraft (at most 30% or 30 days
+   slower) are considered; among those, the cheapest payback that carries everyone wins (fewer aircraft on a tie).
+   If no good-value plan covers everyone, the one that carries the most is shown and says how many stay behind. */
+// cached per route, day and fleet so the map pop-up's live redraw stays smooth
+let fpCache={};
+function fleetPlan(r){const k=r.id+":"+S.day+":"+r.planes.join(".")+":"+Math.round(Math.log2(Math.max(1,S.cash)));if(fpCache.k===k)return fpCache.v;const v=fleetPlan0(r);fpCache={k,v};return v}
+function fleetPlan0(r){const cgo=rkind(r)==="cargo",c0=calc(r),D0=cgo?c0.cdem:c0.demand,CAP0=cgo?c0.ccap:c0.cap,short=D0-CAP0;
+  if(!r.planes.length||short<Math.max(10,D0*.05))return null;
+  const {opts,bd}=airBuys(r),good=opts.filter(o=>o.v&&o.v.gain>0&&o.v.pay<=PAY_MAX);if(!good.length)return null;
+  const best=good.find(o=>o.id===bd.fast)||good[0],lim=Math.max(best.v.pay*1.3,best.v.pay+30);
+  const plans=[];
+  for(const o of good.slice(0,8))for(let n=1;n<=6;n++){const c=whatIf(r,Array.from({length:n},()=>({m:o.m.id,ck:o.ck}))),gain=c.profit-c0.profit;if(gain<=0)break;
+    const D=cgo?c.cdem:c.demand,CAP=cgo?c.ccap:c.cap,left=Math.max(0,Math.round(D-CAP)),pay=Math.ceil(n*o.price/gain);
+    plans.push({o,n,gain,pay,left,cost:n*o.price,carried:Math.round(Math.min(D,CAP)-Math.min(D0,CAP0))});if(left<=Math.max(5,D*.03))break}
+  const ok=plans.filter(x=>x.pay<=lim);if(!ok.length)return null;
+  const full=ok.filter(x=>x.left<=Math.max(5,D0*.03));
+  const pick=(full.length?full:ok).sort((a,b)=>full.length?(a.pay-b.pay)||(a.n-b.n):(a.left-b.left)||(a.pay-b.pay))[0];
+  const b1=plans.find(x=>x.o===best&&x.n===1);
+  return {...pick,short:Math.round(short),best,cgo,bestLeft:b1?b1.left:0}}
+function fleetPlanHTML(r){const P=fleetPlan(r);if(!P)return "";const u=P.cgo?"ตัน":"คน",can=S.cash>=P.cost;
+  return `<div class="fplan"><div class="small"><b>🧭 แนะนำ: ${P.o.m.name}${P.o.ck&&P.o.ck!=="auto"?` ขน${CK_N[P.o.ck]}`:""} × ${P.n} ลำ</b></div>
+    <div class="small">${P.left?`รับ${u}ที่รอได้ ${P.carried.toLocaleString()} จาก ${P.short.toLocaleString()} ${u}/วัน · ยังเหลือ ~${P.left.toLocaleString()} (เพิ่มอีกจะไม่คุ้ม)`:`รับ${u}ที่รอได้ครบ ${P.short.toLocaleString()} ${u}/วัน`}</div>
+    <div class="small muted">กำไรเพิ่ม <b class="good">+${money(P.gain,true)}/วัน</b> · ลงทุน ${money(P.cost,true)} · คืนทุน ${P.pay} วัน${P.o.id!==P.best.id?` · รุ่นคุ้มสุดต่อลำคือ ${P.best.m.name} (คืนทุน ${P.best.v.pay} วัน)${P.bestLeft?` แต่ลำเดียวยังเหลือรอ ~${P.bestLeft.toLocaleString()} ${u} และซื้อหลายลำคืนทุนช้ากว่าแผนนี้`:" แต่แผนนี้คืนทุนรวมเร็วกว่า"}`:""}</div>
+    <button class="btn sm primary" data-popplan="${P.o.m.id}:${P.o.ck||""}:${P.n}" ${can?"":"disabled"}>${can?`ซื้อ ${P.n} ลำใส่เส้นนี้ · ${money(P.cost,true)}`:`เงินยังไม่พอ (ต้องใช้ ${money(P.cost,true)})`}</button></div>`}
 function popRouteHTML(r){const c=calc(r),dc=city(r.dest),cgo=rkind(r)==="cargo",D=cgo?Math.round(c.cdem):c.demand,CAP=cgo?Math.round(c.ccap):c.cap,DONE=cgo?Math.round(Math.min(c.cdem,c.ccap)):c.pax,fill=CAP?Math.min(1,DONE/CAP):0;
   const st=!r.planes.length?["bad","ยังไม่มีเครื่องบิน"]:D>CAP*1.05?["warn",cgo?`ระวางไม่พอ สินค้ารออีก ${(D-CAP).toLocaleString()} ตัน/วัน`:`ที่นั่งไม่พอ คนรอบินอีก ${(D-CAP).toLocaleString()} คน/วัน`]:fill<.55?["muted",cgo?"ระวางว่างเยอะ":"ที่นั่งว่างเยอะ"]:["good",cgo?"ระวางพอดีกับสินค้า":"ที่นั่งพอดีกับคน"];
   let h=`<div class="pophead"><div style="min-width:0"><b>${cgo?"📦 ":""}${fno(r)} · ${r.from} → ${r.dest}</b><div class="small muted">${dc.n} · ${c.d.toLocaleString()} กม. · ${cgo?crateText(c):"ตั๋ว "+money(c.price,true)}</div></div><button class="x" data-popx aria-label="ปิด">✕</button></div>
@@ -1949,7 +1974,7 @@ function popRouteHTML(r){const c=calc(r),dc=city(r.dest),cgo=rkind(r)==="cargo",
   if(!pop.add)h+=`<div class="row" style="gap:6px"><button class="btn primary sm" style="flex:1" data-popadd>+ เพิ่มเครื่องบิน</button><button class="btn sm" style="flex:1" data-poproute="${r.id}">ปรับราคา/ละเอียด</button></div>`;
   else{const idle=S.fleet.filter(p=>!p.route&&fitsKind(model(p.m),r)&&model(p.m).range>=c.d&&p.down<=S.day).slice(0,4);
     const {opts:ab,bd:abd}=airBuys(r),buys=ab.filter(o=>o.v).slice(0,4),bestId=abd.fast;
-    h+=`<div class="eyebrow">เพิ่มเครื่องบิน · กำไรต่อวันหลังเพิ่ม</div><div class="poplist">`;
+    h+=fleetPlanHTML(r)+`<div class="eyebrow">เพิ่มเครื่องบิน · กำไรต่อวันหลังเพิ่ม</div><div class="poplist">`;
     for(const p of idle){const m=model(p.m),cc=whatIf(r,[p.id]),dlt=cc.profit-c.profit;h+=`<button data-popas="${p.id}"><span><b>${p.reg}</b> ${m.name}<br><span class="muted">จอดว่าง · ${m.seats?m.seats+" ที่นั่ง":m.cargo+" ตัน"}</span></span><span class="num ${dlt<0?"bad":"good"}">${dlt>=0?"+":""}${money(dlt,true)}</span></button>`}
     for(const {id:oid,m,ck,price:pr,v} of buys){const dlt=v.gain;h+=`<button data-popbuy="${m.id}" data-ck="${ck||""}" ${S.cash<pr?"disabled":""}><span><b>${m.name}</b>${oid===bestId?' <span class="pt best">⭐ คุ้มสุด</span>':""} ${buyKindChip(ck,false)}<br><span class="muted">ซื้อ ${money(pr,true)} · ${m.seats?m.seats+" ที่นั่ง":m.cargo+" ตัน"}${S.cash<pr?" · เงินยังไม่พอ":""}</span></span><span class="num ${dlt<0?"bad":"good"}" style="text-align:right">${dlt>=0?"+":""}${money(dlt,true)}<br><small class="muted">${dlt>0?`คืนทุน ${v.pay>9999?"นานมาก":v.pay+" วัน"}`:"ไม่คุ้ม"}</small></span></button>`}
     h+=`</div><div class="muted small">ตัวเลขขวาคือกำไรต่อวันที่เปลี่ยนไปเมื่อเพิ่มเครื่องลำนั้น (หักค่าน้ำมัน สนามบิน และค่าดูแลแล้ว)</div><div class="row" style="gap:6px"><button class="btn sm" data-popback>← กลับ</button><button class="btn sm" style="flex:1" data-poppick="air:${r.id}">🧭 ดูทุกรุ่น</button></div>`}
@@ -2048,6 +2073,9 @@ function renderPop(){const box=$(tab==="map"?"#mapfull":".mapbox");if(!pop||!box
   q("[data-poproute]").forEach(b=>b.onclick=()=>{const id=+b.dataset.poproute;closePop();openSheet(routeSheet(id,{}))});
   q("[data-popgo]").forEach(b=>b.onclick=()=>{pop={type:"route",id:+b.dataset.popgo,x:pop.x,y:pop.y,add:true};selCity=null;refreshAirports();renderPop()});
   q("[data-popas]").forEach(b=>b.onclick=()=>{const p=plane(+b.dataset.popas);if(!p||!r)return;r.planes.push(p.id);p.route=r.id;r.last=null;save();toast(`${p.reg} เข้าประจำ ${fno(r)} แล้ว`);pop.add=false;renderPop()});
+  q("[data-popplan]").forEach(b=>b.onclick=()=>{const [mid,ck,n]=b.dataset.popplan.split(":"),keep={...pop};if(!r)return;let k=0;
+    for(let i=0;i<+n;i++){const np=buy(mid);if(!np)break;applyCk(np,ck||"auto",isSpecAir(model(np.m)));r.planes.push(np.id);np.route=r.id;k++}
+    r.last=null;save();toast(`ซื้อ ${model(mid).name} ${k} ลำ เข้าประจำ ${fno(r)} แล้ว`);pop={...keep,add:false};renderPop()});
   q("[data-popbuy]").forEach(b=>b.onclick=()=>{const keep={...pop},np=buy(b.dataset.popbuy);if(!np||!r)return;applyCk(np,b.dataset.ck,isSpecAir(model(np.m)));r.planes.push(np.id);np.route=r.id;r.last=null;save();toast(`ซื้อ ${model(np.m).name} เข้าประจำ ${fno(r)} แล้ว`);pop={...keep,add:false};renderPop()});
   q("[data-popnew]").forEach(b=>b.onclick=()=>{const code=b.dataset.popnew;closePop();openSheet(newRouteSheet({from:S.hub,dest:code,kind:bm()}))});
   q("[data-popbm]").forEach(b=>b.onclick=()=>setBM(b.dataset.popbm));

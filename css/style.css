@@ -892,3 +892,7 @@ button.ptr{cursor:pointer}button.ptr:hover{background:var(--grid)}
 .advauto{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:10px;background:var(--grid);margin:0}
 .advauto input{margin-top:4px}
 .cgover{display:flex;flex-direction:column;gap:6px}.cgchips{display:flex;flex-wrap:wrap;gap:6px}
+
+/* map pop-up: how many aircraft to buy */
+.fplan{display:flex;flex-direction:column;gap:4px;padding:8px 10px;border:1px solid var(--accent);border-radius:10px;background:rgba(232,140,40,.08)}
+.fplan .btn{align-self:flex-start;margin-top:2px}
