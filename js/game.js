@@ -176,6 +176,13 @@ const MODELS=[
  {id:"fx_titan",future:1,cat:"wide",name:"Titan MegaLiner 1000",tag:"✨ แห่งอนาคต · ยักษ์สามชั้น 1,000 ที่นั่ง ต้นทุนต่อที่นั่งต่ำที่สุด",seats:1000,cargo:30,range:16000,speed:930,price:1.2e9,cpk:560,len:90,a:{fw:.11,sr:1.2,big:1,pods:[.27,.58],fh:30,eng:"quad",deck:"double"}},
  {id:"fx_atlas",future:1,cat:"cargo",name:"Atlas Heavy 300F",tag:"✨ แห่งอนาคต · เครื่องขนสินค้า 300 ตัน ใหญ่ที่สุดในเกม",seats:0,cargo:300,range:12000,speed:880,price:1e9,cpk:480,len:95,a:{fw:.1,sr:1.1,big:1,pods:[.27,.58],fh:28,eng:"quad",cargo:1}},
  {id:"fx_cssf",future:1,cat:"cargo",name:"Comet Express SSF",tag:"✨ แห่งอนาคต · เครื่องขนสินค้าเหนือเสียง 40 ตัน ของถึงเร็วมาก",seats:0,cargo:40,range:9000,speed:2000,price:5.5e8,cpk:170,len:60,a:{fw:.06,sr:.72,pods:[.62],fh:12,eng:"jet",cargo:1}},
+
+ // ---- the "super" set: beyond reality, for fighting rivals; heavy upkeep and wear (see SUPER_*) ----
+ {id:"sx_raider",super:1,cat:"wide",name:"⚔️ Phoenix Raider 250",tag:"⚔️ ฝูงพิเศษ · เหนือเสียง 1,800 กม./ชม. บนเส้นที่ถูกบุก คนเลือกเรา +40%",seats:250,cargo:6,range:15000,speed:1800,price:9e8,cpk:150,len:70,a:{fw:.06,sr:.72,big:1,pods:[.62],fh:16,eng:"jet"}},
+ {id:"sx_levi",super:1,cat:"wide",name:"⚔️ Leviathan 1600",tag:"⚔️ ฝูงพิเศษ · ยักษ์ 1,600 ที่นั่ง ยึดเส้นทางใหญ่ทั้งเส้น",seats:1600,cargo:40,range:16000,speed:950,price:1.2e9,cpk:600,len:100,a:{fw:.12,sr:1.25,big:1,pods:[.27,.58],fh:32,eng:"quad",deck:"double"}},
+ {id:"sx_qj",super:1,cat:"wide",name:"⚔️ Quantum Jump QJ-500",tag:"⚔️ ฝูงพิเศษ · 12,000 กม./ชม. ข้ามโลกแทบทันที 300 ที่นั่ง",seats:300,cargo:8,range:16000,speed:12000,price:1.6e9,cpk:300,len:85,a:{fw:.05,sr:.68,big:1,pods:[.6],fh:20,eng:"jet"}},
+ {id:"sx_behe",super:1,cat:"cargo",name:"⚔️ Behemoth 600F",tag:"⚔️ ฝูงพิเศษ · ขนสินค้า 600 ตันต่อเที่ยว",seats:0,cargo:600,range:12000,speed:900,price:1.2e9,cpk:700,len:110,a:{fw:.11,sr:1.2,big:1,pods:[.27,.58],fh:32,eng:"quad",cargo:1}},
+ {id:"sx_bolt",super:1,cat:"cargo",name:"⚔️ Bolt Courier Q",tag:"⚔️ ฝูงพิเศษ · เครื่องขนสินค้าไฮเปอร์โซนิก 80 ตัน 8,000 กม./ชม.",seats:0,cargo:80,range:12000,speed:8000,price:8e8,cpk:180,len:70,a:{fw:.05,sr:.7,pods:[.6],fh:14,eng:"jet",cargo:1}},
 ];
 // fuel burn per km in game baht (scaled so fuel is ~a third of airline costs, as in real airlines)
 for(const m of MODELS)m.cpk=Math.round(m.cpk*.65);
@@ -393,6 +400,9 @@ const SHIPS=[
  {id:"fs_hydro",future:1,name:"✨ ไฮโดรฟอยล์ 3,000 TEU",tag:"✨ แห่งอนาคต · ความเร็ว 90 กม./ชม. เร็วกว่าเรือทั่วไปสองเท่า",teu:3000,speed:90,price:2.6e9,cpk:1500,len:220},
  {id:"fs_polar",future:1,name:"✨ ห้องเย็นยักษ์ 6,000 TEU",tag:"✨ แห่งอนาคต · เรือห้องเย็นใหญ่และเร็ว ค่าระวาง 1.8 เท่า",teu:6000,speed:55,price:4.2e9,cpk:1700,len:300,reefer:1},
  {id:"fs_nova",future:1,name:"✨ โนวา 40,000 TEU",tag:"✨ แห่งอนาคต · เรือยักษ์ที่สุดในเกม เทียบได้เฉพาะท่าน้ำลึก",teu:40000,speed:44,price:9.5e9,cpk:3200,len:480,deep:1},
+ {id:"ss_wig",super:1,name:"⚔️ สกิมเมอร์ WIG 5,000 TEU",tag:"⚔️ ฝูงพิเศษ · เรือบินเรี่ยน้ำ 300 กม./ชม. ข้ามทวีปในไม่กี่วัน",teu:5000,speed:300,price:4e9,cpk:2600,len:260},
+ {id:"ss_arc",super:1,name:"⚔️ อาร์กติกเอ็กซ์เพรส 10,000 TEU",tag:"⚔️ ฝูงพิเศษ · ห้องเย็นยักษ์ความเร็ว 70 กม./ชม. ค่าระวาง 1.8 เท่า",teu:10000,speed:70,price:5e9,cpk:2200,len:330,reefer:1},
+ {id:"ss_levi",super:1,name:"⚔️ เลวีอาธาน 60,000 TEU",tag:"⚔️ ฝูงพิเศษ · เรือ 60,000 TEU ใหญ่ที่สุดในโลกเกม เฉพาะท่าน้ำลึก",teu:60000,speed:46,price:1.2e10,cpk:4200,len:520,deep:1},
 ];
 /* How far each ship can sail between two ports without refuelling (km of sea route). Small coastal / feeder ships
    stay in their region; long lanes (Asia–Europe ~18,000 km, round the Cape ~25,000 km) need ocean-going ships. */
@@ -476,7 +486,7 @@ function sailLeg(l,sh,m,lc,n){const bkk=shipK(sh,m),sf=lc.sK?lc.sK[bkk]:1;
   const net=o.srev-o.sfuel-o.sport;S.cash+=net;sh.tn=(sh.tn||0)+net;addT(S.today,o);l.today=l.today||{};addT(l.today,o);S.totTeu=(S.totTeu||0)+teu;
   if((tab==="home"||tab==="map")&&floaters.length<14)floaters.push({p:arr.c,v:net,t0:performance.now()})}
 function shipResale(sh){return shipM(sh.m).price*.6*Math.max(.5,1-sh.age/7300)}
-function shipFixed(){return S.ships.reduce((a,sh)=>a+shipM(sh.m).price*(sh.lane?.0004:.0002),0)}
+function shipFixed(){return S.ships.reduce((a,sh)=>a+shipM(sh.m).price*(sh.lane?.0004:.0002)*upkeepK(shipM(sh.m)),0)}
 function buyShip(id){const m=shipM(id);if(S.cash<m.price)return null;S.cash-=m.price;
   const sh={id:S.nid++,m:id,reg:`${S.code}-M${String(S.ships.length+1).padStart(2,"0")}`,lane:null,off:Math.random(),age:0,down:0};
   S.ships.push(sh);buzz(18);addNews(`🚢 รับมอบ${m.name} ชื่อ ${sh.reg}`);toast(`ซื้อ${m.name}แล้ว`);save();return sh}
@@ -498,8 +508,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.35";
+const GAME_VERSION="1.36";
 const CHANGELOG=[
+ ["1.36","21 พ.ย. 2569",["⚔️ ฝูงพิเศษสู้คู่แข่ง (ปลดล็อกสูงกว่าตัวช่วยพิเศษ: 80 เส้นทาง + เครื่อง 200 ลำ): Phoenix Raider, Leviathan 1600, Quantum Jump, Behemoth 600F, Bolt Courier, เรือ WIG 300 กม./ชม., อาร์กติกเอ็กซ์เพรส, เลวีอาธาน 60,000 TEU","ข้อแลกเปลี่ยน: ค่าดูแล 3 เท่า สึกเร็ว 3 เท่า และการแข่งขันอาวุธ: ยิ่งมีมาก คู่แข่งยิ่งตั้งเป้าสูง (สูงสุด +40%) เกมจึงไม่จบเร็วเกินไป","เครื่องผู้โดยสารฝูงพิเศษบนเส้นที่ถูกบุก ผู้โดยสารเลือกเรามากขึ้น 40%"]],
  ["1.35","21 พ.ย. 2569",["เส้นทางขนสินค้าทางอากาศ: การออกเดินทางกับการรอสินค้ารวมเป็นปุ่มเดียวแบบเดียวกับเรือ พร้อมบรรทัดบอกว่าการรอช่วยไหม","🚀 เครื่องบินและเรือแห่งอนาคต (ปลดล็อกหลังตัวช่วยพิเศษ): เครื่องไฟฟ้า เครื่องเหนือเสียง ไฮเปอร์โซนิก เครื่องยักษ์ 1,000 ที่นั่ง เครื่องขนสินค้า 300 ตัน และเครื่องขนสินค้าเหนือเสียง · เรือไฮโดรฟอยล์ เรือห้องเย็นยักษ์ และเรือ 40,000 TEU"]],
  ["1.34","21 พ.ย. 2569",["🧰 ตัวช่วยพิเศษปลดล็อกช่วงท้ายสุดของเกม: ต้องมีเส้นทางที่บินอยู่ 50 เส้น และเครื่องบิน 100 ลำ"]],
  ["1.33","21 พ.ย. 2569",["ปีในเกมเริ่มที่ปีที่ 0 (ด้านบนแสดง “ปีที่ 0 · 1 ม.ค.”)","🧰 ตัวช่วยพิเศษ (ปลดล็อกช่วงท้ายสุดของเกม): เลือกหลายเส้นแล้วปรับราคา บริการ ตารางบิน การออกเดินทางพร้อมกัน, ซื้อเครื่องตามแผนทุกเส้นที่ล้นทีเดียว, ปิดเส้นที่ไม่มีเครื่อง, ซ่อมทุกลำที่สภาพต่ำ, ใส่เครื่องจอดว่างทั้งหมดในปุ่มเดียว"]],
@@ -815,7 +826,7 @@ const RV_STR=.62,RV_GRACE=20,RV_EXIT_SHARE=.62,RV_EXIT_DAYS=20;
 const rivalByName=n=>S.rivals.find(x=>x.n===n);
 function compShare(r,price,svc){if(!r.cmp||rkind(r)==="cargo")return 1;
   const base=baseFare(dist(city(r.from),city(r.dest))),rv=rivalByName(r.cmp.rv),st=rv?rivalStars(rv):3.5;
-  const me=SERVICE[svc??svcOf(r)].f*(.6+S.rep/125)*Math.pow(base/(price||base),1.5),them=RV_STR*(1+.3*botLv())*(st/4)*Math.pow(1/r.cmp.fare,1.5);
+  const me=SERVICE[svc??svcOf(r)].f*(.6+S.rep/125)*Math.pow(base/(price||base),1.5)*raiderK(r),them=RV_STR*(1+.3*botLv())*(st/4)*Math.pow(1/r.cmp.fare,1.5);
   return me/(me+them)}
 // Automatic fare: aims for ~90% full on the full schedule — rises when more people want to fly than there are seats, falls when they don't
 // Automatic fare = 60% of the way from "fill the seats" to the most profitable fare (cached per route per day; setting it yourself still earns more)
@@ -840,7 +851,14 @@ const svcOf=r=>r.svc??S.service;
    direct. This is how far places no aircraft can reach directly get served. Recomputed when the network changes. */
 const XF_PAX={2:.25,3:.14},XF_CGO={2:.35,3:.2},XF_CAP=.4;
 const AIR_MAX=k=>k==="cargo"?AIR_MAX_C:AIR_MAX_P;
-const AIR_MAX_P=Math.max(...MODELS.filter(m=>m.seats&&!m.future).map(m=>m.range)),AIR_MAX_C=Math.max(...MODELS.filter(m=>!m.seats&&!m.future).map(m=>m.range));
+/* Super set trade-offs: 3x upkeep, 3x wear, and an arms race — every super vehicle you own makes the rivals aim
+   1% higher (up to +40%), so the super set wins fights but cannot end the game by itself. */
+const SUPER_UPKEEP=3,SUPER_WEAR=3,SUPER_ARMS=.01,SUPER_ARMS_MAX=.4,SUPER_SHARE=1.4;
+const upkeepK=m=>m.super?SUPER_UPKEEP:1;
+const superCount=()=>S.fleet.filter(p=>model(p.m).super).length+S.ships.filter(sh=>shipM(sh.m).super).length;
+const armsK=()=>1+Math.min(SUPER_ARMS_MAX,SUPER_ARMS*superCount());
+const raiderK=r=>r.planes.some(id=>{const p=plane(id);return p&&p.down<=S.day&&model(p.m).super&&model(p.m).seats})?SUPER_SHARE:1;
+const AIR_MAX_P=Math.max(...MODELS.filter(m=>m.seats&&!m.future&&!m.super).map(m=>m.range)),AIR_MAX_C=Math.max(...MODELS.filter(m=>!m.seats&&!m.future&&!m.super).map(m=>m.range));
 let xfCache={k:null};
 const XF0={pax:0,cargo:0};
 function xferNet(){let sig=S.day*1e6+S.bases.length*7919+S.routes.length;for(const r of S.routes)sig+=r.id*31+r.planes.length*(r.kind==="cargo"?7:3);
@@ -900,7 +918,7 @@ function calc(r,price,crate,svc){
     for(const p of ps){const m=model(p.m),tk=planeK(p);if(m.seats||tk==="mix"||tgt[tk]>=1)continue;plan.set(p.id,Math.max(1,Math.round(plan.get(p.id)*tgt[tk])))}
     const c1K=capOf();for(const t of CK){sK[t]=c0K[t]?Math.min(1,c1K[t]/c0K[t]):1;wpen[t]=1-(LATE+(t==="fd"?AIR_SPOIL:0))*(1-sK[t])}}
   let cap=0,ccap=0,fuelC=0,feeC=0,fixed=0,legs=0;
-  for(const p of ps){const m=model(p.m);fixed+=m.price*FIX_RATE;
+  for(const p of ps){const m=model(p.m);fixed+=m.price*FIX_RATE*upkeepK(m);
     if(ground||p.down>S.day)continue;
     const L=plan.get(p.id),tk=planeK(p),cc=L*m.cargo*(tk==="mix"?1:CK_LOAD[tk]);legs+=L;cap+=L*m.seats;ccap+=cc;if(tk==="mix")for(const k of CK)capK[k]+=cc*sh[k];else capK[tk]+=cc;
     fuelC+=L*d*m.cpk*fuel;feeC+=L*FEE_K*(feeOf(a)+feeOf(b))/2*1000*(m.seats||m.cargo*3)/100}
@@ -991,7 +1009,7 @@ function flyLeg(r,p,m,c,d,a,b,n){
   const net=o.tix+o.crev-o.fuelC-o.feeC-o.svc;
   S.cash+=net;p.tn=(p.tn||0)+net;addT(S.today,o);r.today=r.today||blankT();addT(r.today,o);
   {const arr=(n%2===1?a:b).c,dep=(n%2===1?b:a).c;S.apT=S.apT||{};const A=S.apT[arr]=S.apT[arr]||{up:0,dn:0,cu:0,cd:0},D=S.apT[dep]=S.apT[dep]||{up:0,dn:0,cu:0,cd:0};D.up+=pax;A.dn+=pax;D.cu+=cargo;A.cd+=cargo}
-  p.cond=clamp(p.cond-.035,0,100);S.totPax+=pax;S.totCargo+=cargo;
+  p.cond=clamp(p.cond-.035*(m.super?SUPER_WEAR:1),0,100);S.totPax+=pax;S.totCargo+=cargo;
   if((tab==="home"||tab==="map")&&floaters.length<14)floaters.push({c:(n%2===1?a:b).c,v:net,t0:performance.now()})}
 function rangeMigrate(){if(S.rngMig)return;S.rngMig=1;const off=[];
   for(const l of S.lanes)for(const id of l.ships.slice()){const sh=shipById(id);if(!sh)continue;const m=shipM(sh.m);if(m.rng<laneKm(l)){l.ships=l.ships.filter(x=>x!==id);sh.lane=null;off.push(sh.reg)}}
@@ -1005,7 +1023,7 @@ function simDay(){
   // overnight: fixed costs per aircraft, interest, and close the day's books
   let fixed=0;
   for(const r of S.routes){const c=calc(r),t=r.today||blankT();
-    const rf=ROUTE_SLOT+r.planes.reduce((s,id)=>{const p=plane(id);return s+(p?model(p.m).price*FIX_RATE:0)},0);fixed+=rf;
+    const rf=ROUTE_SLOT+r.planes.reduce((s,id)=>{const p=plane(id);return s+(p?model(p.m).price*FIX_RATE*upkeepK(model(p.m)):0)},0);fixed+=rf;
     const rev=t.tix+t.crev,cost=t.fuelC+t.feeC+t.svc+rf;
     r.prevPax=r.last?r.last.pax:null;r.last={...c,pax:t.pax,cargo:t.cargo,tix:t.tix,crev:t.crev,rev,fuelC:t.fuelC,feeC:t.feeC,fly:t.fuelC+t.feeC,svc:t.svc,fixed:rf,cost,profit:rev-cost,lf:t.seats?t.pax/t.seats:0,flown:t.legs,...(t.seats?{cap:t.seats}:{}),...(t.hold?{ccap:t.hold}:{})};   // yesterday's real seats, not the forecast
     r.h.push(Math.round(rev-cost));if(r.h.length>30)r.h.shift();r.today=blankT();
@@ -1085,8 +1103,8 @@ function leagueTick(){if(!has("rank")||!S.rivals||!S.rivals.length)return;if(S.d
   const before=botLvTxt();S.dlv=(S.dlv||0)+(diffTarget()-(S.dlv||0))*.12;const after=botLvTxt();
   if(after!==before){const L=leadInfo();addNews(L.rank===1?`⚔️ คู่แข่งปรับตัวเป็นระดับ “${after}” เพราะคุณนำอันดับ 2 อยู่ ${L.pct}%`:`🙂 คู่แข่งผ่อนลงเป็นระดับ “${after}” คุณตามหลังอันดับ 1 อยู่ ${Math.abs(L.pct)}%`)}}
 const diffPickHTML=()=>`<div class="stack" style="gap:4px"><span class="eyebrow">⚙️ ความยากของคู่แข่ง</span><div class="seg">${DIFFS.map(([k,n])=>`<button data-diff="${k}" class="${diffOf()===k?"on":""}">${n}</button>`).join("")}</div><div class="muted small">${DIFFS.find(x=>x[0]===diffOf())[2]} · เปลี่ยนได้ตลอด</div></div>`;
-function competeHTML(){const L=leadInfo(),n=S.rivals.length+1,d=botLv(),pc=clamp((d+.6)/2.2,0,1)*100;
-  return `<div class="panel stack">${diffPickHTML()}<div class="row between"><div><span class="eyebrow">📋 อันดับของเรา</span><div class="cbig num">#${L.rank}<small> / ${n}</small></div></div>
+function competeHTML(){const L=leadInfo(),n=S.rivals.length+1,d=botLv(),pc=clamp((d+.6)/2.2,0,1)*100,sc=has("super")?superCount():0;
+  return `<div class="panel stack">${diffPickHTML()}${sc?`<div class="small warn">⚔️ การแข่งขันอาวุธ: เรามีฝูงพิเศษ ${sc} ลำ คู่แข่งจึงตั้งเป้าสูงขึ้น +${Math.round((armsK()-1)*100)}% (สูงสุด +${Math.round(SUPER_ARMS_MAX*100)}%)</div>`:""}<div class="row between"><div><span class="eyebrow">📋 อันดับของเรา</span><div class="cbig num">#${L.rank}<small> / ${n}</small></div></div>
      <div style="text-align:right"><span class="eyebrow">⚔️ คู่แข่งเล่นระดับ</span><div class="cbig">${botLvTxt()}</div></div></div>
     <div class="diffbar"><i style="left:${pc}%"></i></div><div class="row between small muted"><span>ง่าย</span><span>ปกติ</span><span>โหดสุด</span></div>
     <div class="small">${L.rank===1?`คุณนำ <b>${esc(L.vs)}</b> (อันดับ 2) อยู่ <b>${L.pct}%</b>`:`คุณตามหลัง <b>${esc(L.vs)}</b> (อันดับ 1) อยู่ <b>${Math.abs(L.pct)}%</b>`} · ยิ่งนำห่าง คู่แข่งยิ่งเก่งขึ้น: โตเร็วขึ้น บุกเส้นทางบ่อยขึ้น ตัดราคาแรงขึ้น · ถ้าตามหลัง คู่แข่งจะผ่อนลง</div>
@@ -1245,7 +1263,7 @@ function rivalTurn(){
     if(r.cmp.weak>=RV_EXIT_DAYS+Math.round(8*Math.max(0,botLv()))||(S.day-r.cmp.since>60&&sh>.5&&Math.random()<.01)){addNews(`🏳️ ${r.cmp.rv} ถอนตัวจาก ${r.from}→${r.dest} คุณครองเส้นทางนี้แล้ว`);celebrate("!ชนะศึกเส้นทาง",`${r.from}→${r.dest}`);S.rep=clamp(S.rep+2,0,100);delete r.cmp;r.cmpCool=S.day+90}}
   // rivals keep pace: they grow faster when you pull ahead and from every route they fight you on
   S.rivals.forEach((rv,i)=>{const fights=S.routes.filter(r=>r.cmp&&r.cmp.rv===rv.n).length,aim=rvAim(rv,i);
-    const tgt=Math.max(S.startCap||1,myV)*Math.max(.4,aim*DIFF_AIM[diffOf()]+.12*botLv()),gap=(tgt-rv.v)/tgt;
+    const tgt=Math.max(S.startCap||1,myV)*Math.max(.4,aim*DIFF_AIM[diffOf()]*armsK()+.12*botLv()),gap=(tgt-rv.v)/tgt;
     rv.v*=1+(gap>0?.0015+.02*Math.min(1,gap*1.5):-.008*Math.min(1,-gap))+.0004*Math.min(fights,5);
     rv.ops=(rv.ops||0)+Math.min(fights,5)*3});
   rankNews()}
@@ -1296,7 +1314,7 @@ const rvStr=(P,k)=>k==="net"?(P.net||1):clamp(.35+1.6*(P[k]||0),.35,1.4);
 function rvTarget(rv,k){const P=rvProf(rv),d=S.day,aim=rv.aim||1,my=myCat(k),K=catK(),cap=v=>Math.min(rv.v,v);
   const floor=k==="pax"?Math.min(rv.v*K.pax,1500+d*25):k==="cargo"?Math.max(myCat("pax")*.02,Math.min(rv.v*K.cargo,40+d*.8)):
     k==="sea"?Math.max(myCat("pax")*.025,Math.min(rv.v*K.sea,50+d)):Math.min(8+d/15,40);
-  const t=Math.max(my,floor)*aim*DIFF_AIM[diffOf()]*rvStr(P,k);return k==="net"?Math.min(t,Math.round((CITIES.length+PORTS.length)*.6)):t}
+  const t=Math.max(my,floor)*aim*DIFF_AIM[diffOf()]*armsK()*rvStr(P,k);return k==="net"?Math.min(t,Math.round((CITIES.length+PORTS.length)*.6)):t}
 function rvOps(rv){if(!rv.m){rv.m={};for(const k of ["pax","cargo","sea","net"])rv.m[k]=rvTarget(rv,k)*(.7+Math.random()*.2)}return rv.m}
 function rvOpsTick(){for(const rv of S.rivals){const m=rvOps(rv),before={...m};
     for(const k of ["pax","cargo","sea","net"]){const t=rvTarget(rv,k);m[k]=Math.max(0,m[k]+(t-m[k])*(t>m[k]?.03:.012)*(.6+Math.random()*.8))}
@@ -1317,7 +1335,8 @@ function catBoard(k){return [...S.rivals.map(rv=>({n:rv.n,v:rvCat(rv,k),rv})),{n
 const catRank=k=>catBoard(k).findIndex(x=>x.me)+1;
 const catFmt=(k,v)=>k==="val"?money(v,true):k==="svc"?v.toFixed(1):Math.round(v).toLocaleString();
 const medal=r=>r===1?"🥇":r===2?"🥈":r===3?"🥉":"#"+r;
-function catTick(){const L=S.last||{},e=(o,x)=>o==null?x:o+(x-o)*.2;S.cat=S.cat||{};
+function armsNews(){if(!has("super"))return;const k=Math.round((armsK()-1)*100),was=S.armsSeen||0;if(k>=was+10){S.armsSeen=k-k%10;addNews(`⚔️ คู่แข่งเร่งสร้างฝูงบินตอบโต้ฝูงพิเศษของเรา ตั้งเป้าสูงขึ้น +${k}%`)}}
+function catTick(){armsNews();const L=S.last||{},e=(o,x)=>o==null?x:o+(x-o)*.2;S.cat=S.cat||{};
   S.cat.pax=e(S.cat.pax,L.pax||0);S.cat.cargo=e(S.cat.cargo,L.cargo||0);S.cat.teu=e(S.cat.teu,L.teu||0);
   rvOpsTick();
   // service-minded rivals drift toward their own level of service
@@ -1515,10 +1534,11 @@ const FEATS=[
  {id:"sea_big",n:"⚓ เรือใหญ่",d:"ซื้อเรือพานาแมกซ์ขึ้นไปจนถึงเรือยักษ์ ULCV ได้แล้ว วิ่งข้ามทวีปได้",ok:()=>opLanes()>=3&&lanesOK()&&lv()>=8,go:"fleet",mode:"cargo",after:["sea_reefer"],need:"เส้นทางเรือ 3 เส้นที่ทำกำไร และ Lv 8"},
  {id:"tools",n:"🧰 ตัวช่วยพิเศษ",d:"สำหรับสายการบินใหญ่: เลือกหลายเส้นทางแล้วปรับราคา บริการ ตารางบิน การออกเดินทางพร้อมกัน · ซื้อเครื่องตามแผนให้ทุกเส้นที่ล้นทีเดียว · ซ่อมทุกลำที่สภาพต่ำ และใส่เครื่องจอดว่างทั้งหมดในปุ่มเดียว",ok:()=>opRoutes()>=50&&S.fleet.length>=100,go:"routes",need:"เส้นทางที่บินอยู่ 50 เส้น และเครื่องบิน 100 ลำ"},
  {id:"future",n:"🚀 เครื่องบินและเรือแห่งอนาคต",d:"รุ่นที่ยังไม่มีในโลกจริง: เครื่องบินความเร็วเหนือเสียงและไฮเปอร์โซนิก เครื่องยักษ์ 1,000 ที่นั่ง เครื่องไฟฟ้าต้นทุนต่ำ เครื่องขนสินค้า 300 ตัน เรือยักษ์ 40,000 TEU และเรือไฮโดรฟอยล์ความเร็วสูง",ok:()=>true,after:["tools"],go:"fleet",need:"ปลดล็อกตัวช่วยพิเศษก่อน"},
+ {id:"super",n:"⚔️ ฝูงพิเศษสู้คู่แข่ง",d:"เครื่องบินและเรือระดับเหนือจริงไว้สู้คู่แข่ง: บนเส้นที่ถูกบุก ผู้โดยสารเลือกเราก่อน (+40%) · แต่ต้องแลก: ค่าดูแลแพง 3 เท่า สึกเร็ว 3 เท่า และยิ่งมีมาก คู่แข่งยิ่งเร่งตาม (การแข่งขันอาวุธ) เกมจึงไม่จบง่าย",ok:()=>opRoutes()>=80&&S.fleet.length>=200,after:["future"],go:"fleet",need:"เส้นทางที่บินอยู่ 80 เส้น และเครื่องบิน 200 ลำ"},
  {id:"sea_roro",n:"🚢 เรือขนรถ",d:"ซื้อเรือขนรถ Ro-Ro/PCTC และรับตู้ชิ้นส่วน/รถทางเรือ ค่าระวาง 1.5 เท่า",ok:()=>opLanes()>=4&&lanesOK()&&lv()>=9,go:"fleet",mode:"cargo",after:["sea_big"],need:"เส้นทางเรือ 4 เส้นที่ทำกำไร และ Lv 9"}];
 // what is open: aircraft / ship models and cargo kinds
-const mOpen=m=>m.future?has("future")&&(m.seats||has("cargo")):m.seats?true:has("cargo")&&(cargoCls(m)==="cs"||cargoCls(m)==="cn"||has("cargo_big"))&&(!SPEC_AIR[m.id]||has("cargo_pt"));
-const sOpen=m=>m.future?has("future")&&has("sea"):has("sea")&&(m.reefer?has("sea_reefer"):m.roro?has("sea_roro"):m.teu<=3500||has("sea_big"));
+const mOpen=m=>m.super?has("super")&&(m.seats||has("cargo")):m.future?has("future")&&(m.seats||has("cargo")):m.seats?true:has("cargo")&&(cargoCls(m)==="cs"||cargoCls(m)==="cn"||has("cargo_big"))&&(!SPEC_AIR[m.id]||has("cargo_pt"));
+const sOpen=m=>m.super?has("super")&&has("sea"):m.future?has("future")&&has("sea"):has("sea")&&(m.reefer?has("sea_reefer"):m.roro?has("sea_roro"):m.teu<=3500||has("sea_big"));
 const ckOpen=t=>t==="pcl"||(t==="fd"?has("cargo_fd"):has("cargo_pt"));
 const skOpen=k=>k==="d"||(k==="r"?has("sea_reefer"):has("sea_roro"));
 const has=id=>!S||!S.prog||S.prog.includes(id);
