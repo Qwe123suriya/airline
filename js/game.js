@@ -508,8 +508,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.37";
+const GAME_VERSION="1.38";
 const CHANGELOG=[
+ ["1.38","21 พ.ย. 2569",["ตารางสินค้าแยกประเภท (เครื่องบินและเรือ) มีช่อง “ค้าง/วัน” และ “สะสมรอ” พร้อมคำอธิบาย","หน้าเส้นทางผู้โดยสารบอก “คนค้าง/วัน” และ “คนสะสมรอบิน”"]],
  ["1.37","21 พ.ย. 2569",["ฝูงบิน: เลือกหลายลำเพื่อขายทีเดียว ทั้งเครื่องบินและเรือในหน้าเดียว (โหมดสินค้า) พร้อมปุ่มเลือกด่วน: จอดว่างทั้งหมด / สภาพต่ำ / อายุเกิน 10 ปี และบอกเงินที่จะได้ก่อนยืนยัน"]],
  ["1.36","21 พ.ย. 2569",["⚔️ ฝูงพิเศษสู้คู่แข่ง (ปลดล็อกสูงกว่าตัวช่วยพิเศษ: 80 เส้นทาง + เครื่อง 200 ลำ): Phoenix Raider, Leviathan 1600, Quantum Jump, Behemoth 600F, Bolt Courier, เรือ WIG 300 กม./ชม., อาร์กติกเอ็กซ์เพรส, เลวีอาธาน 60,000 TEU","ข้อแลกเปลี่ยน: ค่าดูแล 3 เท่า สึกเร็ว 3 เท่า และการแข่งขันอาวุธ: ยิ่งมีมาก คู่แข่งยิ่งตั้งเป้าสูง (สูงสุด +40%) เกมจึงไม่จบเร็วเกินไป","เครื่องผู้โดยสารฝูงพิเศษบนเส้นที่ถูกบุก ผู้โดยสารเลือกเรามากขึ้น 40%"]],
  ["1.35","21 พ.ย. 2569",["เส้นทางขนสินค้าทางอากาศ: การออกเดินทางกับการรอสินค้ารวมเป็นปุ่มเดียวแบบเดียวกับเรือ พร้อมบรรทัดบอกว่าการรอช่วยไหม","🚀 เครื่องบินและเรือแห่งอนาคต (ปลดล็อกหลังตัวช่วยพิเศษ): เครื่องไฟฟ้า เครื่องเหนือเสียง ไฮเปอร์โซนิก เครื่องยักษ์ 1,000 ที่นั่ง เครื่องขนสินค้า 300 ตัน และเครื่องขนสินค้าเหนือเสียง · เรือไฮโดรฟอยล์ เรือห้องเย็นยักษ์ และเรือ 40,000 TEU"]],
@@ -798,7 +799,8 @@ function airKindsHTML(r,c){const fr=r.planes.map(plane).filter(p=>p&&!model(p.m)
   return `<div class="kbox"><div class="row between"><b>สินค้าแยกประเภท</b><span class="muted small">ตัน/วัน</span></div>
     <div class="muted small">เส้นทางเดียวขนได้หลายอย่างพร้อมกัน โดยแต่ละลำขนคนละอย่าง</div>
     ${adviceBox(airAdvice(r,c))}
-    <div class="ktab"><span></span><span>ต้องการ</span><span>รองรับ</span><span>ขนได้</span><span>สะสม</span>${CK.filter(ckOpen).map(t=>{const k=c.cK[t];return `<span>${kindChip(t)}</span><b class="num">${Math.round(k.dem)}</b><b class="num">${Math.round(k.cap)}</b><b class="num ${k.cap&&k.carry<k.dem*.9?"warn":""}">${Math.round(k.carry)}</b><b class="num muted">${Math.round(cbkObj(r)[t]||0)}</b>`}).join("")}</div>
+    <div class="ktab k6"><span></span><span>ต้องการ</span><span>รองรับ</span><span>ขนได้</span><span>ค้าง/วัน</span><span>สะสมรอ</span>${CK.filter(ckOpen).map(t=>{const k=c.cK[t],sh=Math.max(0,Math.round(k.dem-k.carry)),bk=Math.round(cbkObj(r)[t]||0);return `<span>${kindChip(t)}</span><b class="num">${Math.round(k.dem)}</b><b class="num">${Math.round(k.cap)}</b><b class="num ${k.cap&&k.carry<k.dem*.9?"warn":""}">${Math.round(k.carry)}</b><b class="num ${sh?"bad":"good"}">${sh.toLocaleString()}</b><b class="num ${bk?"warn":"muted"}">${bk.toLocaleString()}</b>`}).join("")}</div>
+    <div class="muted small"><b>ค้าง/วัน</b> = สินค้าที่ต้องการส่งแต่เครื่องไม่มีที่ในแต่ละวัน · <b>สะสมรอ</b> = สินค้าที่ค้างจากวันก่อนและรออยู่ตอนนี้ (ขึ้นเครื่องเมื่อมีที่ว่าง)</div>
     <div class="muted small">ค่าระวาง: อาหาร ×1.35 · ชิ้นส่วน/รถ ×1.2 · บรรทุกได้ อาหาร 90% · ชิ้นส่วน/รถ 75% ของน้ำหนักเครื่อง · ของสะสมเก็บเฉพาะประเภทที่เส้นทางนี้ขนอยู่${r.planes.length?"":" (ยังไม่มีเครื่อง จึงสะสมแค่พัสดุ)"}</div>
     ${fr.length?`<div class="klist">${fr.map(p=>{const m=model(p.m);return `<div class="krow"><span><b>${p.reg}</b> <span class="muted small">${m.name}</span></span>${isSpecAir(m)?`<span class="small">${kindChip(SPEC_AIR[m.id])} <span class="muted">เครื่องเฉพาะ</span></span>`:`<span class="row" style="gap:6px">${(!p.ck||p.ck==="auto")?`<span class="small muted">ตอนนี้ ${CK_E[planeK(p)]}</span>`:""}${ckSel("pck",p.id,p.ck,AIR_OPTS)}</span>`}</div>`}).join("")}</div>`:""}
     ${r.planes.some(id=>{const p=plane(id);return p&&model(p.m).seats})?`<div class="muted small">เครื่องบินโดยสารขนสินค้าใต้ท้องเครื่องได้ทุกประเภทปนกัน ตามสัดส่วนที่ต้องการ</div>`:""}</div>`}
@@ -807,7 +809,8 @@ function seaKindsHTML(l,c){const B=l.bk||{};
   return `<div class="kbox"><div class="row between"><b>สินค้าแยกประเภท</b><span class="muted small">ตู้/วัน</span></div>
     <div class="muted small">เส้นทางเดียวขนได้หลายอย่างพร้อมกัน โดยแต่ละลำขนคนละอย่าง</div>
     ${adviceBox(seaAdvice(l,c))}
-    <div class="ktab"><span></span><span>ต้องการ</span><span>รองรับ</span><span>เต็ม</span><span>สะสม</span>${["d","r","o"].filter(skOpen).map(k=>`<span>${kindChip(SEA_KN[k])}</span><b class="num">${Math.round(c.DK[k])}</b><b class="num">${Math.round(c.capK[k])}</b><b class="num">${c.capK[k]?Math.round(c.loadK[k]*100)+"%":"—"}</b><b class="num muted">${Math.round(B[k]||0)}</b>`).join("")}</div>
+    <div class="ktab k6"><span></span><span>ต้องการ</span><span>รองรับ</span><span>เต็ม</span><span>ค้าง/วัน</span><span>สะสมรอ</span>${["d","r","o"].filter(skOpen).map(k=>{const sh=Math.max(0,Math.round(c.DK[k]-c.capK[k])),bk=Math.round(B[k]||0);return `<span>${kindChip(SEA_KN[k])}</span><b class="num">${Math.round(c.DK[k])}</b><b class="num">${Math.round(c.capK[k])}</b><b class="num">${c.capK[k]?Math.round(c.loadK[k]*100)+"%":"—"}</b><b class="num ${sh?"bad":"good"}">${sh?sh.toLocaleString():"0"}</b><b class="num ${bk?"warn":"muted"}">${bk.toLocaleString()}</b>`}).join("")}</div>
+    <div class="muted small"><b>ค้าง/วัน</b> = ตู้ที่ต้องการส่งแต่เรือไม่มีที่ในแต่ละวัน · <b>สะสมรอ</b> = ตู้ที่ค้างจากวันก่อนและรออยู่ที่ท่าตอนนี้ (ขึ้นเรือเมื่อมีที่ว่าง)</div>
     <div class="muted small">เรือเฉพาะ (ห้องเย็น, ขนรถ) ขนได้เต็มลำ ค่าระวางสูงกว่า ${Math.round((SPEC_RATE-1)*100)}% และอาหารไม่เสียตอนรอสินค้า · เรือรวมขนได้ทุกอย่างแต่ทีละประเภท: พัสดุเต็มลำ อาหาร ${Math.round(SEA_LOAD.r*100)}% ชิ้นส่วน/รถ ${Math.round(SEA_LOAD.o*100)}% ของความจุ · ค่าระวาง อาหาร ×1.8 ชิ้นส่วน/รถ ×1.5</div>
     ${l.ships.length?`<div class="klist">${l.ships.map(shipById).filter(Boolean).map(sh=>{const m=shipM(sh.m);return `<div class="krow"><span><b>${sh.reg}</b> <span class="muted small">${m.name}</span></span>${shipSpec(m)?`<span class="small">${kindChip(SEA_KN[shipK(sh,m)])} <span class="muted">เรือเฉพาะ</span></span>`:`<span class="row" style="gap:6px">${(!sh.ck||sh.ck==="auto")?`<span class="small muted">ตอนนี้ ${CK_E[SEA_KN[shipK(sh,m)]]}</span>`:""}${ckSel("sck",sh.id,sh.ck,SEA_OPTS)}</span>`}</div>`}).join("")}</div>`:""}</div>`}
 // cargo-only airports (Memphis, Leipzig, Liege...) are freight hubs: three times the freight of a normal airport that size
@@ -3577,7 +3580,7 @@ function routeSheet(rid,st){
 `}${cg?airDepartHTML(r,c):paxDepartHTML(r)}     <div class="stack" style="gap:6px"><span class="eyebrow">ตารางบิน</span><div class="seg"><button data-freq="auto" class="${r.freq!=="max"?"on":""}">${cg?"ปรับตามสินค้า":"ปรับตามผู้โดยสาร"}</button><button data-freq="max" class="${r.freq==="max"?"on":""}">บินเต็มตาราง</button></div>
       <div class="muted small">${r.freq==="max"?"เครื่องบินทุกลำบินจำนวนเที่ยวสูงสุดทุกวัน แม้ที่นั่งจะว่าง":"ลดจำนวนเที่ยวลงเมื่อคนน้อย ให้แต่ละเที่ยวเต็มประมาณ 85% ประหยัดน้ำมันและค่าสนามบิน"}</div></div>
 
-     ${cg?"":`<div class="kv" id="kv">${kvHTML(c)}</div>`}
+     ${cg?"":`<div class="kv" id="kv">${kvHTML(c,r)}</div>`}
      <div id="bd">${breakdownHTML(c)}</div>
      ${cg||c.ccap?`<div class="panel stack cargo"><div class="row between"><span class="eyebrow">ขนส่งสินค้าทางอากาศ</span>${(()=>{const ss=[...cargoSeasons(r.from),...cargoSeasons(r.dest)];return ss.length?`<span class="chips">${[...new Set(ss.map(x=>x[0]))].map(n=>`<span class="chip got">${n}</span>`).join("")}</span>`:""})()}</div>
       <div class="seg"><button data-cmode="auto" class="${r.cmode!=="manual"?"on":""}">ค่าระวางอัตโนมัติ</button><button data-cmode="manual" class="${r.cmode==="manual"?"on":""}">ตั้งเอง</button></div>
@@ -3605,7 +3608,7 @@ function routeSheet(rid,st){
     return out};
   fn.bind=()=>{const r=S.routes.find(x=>x.id===rid);if(!r)return;
     $$("#sheet [data-rplan]").forEach(b=>b.onclick=()=>{buyPlanPlanes(r,b.dataset.rplan);drawSheet()});
-    const preview=v=>{st.price=v;const c=calc(r,v);$("#pr").value=v;$("#pv").textContent=money(v);$("#kv").innerHTML=kvHTML(c);$("#bd").innerHTML=breakdownHTML(c);$("#fc").innerHTML=forecastHTML(r,c);$("#savep").disabled=false;const pt=$("#ptab");if(pt)pt.innerHTML=priceTableHTML(r,v)};
+    const preview=v=>{st.price=v;const c=calc(r,v);$("#pr").value=v;$("#pv").textContent=money(v);$("#kv").innerHTML=kvHTML(c,r);$("#bd").innerHTML=breakdownHTML(c);$("#fc").innerHTML=forecastHTML(r,c);$("#savep").disabled=false;const pt=$("#ptab");if(pt)pt.innerHTML=priceTableHTML(r,v)};
     const ptb=$("#ptab");if(ptb)ptb.onclick=e=>{const t=e.target.closest("[data-pt]");if(t)preview(+t.dataset.pt)};
     const pr=$("#pr");if(pr)pr.oninput=()=>preview(+pr.value);
     $$("[data-qp]").forEach(b=>b.onclick=()=>{const f=+b.dataset.qp,base=baseFare(rd(r)),cur=st.price??priceOf(r);let v=f===0?base:f>0?cur*f:bestPrice(r);preview(Math.round(clamp(v,base*.5,base*2)/10)*10)});
@@ -3728,8 +3731,10 @@ function forecastHTML0(r,c){if(rkind(r)==="cargo"){const pf=c.profit,good=pf>=0,
      <div class="fgauge" style="--p:${clamp(ld,0,100)}"><b class="num">${ld}%</b><span>ที่นั่งเต็ม</span></div></div>
    ${edit?`<div class="small" style="font-weight:600">${diff>=0?"ดีขึ้น":"แย่ลง"} ${diff>=0?"+":""}${money(diff,true)} ต่อวันเมื่อเทียบกับตอนนี้</div>`:""}
    <div class="small muted">💡 ${why} · ผู้โดยสาร ${c.pax.toLocaleString()} จาก ${c.demand.toLocaleString()} คนที่อยากบิน</div></div>`}
-function kvHTML(c){return `<div><div class="k">คนอยากบิน/วัน</div><div class="v">${c.demand.toLocaleString()}</div></div>
+function kvHTML(c,r){const left=Math.max(0,Math.round(c.demand-c.cap)),wait=r?Math.floor(r.bk||0):0;return `<div><div class="k">คนอยากบิน/วัน</div><div class="v">${c.demand.toLocaleString()}</div></div>
  <div><div class="k">ที่นั่ง/วัน</div><div class="v">${c.cap.toLocaleString()}</div></div>
+ <div><div class="k">คนค้าง/วัน (ไม่มีที่นั่ง)</div><div class="v ${left?"bad":"good"}">${left.toLocaleString()}</div></div>
+ <div><div class="k">คนสะสมรอบิน</div><div class="v ${wait?"warn":""}">${wait.toLocaleString()}</div></div>
  <div><div class="k">สินค้า/วัน</div><div class="v">${Math.round(Math.min(c.cdem,c.ccap))} / ${Math.round(c.ccap)} ตัน</div></div>
  <div><div class="k">กำไร/วัน (ประมาณ)</div><div class="v ${c.profit<0?"bad":"good"}">${money(c.profit,true)}</div></div>`}
 function breakdownHTML(c){const rows=[["ค่าตั๋ว",c.tix,1],["ขนสินค้า",c.crev,1],["น้ำมัน",-c.fuelC],["สนามบิน",-c.feeC],["ดูแลเครื่อง/ลูกเรือ",-c.fixed],["บริการบนเครื่อง",-c.svc]];
