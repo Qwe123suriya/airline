@@ -487,8 +487,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.30";
+const GAME_VERSION="1.31";
 const CHANGELOG=[
+ ["1.31","20 พ.ย. 2569",["การออกเรือกับการรอสินค้ารวมเป็นปุ่มเดียว ไม่ขัดกัน: ตามตาราง (เว้นระยะ / ตามสะดวก) หรือรอเต็ม 50 / 75 / 95%","บอกว่าตอนนี้การรอช่วยไหม: ถ้าตู้ล้นอยู่แล้ว การรอไม่มีผล ควรเพิ่มเรือ","เครื่องบินขนสินค้า: ตั้งรอสินค้าแล้วการเว้นระยะจะปิดเองและบอกเหตุผล"]],
  ["1.30","20 พ.ย. 2569",["ระบบอัปเดต: บอกเวอร์ชันที่เล่นอยู่ แจ้งเมื่อมีเวอร์ชันใหม่ และสรุปว่ามีอะไรใหม่","เรือมีแผนแนะนำ “ซื้อกี่ลำ” แบบเดียวกับเครื่องบิน ผสมหลายรุ่นได้ตามประเภทสินค้าที่ค้าง","หน้าเปิดเส้นทางสินค้าเขียนว่า “สินค้าเยอะสุด” แทน “คนเยอะสุด”"]],
  ["1.29","20 พ.ย. 2569",["กล่องเส้นทางบนแผนที่แนะนำว่าควรซื้อเครื่องรุ่นไหนกี่ลำถึงจะรับคนที่รอได้หมด"]],
  ["1.28","19 พ.ย. 2569",["ช่วงพายุไม่ทำให้ทุกรุ่นขึ้น “ไม่คุ้ม” อีก","เต็มลำ % ของเครื่องขนสินค้าแสดงระวางที่ถูกต้อง","โหลดไฟล์ใหม่ทันทีหลังอัปเดต"]],
@@ -2348,10 +2349,7 @@ function laneSheet(lid,st){
      ${bkLaneHTML(l)}
      <div class="muted small">ค่าระวาง ${money(TEU_RATE(c.km),true)} ต่อตู้ต่อเที่ยว (เรือห้องเย็น 1.8 เท่า) · ท่าเรือ ${a.deep&&b.deep?"น้ำลึกทั้งสองฝั่ง เรือ ULCV เทียบได้":"ไม่ใช่น้ำลึกทั้งคู่ ใช้เรือ ULCV ไม่ได้"}</div>
      ${seaKindsHTML(l,c)}
-     <div class="stack" style="gap:6px"><span class="eyebrow">การออกเรือ</span><div class="seg"><button data-lspread="1" class="${l.spread!==false?"on":""}">⏱ เว้นระยะเท่ากัน</button><button data-lspread="0" class="${l.spread===false?"on":""}">🎲 ออกตามสะดวก</button></div>
-      <div class="muted small">${(()=>{const gd=laneGapD(l);if(gd==null)return "มีเรือลำเดียวในเส้นทางนี้ ยังไม่ต้องเว้นระยะ";
-        return l.spread!==false?`เรือ ${l.ships.length} ลำออกจาก ${port(l.from).n} สลับกันทุก ~${gd<1?Math.round(gd*24)+" ชม.":gd.toFixed(1)+" วัน"} ครึ่งหนึ่งเริ่มจาก ${port(l.to).n} ไม่ไปเทียบท่าพร้อมกัน · ค่าระวางเท่าเดิม`:"เรือแต่ละลำออกตามเวลาของตัวเอง อาจไปถึงท่าพร้อมกันได้ · ค่าระวางเท่าเดิม"})()}</div></div>
-     ${waitHTML(l,c)}
+     ${departHTML(l,c)}
      <div><div class="eyebrow" style="margin-bottom:6px">เรือในเส้นทาง ${l.ships.length} ลำ</div><div class="pick">${l.ships.map(shipById).filter(Boolean).map(sh=>row(sh,"srem")).join("")||'<div class="muted small">ยังไม่มีเรือ</div>'}
       ${idle.length?`<div class="eyebrow" style="margin-top:6px">เรือที่จอดว่าง</div>`:""}${idle.map(sh=>row(sh,"sadd")).join("")}</div></div>
      ${(()=>{const {opts,bd}=seaBuys(l,st.sk);
@@ -2368,6 +2366,9 @@ function laneSheet(lid,st){
       if(a.act.ship){const sh=shipById(a.act.ship);sh.ck=a.act.ck;save();toast(`${sh.reg} เปลี่ยนไปขน ${CK_E[SEA_KN[a.act.ck]]} ${CK_N[SEA_KN[a.act.ck]]}`);drawSheet()}
       else if(a.act.buy){st.buy=1;if(a.act.ck)st.sk=a.act.ck;drawSheet();const bh=$("#sbuy");if(bh){bh.open=true;bh.scrollIntoView({block:"start"})}}}}
     $$("[data-sck]").forEach(sl=>sl.onchange=()=>{const sh=shipById(+sl.dataset.sck);if(!sh)return;sh.ck=sl.value;save();toast(`${sh.reg} ขน ${sl.options[sl.selectedIndex].text}`);drawSheet()});
+    $$("[data-ldep]").forEach(b=>b.onclick=()=>{const k=b.dataset.ldep;
+      if(k[0]==="w"){l.wait=+k.slice(1);l.spread=false}else{l.wait=0;l.spread=k==="even"}syncLaneSpread(l);save();
+      toast(l.wait?`เรือจะรอจนตู้เต็ม ${Math.round(l.wait*100)}% ก่อนออก`:l.spread?"เรือออกตามตาราง เว้นระยะเท่ากัน":"เรือออกตามตาราง ตามสะดวก");drawSheet()});
     $$("[data-lwait]").forEach(b=>b.onclick=()=>{l.wait=+b.dataset.lwait;save();toast(l.wait?`เรือจะรอจนตู้เต็ม ${Math.round(l.wait*100)}% ก่อนออก`:"เรือออกตามตารางแล้ว");drawSheet()});
     $$("[data-lspread]").forEach(b=>b.onclick=()=>{l.spread=b.dataset.lspread==="1";syncLaneSpread(l);save();toast(l.spread?"เว้นระยะการออกเรือแล้ว":"ให้เรือออกตามสะดวกแล้ว");drawSheet()});
     $$("[data-srem]").forEach(b=>b.onclick=()=>{const id=+b.dataset.srem;l.ships=l.ships.filter(x=>x!==id);shipById(id).lane=null;save();drawSheet()});
@@ -2377,6 +2378,25 @@ function laneSheet(lid,st){
     $$("[data-sbuy]").forEach(b=>b.onclick=()=>{const sh=buyShip(b.dataset.sbuy);if(!sh)return;applyCk(sh,b.dataset.ck,shipSpec(shipM(sh.m)));l.ships.push(sh.id);sh.lane=l.id;save();toast(`${sh.reg} เข้าประจำ ${laneNo(l)} แล้ว`);drawSheet()});
     $("#lclose").onclick=()=>{if(!st.confirm){st.confirm=1;drawSheet();return}for(const id of l.ships){const sh=shipById(id);if(sh)sh.lane=null}S.lanes=S.lanes.filter(x=>x!==l);addNews(`ปิดเส้นทางเรือ ${port(l.from).n} → ${port(l.to).n}`);save();closeSheet()}};
   return fn}
+/* How ships leave port — one choice instead of two that could contradict each other:
+   on schedule, evenly spaced · on schedule, each in its own time · or wait until the hold is 50/75/95% full
+   (a ship that waits leaves when it is full, so it cannot also keep an even spacing). The line under it says
+   whether waiting can help right now: when freight already overflows, every ship leaves full anyway. */
+function departHTML(l,c){if(!l.ships.length)return "";
+  const cur=(l.wait||0)>0?"w"+l.wait:l.spread===false?"free":"even",gd=laneGapD(l);
+  const opts=[{k:"even",n:"⏱ ตามตาราง<br>เว้นระยะเท่ากัน",w:0},{k:"free",n:"🎲 ตามตาราง<br>ออกตามสะดวก",w:0},...WAITS.filter(([w])=>w>0).map(([w,n])=>({k:"w"+w,n:"⏳ "+n,w}))]
+    .map(o=>({...o,c:o.w===(l.wait||0)?c:laneCalc({...l,wait:o.w})}));
+  const best=opts.reduce((a,b)=>b.c.profit>a.c.profit+1?b:a),waiting=l.ships.map(shipById).filter(sh=>sh&&sh.waiting).length;
+  const ld=Math.max(c.load||0,c.loadr||0,c.loado||0),over=seaShort(c)>Math.max(20,((c.DK.d||0)+(c.DK.r||0)+(c.DK.o||0))*.05)||bkSea(l)>=1;
+  const situ=over?`📦 ตอนนี้ตู้ล้นอยู่แล้ว (เต็ม ${Math.round(ld*100)}%) เรือออกเต็มทุกเที่ยว การรอไม่ช่วยอะไร · เลือก “ตามตาราง” แล้วเพิ่มเรือดีกว่า`:
+    ld<.6?`🪫 ตู้เต็มแค่ ${Math.round(ld*100)}% · การรอให้เต็มก่อนออกช่วยประหยัดน้ำมันและค่าท่าได้ แต่ของถึงช้าลง`:`✅ ตู้เต็ม ${Math.round(ld*100)}% กำลังดี · ออกตามตารางก็ได้ผลดี`;
+  const how=cur==="even"?(gd==null?"มีเรือลำเดียว ยังไม่ต้องเว้นระยะ":`เรือ ${l.ships.length} ลำออกสลับกันทุก ~${gd<1?Math.round(gd*24)+" ชม.":gd.toFixed(1)+" วัน"} ไม่ไปเทียบท่าพร้อมกัน`):
+    cur==="free"?"เรือแต่ละลำออกตามเวลาของตัวเอง อาจไปถึงท่าพร้อมกันได้":
+    `เรือรอที่ท่าจนตู้เต็ม ${Math.round(l.wait*100)}% แล้วค่อยออก (จึงไม่ได้เว้นระยะตามตาราง) · ประหยัดน้ำมันและค่าท่า ~${money(c.saved,true)}/วัน${c.spoil>1?` · ส่งช้าลง ลูกค้าจ่ายน้อยลง −${money(c.spoil,true)}/วัน`:""}`;
+  return `<div class="stack" style="gap:6px"><div class="row between"><span class="eyebrow">⛴️ การออกเรือ</span>${waiting?`<span class="small warn">⏳ ${waiting} ลำกำลังรอสินค้าที่ท่า</span>`:""}</div>
+    <div class="small depsitu">${situ}</div>
+    <div class="seg waitseg depseg">${opts.map(o=>`<button data-ldep="${o.k}" class="${cur===o.k?"on":""}">${o.n}${o===best&&best.k!==cur&&best.c.profit>c.profit+1?" ⭐":""}<br><span class="num ${o.c.profit<0?"bad":"good"}" style="font-size:12px;font-weight:700">${o.c.profit>=0?"+":""}${money(o.c.profit,true)}</span></button>`).join("")}</div>
+    <div class="muted small">${how} · ตัวเลขใต้ปุ่มคือกำไร/วันถ้าเลือกแบบนั้น${best.c.profit>c.profit+1?" · ⭐ คือแบบที่กำไรดีกว่าตอนนี้":""}</div></div>`}
 function waitHTML(l,c){if(!l.ships.length)return "";
   const opts=WAITS.map(([w,n])=>({w,n,c:w===(l.wait||0)?c:laneCalc({...l,wait:w})})),best=opts.reduce((a,b)=>b.c.profit>a.c.profit+1?b:a);
   const waiting=l.ships.map(shipById).filter(sh=>sh&&sh.waiting).length;
@@ -3439,8 +3459,8 @@ function routeSheet(rid,st){
       <div class="row qprice" style="gap:6px;margin-top:6px">${[["−10%",.9],["ราคากลาง",0],["+10%",1.1],["กำไรสูงสุด",-1]].map(([n,f])=>`<button class="btn sm" data-qp="${f}">${n}</button>`).join("")}</div>
       <div id="ptab">${priceTableHTML(r,price)}</div>
 </div>
-`}     <div class="stack" style="gap:6px"><span class="eyebrow">การออกเดินทาง</span><div class="seg"><button data-spread="1" class="${r.spread!==false?"on":""}">⏱ เว้นระยะเท่ากัน</button><button data-spread="0" class="${r.spread===false?"on":""}">🎲 ออกตามสะดวก</button></div>
-      <div class="muted small">${(()=>{const gh=spreadGapH(r);if(gh==null)return "มีเครื่องบินลำเดียวในเส้นทางนี้ ยังไม่ต้องเว้นระยะ";
+`}     <div class="stack" style="gap:6px"><span class="eyebrow">การออกเดินทาง</span><div class="seg"><button data-spread="1" class="${r.spread!==false&&!(r.wait>0)?"on":""}">⏱ เว้นระยะเท่ากัน</button><button data-spread="0" class="${r.spread===false&&!(r.wait>0)?"on":""}">🎲 ออกตามสะดวก</button></div>
+      <div class="muted small">${(()=>{const gh=spreadGapH(r);if(r.wait>0)return `ตอนนี้เครื่องรอสินค้าเต็ม ${Math.round(r.wait*100)}% แล้วค่อยบิน จึงออกเมื่อของเต็ม ไม่ได้เว้นระยะตามตาราง · กด “เว้นระยะเท่ากัน” จะกลับไปบินตามตาราง`;if(gh==null)return "มีเครื่องบินลำเดียวในเส้นทางนี้ ยังไม่ต้องเว้นระยะ";
         return r.spread!==false?`เครื่อง ${r.planes.length} ลำออกจาก ${r.from} สลับกันทุก ~${gh<1?Math.round(gh*60)+" นาที":gh.toFixed(1)+" ชม."} ครึ่งหนึ่งรอที่ ${r.dest} ไม่ออกพร้อมกัน · จำนวนเที่ยวและรายได้เท่าเดิม`:"แต่ละลำออกตามเวลาของตัวเอง อาจออกติดๆ กันได้ · จำนวนเที่ยวและรายได้เท่าเดิม"})()}</div></div>
      <div class="stack" style="gap:6px"><span class="eyebrow">ตารางบิน</span><div class="seg"><button data-freq="auto" class="${r.freq!=="max"?"on":""}">${cg?"ปรับตามสินค้า":"ปรับตามผู้โดยสาร"}</button><button data-freq="max" class="${r.freq==="max"?"on":""}">บินเต็มตาราง</button></div>
       <div class="muted small">${r.freq==="max"?"เครื่องบินทุกลำบินจำนวนเที่ยวสูงสุดทุกวัน แม้ที่นั่งจะว่าง":"ลดจำนวนเที่ยวลงเมื่อคนน้อย ให้แต่ละเที่ยวเต็มประมาณ 85% ประหยัดน้ำมันและค่าสนามบิน"}</div></div>
@@ -3486,8 +3506,8 @@ function routeSheet(rid,st){
       if(a.act.plane){const p=plane(a.act.plane);p.ck=a.act.ck;r.last=null;save();toast(`${p.reg} เปลี่ยนไปขน ${CK_E[a.act.ck]} ${CK_N[a.act.ck]}`);drawSheet()}
       else if(a.act.buy){st.buy=1;if(a.act.ck)st.bk=a.act.ck;drawSheet();const bh=$("#buyhere");if(bh){bh.open=true;bh.scrollIntoView({block:"start"})}}}}
     $$("[data-pck]").forEach(sl=>sl.onchange=()=>{const p=plane(+sl.dataset.pck);if(!p)return;p.ck=sl.value;r.last=null;save();toast(`${p.reg} ขน ${sl.options[sl.selectedIndex].text}`);drawSheet()});
-    $$("[data-spread]").forEach(b=>b.onclick=()=>{r.spread=b.dataset.spread==="1";syncSpread(r);save();toast(r.spread?"เว้นระยะการออกเดินทางแล้ว":"ให้ออกตามสะดวกแล้ว");drawSheet()});
-    $$("[data-rwait]").forEach(b=>b.onclick=()=>{r.wait=+b.dataset.rwait;r.last=null;save();toast(r.wait?`เครื่องจะรอจนระวางเต็ม ${Math.round(r.wait*100)}% ก่อนบิน`:"เครื่องบินตามตารางแล้ว");drawSheet()});
+    $$("[data-spread]").forEach(b=>b.onclick=()=>{r.spread=b.dataset.spread==="1";if(r.spread&&r.wait){r.wait=0;r.last=null}syncSpread(r);save();toast(r.spread?"เว้นระยะการออกเดินทางแล้ว":"ให้ออกตามสะดวกแล้ว");drawSheet()});
+    $$("[data-rwait]").forEach(b=>b.onclick=()=>{r.wait=+b.dataset.rwait;if(r.wait>0){r.spread=false;syncSpread(r)}r.last=null;save();toast(r.wait?`เครื่องจะรอจนระวางเต็ม ${Math.round(r.wait*100)}% ก่อนบิน`:"เครื่องบินตามตารางแล้ว");drawSheet()});
     $$("[data-cmode]").forEach(b=>b.onclick=()=>{if(b.dataset.cmode==="manual"){r.crate=crateOf(r);r.cmode="manual"}else r.cmode="auto";r.last=null;save();drawSheet()});
     const crs=$("#crs");if(crs){crs.oninput=()=>{const c=calc(r,st.price??priceOf(r),+crs.value);$("#crv").textContent=crateText(c);$("#ckv").innerHTML=cargoKV(c);const kv=$("#kv");if(kv)kv.innerHTML=kvHTML(c);$("#bd").innerHTML=breakdownHTML(c);$("#fc").innerHTML=forecastHTML(r,c)};
       crs.onchange=()=>{r.crate=+crs.value;r.cmode="manual";r.last=null;save();drawSheet()}}
