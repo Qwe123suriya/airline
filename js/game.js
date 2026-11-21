@@ -508,8 +508,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.41";
+const GAME_VERSION="1.42";
 const CHANGELOG=[
+ ["1.42","22 พ.ย. 2569",["หน้าเส้นทาง (เครื่องบินและเรือ) บอกแล้วว่าเครื่อง/เรือที่จอดว่างแต่ละลำคุ้มไหม: ขึ้นกำไรต่อวันที่จะเพิ่มขึ้นถ้าใส่ลำนั้น เรียงจากคุ้มสุด ลำที่ดีที่สุดมีป้าย ⭐ คุ้มสุด ลำที่ไม่ช่วยขึ้นสีแดงว่าไม่คุ้ม","รายการเครื่อง/เรือจอดว่างในหน้าเส้นทางไม่รวมตัวสำรองแล้ว (ตัวสำรองระบบส่งไปช่วยเอง)"]],
  ["1.41","22 พ.ย. 2569",["ดูง่ายขึ้นว่าเครื่องบิน/เรือสำรองทำงานอยู่ไหม: แท็บฝูงบินแยกกลุ่ม “🛟 สำรอง · กำลังช่วยงาน” กับ “🛟 สำรอง · จอดรอที่สาขา/ท่า”","แต่ละลำมีป้าย “🛟 กำลังช่วย” ตามด้วยเส้นที่บินอยู่ หรือ “🛟 จอดรอที่ …” (เรือเคยขึ้นว่าจอดว่าง)"]],
  ["1.40","22 พ.ย. 2569",["ปิดโหมดเลือกได้หลายทาง: ปุ่ม ✕ ในแถบ ปุ่ม “✕ เลิกเลือก” ข้างหัวข้อ ปุ่ม Esc และปิดเองเมื่อเปลี่ยนแท็บ (ทั้งเลือกขายในฝูงบินและเลือกหลายเส้นทาง)","ปุ่ม “☑ เลือกเพื่อขาย” ย้ายไปอยู่ข้างหัวข้อฝูงบิน ไม่เป็นกล่องใหญ่","เครื่องสำรองไม่ถูก 🤖 จัดการอัตโนมัติย้ายไปเส้นของสาขาอื่น และไม่ถูกนับเป็นเครื่องจอดว่าง (เลือกขาย/ใส่เครื่องจอดว่าง/ปุ่มเพิ่มเครื่องบนแผนที่)","ย้ายเครื่องหรือเรือสำรองไปเส้นอื่นด้วยมือ จะเลิกเป็นตัวสำรองให้เอง"]],
  ["1.39","22 พ.ย. 2569",["🛟 เครื่องบินและเรือสำรองของสาขา: ตั้งจากหน้าเครื่องบิน/เรือ เครื่องสำรองจอดรอที่สาขา ออกไปช่วยเส้นทางของสาขานั้นเมื่อคนหรือสินค้าล้น และกลับเมื่อที่พอ 3 วัน ใช้ได้ทั้งเครื่องโดยสาร เครื่องขนสินค้า และเรือ"]],
@@ -2421,8 +2422,10 @@ function newLaneSheet(st){
   return fn}
 function laneSheet(lid,st){
   const fn=()=>{const l=S.lanes.find(x=>x.id===lid);if(!l)return head("ไม่พบเส้นทางเรือ");const c=laneCalc(l),a=port(l.from),b=port(l.to),v=viaText(c.sp);
-    const idle=S.ships.filter(sh=>!sh.lane);
-    const row=(sh,act)=>{const m=shipM(sh.m),ok=canDock(m,l),Ld=legDaysS(m,c.km);return `<button data-${act}="${sh.id}" ${act==="sadd"&&!ok?"disabled":""} class="${ok?"":"noreach"}"><span class="mini">${shipArt(m)}</span><span>${sh.reg} · ${m.name} ${carryShip(sh)}<br><span class="muted" style="font-size:12.5px">${ok?`ไป ${Math.round(sailDays(m,c.km))} วัน + เทียบท่า ${Math.round(portH(m))} ชม. · ${m.teu.toLocaleString()} TEU`:`<b class="bad">${dockWhy(m,l)}</b>`}</span></span><span class="small" style="font-weight:600;color:${act==="srem"?"var(--muted)":ok?"var(--accent)":"var(--bad)"}">${act==="srem"?"ถอดออก":ok?"+ ใส่":"ใช้ไม่ได้"}</span></button>`};
+    const sseen=new Map(),sg=sh=>{const m=shipM(sh.m);if(!canDock(m,l))return null;const k=sh.m+"|"+(sh.ck||"auto");if(!sseen.has(k))sseen.set(k,shipGain(l,sh.m,sh.ck||"auto"));return sseen.get(k)};
+    const sgv=sh=>{const g=sg(sh);return g?g.gain:-Infinity};
+    const idle=S.ships.filter(sh=>!sh.lane&&!sh.reserve).sort((a,b)=>sgv(b)-sgv(a)),bestS=idle.length&&sgv(idle[0])>0?idle[0].id:null;
+    const row=(sh,act)=>{const m=shipM(sh.m),ok=canDock(m,l),Ld=legDaysS(m,c.km);return `<button data-${act}="${sh.id}" ${act==="sadd"&&!ok?"disabled":""} class="${ok?"":"noreach"}"><span class="mini">${shipArt(m)}</span><span>${sh.reg} · ${m.name} ${carryShip(sh)}<br><span class="muted" style="font-size:12.5px">${act==="sadd"&&ok?gainTag(sg(sh),sh.id===bestS)+" ":""}${ok?`ไป ${Math.round(sailDays(m,c.km))} วัน + เทียบท่า ${Math.round(portH(m))} ชม. · ${m.teu.toLocaleString()} TEU`:`<b class="bad">${dockWhy(m,l)}</b>`}</span></span><span class="small" style="font-weight:600;color:${act==="srem"?"var(--muted)":ok?"var(--accent)":"var(--bad)"}">${act==="srem"?"ถอดออก":ok?"+ ใส่":"ใช้ไม่ได้"}</span></button>`};
     return head(`${laneNo(l)} · ${a.n} → ${b.n}`,`${c.km.toLocaleString()} กม. ทางทะเล${v.length?" · ผ่าน "+v.join(" · "):""}`)+
      `<div class="kv"><div><div class="k">ตู้ที่ต้องการ/วัน</div><div class="v">${Math.round(c.D).toLocaleString()} TEU</div></div><div><div class="k">ความจุเรือ/วัน</div><div class="v">${Math.round(c.cap+c.capr).toLocaleString()} TEU</div></div>
       <div><div class="k">ตู้เต็ม</div><div class="v">${Math.round(Math.max(c.load,c.loadr)*100)}%</div></div><div><div class="k">กำไร/วัน (เฉลี่ย)</div><div class="v ${laneAvg(l)<0?"bad":"good"}">${money(laneAvg(l),true)}</div></div></div>
@@ -2433,7 +2436,7 @@ function laneSheet(lid,st){
      ${seaKindsHTML(l,c)}
      ${departHTML(l,c)}
      <div><div class="eyebrow" style="margin-bottom:6px">เรือในเส้นทาง ${l.ships.length} ลำ</div><div class="pick">${l.ships.map(shipById).filter(Boolean).map(sh=>row(sh,"srem")).join("")||'<div class="muted small">ยังไม่มีเรือ</div>'}
-      ${idle.length?`<div class="eyebrow" style="margin-top:6px">เรือที่จอดว่าง</div>`:""}${idle.map(sh=>row(sh,"sadd")).join("")}</div></div>
+      ${idle.length?`<div class="eyebrow" style="margin-top:6px">เรือที่จอดว่าง · เรียงจากคุ้มสุด</div><div class="muted small">ตัวเลขคือกำไรต่อวันที่เส้นนี้จะเพิ่มขึ้นถ้าใส่ลำนั้น</div>`:""}${idle.map(sh=>row(sh,"sadd")).join("")}</div></div>
      ${(()=>{const {opts,bd}=seaBuys(l,st.sk);
        const rec=bd.fast&&opts.find(o=>o.id===bd.fast);
        return `${planBoxHTML(shipPlan(l),"data-splan")}<details class="more buyhere" ${st.buy?"open":""} id="sbuy"><summary>+ ซื้อเรือใหม่ใส่เส้นทางนี้${rec?` · <span class="good">แนะนำ ${rec.m.name}${rec.ck?` ขน${rec.ck==="auto"?"อัตโนมัติ":CK_N[SEA_KN[rec.ck]]}`:""} คืนทุน ${rec.v.pay} วัน</span>`:` · <span class="muted">เรือพอแล้ว</span>`} ▾</summary>
@@ -3469,6 +3472,7 @@ function fcLine(o,KC){const b=o.best;if(!b)return `<span class="muted">ไม่
   return `<span class="${b.profit>=0?"good":"bad"} num">${b.profit>=0?"+":"−"}${money(Math.abs(b.profit),true)}/วัน</span> <span class="muted">· ${o.own?"":"ถ้าซื้อ "}${b.m.name}</span>`}
 /* Value of adding one more aircraft (or ship) of a model to an existing route (or lane):
    extra profit a day after fixed costs, and days to earn back its price. */
+function gainTag(g,best){if(!g)return "";const v=g.gain;return v>0?`<span class="gtag ${best?"best":""}">${best?"⭐ คุ้มสุด · ":""}+${money(v,true)}/วัน</span>`:`<span class="gtag no">ไม่คุ้ม · ${v<0?money(v,true)+"/วัน":"ไม่เพิ่มกำไร"}</span>`}
 function planeGain(r,mid,ck){const m=model(mid),d=dist(city(r.from),city(r.dest));if(m.range<d||!fitsKind(m,r)||!mOpen(m))return null;
   const ev0=S.events;S.events=ev0.filter(e=>e.type!=="storm");r._apk=null;
   try{return planeGain0(r,m,mid,ck)}finally{S.events=ev0;r._apk=null}}
@@ -3601,7 +3605,10 @@ function xferHTML(){const K=rseg,its=xferNet().its.filter(it=>it.kind===K),tot=i
 function routeSheet(rid,st){
   const fn=()=>{const r=S.routes.find(x=>x.id===rid);if(!r)return head("ไม่พบเส้นทาง");
     const dc=city(r.dest),auto=r.pmode==="auto"&&st.price==null,price=st.price??priceOf(r),c=calc(r,price),cg=rkind(r)==="cargo";
-    const idle=S.fleet.filter(p=>!p.route&&fitsKind(model(p.m),r)).sort((a,b)=>(model(b.m).range>=c.d)-(model(a.m).range>=c.d)||model(b.m).range-model(a.m).range);
+    const idle0=S.fleet.filter(p=>!p.route&&!p.reserve&&fitsKind(model(p.m),r)),igain=new Map(),gseen=new Map();
+    for(const p of idle0){if(model(p.m).range<c.d)continue;const k=p.m+"|"+(p.ck||"auto");if(!gseen.has(k))gseen.set(k,planeGain(r,p.m,p.ck||"auto"));igain.set(p.id,gseen.get(k))}
+    const gv=p=>{const g=igain.get(p.id);return g?g.gain:-Infinity};
+    const idle=idle0.sort((a,b)=>gv(b)-gv(a)||model(b.m).range-model(a.m).range),bestId=idle.length&&gv(idle[0])>0?idle[0].id:null;
     let out=head(`${fno(r)} · ${r.from} → ${r.dest}`,`${dc.n} · ระยะทาง ${c.d.toLocaleString()} กม. · เครื่องต้องบินได้ไกลกว่านี้`);
     if(r.cmp){const sh=compShare(r,price),base=baseFare(c.d);
       out+=`<div class="cmpbox"><div class="row between"><b>⚔️ แข่งกับ ${esc(r.cmp.rv)}</b><span class="num">ราคาเขา ${money(Math.round(base*r.cmp.fare/10)*10)}</span></div>
@@ -3636,8 +3643,8 @@ function routeSheet(rid,st){
      ${r.h.length>1?`<div><div class="row between"><span class="eyebrow">กำไรรายวัน ${r.h.length} วันล่าสุด</span></div><canvas class="spark" id="sp"></canvas></div>`:""}
      <div><div class="row between" style="margin-bottom:6px"><span class="eyebrow">เครื่องบินในเส้นทาง ${r.planes.length} ลำ</span><span class="muted small">${c.legs} เที่ยว/วัน รวม</span></div><div class="pick">
       ${r.planes.map(id=>{const p=plane(id),m=model(p.m);return `<button data-un="${id}"><span class="num" style="font-size:13px">${p.reg}</span><span>${m.name} ${carryPlane(p)}<br><span class="muted" style="font-size:12.5px">${c.plan.get(id)||legsFor(m,c.d)} จาก ${legsFor(m,c.d)} เที่ยว/วัน · ${m.seats?m.seats+" ที่นั่ง":m.cargo+" ตัน"} · สภาพ ${Math.round(p.cond)}%</span><br>${rangeBar(m.range,c.d)}</span><span class="muted" style="font-size:13px">ถอดออก</span></button>`}).join("")||'<div class="muted" style="font-size:14px">ยังไม่มีเครื่องบิน เส้นทางนี้ยังไม่ทำเงิน</div>'}
-      ${idle.length?`<div class="eyebrow" style="margin-top:6px">เครื่องที่จอดว่าง</div>`:""}
-      ${idle.map(p=>{const m=model(p.m),ok=m.range>=c.d;return `<button data-as="${p.id}" ${ok?"":"disabled"} class="${ok?"":"noreach"}"><span class="num" style="font-size:13px">${p.reg}</span><span>${m.name}<br><span class="muted" style="font-size:12.5px">${ok?`จอดว่าง · ${legsFor(m,c.d)} เที่ยว/วัน`:`<b class="bad">ไม่สามารถบินได้</b> · ขาดอีก ${(c.d-m.range).toLocaleString()} กม.`}</span><br>${rangeBar(m.range,c.d)}</span><span style="color:${ok?"var(--accent)":"var(--bad)"};font-weight:600;font-size:13px">${ok?"+ ใส่":"บินไม่ถึง"}</span></button>`}).join("")}
+      ${idle.length?`<div class="eyebrow" style="margin-top:6px">เครื่องที่จอดว่าง · เรียงจากคุ้มสุด</div><div class="muted small">ตัวเลขคือกำไรต่อวันที่เส้นนี้จะเพิ่มขึ้นถ้าใส่ลำนั้น (คิดจากวันปกติไม่มีพายุ)</div>`:""}
+      ${idle.map(p=>{const m=model(p.m),ok=m.range>=c.d;return `<button data-as="${p.id}" ${ok?"":"disabled"} class="${ok?"":"noreach"}"><span class="num" style="font-size:13px">${p.reg}</span><span>${m.name}<br><span class="muted" style="font-size:12.5px">${ok?`${gainTag(igain.get(p.id),p.id===bestId)} ${legsFor(m,c.d)} เที่ยว/วัน`:`<b class="bad">ไม่สามารถบินได้</b> · ขาดอีก ${(c.d-m.range).toLocaleString()} กม.`}</span><br>${rangeBar(m.range,c.d)}</span><span style="color:${ok?"var(--accent)":"var(--bad)"};font-weight:600;font-size:13px">${ok?"+ ใส่":"บินไม่ถึง"}</span></button>`}).join("")}
      </div></div>
      ${(()=>{const {opts,bd}=airBuys(r,cg?st.bk:null);
       const rec=bd.fast&&opts.find(o=>o.id===bd.fast);

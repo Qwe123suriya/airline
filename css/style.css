@@ -917,3 +917,5 @@ button.ptr{cursor:pointer}button.ptr:hover{background:var(--grid)}
 .rsvtag{background:#e8f0ff;color:#1d4ed8;border-radius:6px;padding:0 5px;font-weight:600;white-space:nowrap}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rsvtag{background:#1e2a4a;color:#9db8ff}}
 :root[data-theme="dark"] .rsvtag{background:#1e2a4a;color:#9db8ff}
+
+.gtag{display:inline-block;font-weight:700;color:var(--good);white-space:nowrap}.gtag.best{border:1.5px solid var(--good);border-radius:6px;padding:0 6px}.gtag.no{color:var(--bad);font-weight:600}
