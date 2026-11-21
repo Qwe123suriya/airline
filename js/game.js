@@ -508,8 +508,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.39";
+const GAME_VERSION="1.40";
 const CHANGELOG=[
+ ["1.40","22 พ.ย. 2569",["ปิดโหมดเลือกได้หลายทาง: ปุ่ม ✕ ในแถบ ปุ่ม “✕ เลิกเลือก” ข้างหัวข้อ ปุ่ม Esc และปิดเองเมื่อเปลี่ยนแท็บ (ทั้งเลือกขายในฝูงบินและเลือกหลายเส้นทาง)","ปุ่ม “☑ เลือกเพื่อขาย” ย้ายไปอยู่ข้างหัวข้อฝูงบิน ไม่เป็นกล่องใหญ่","เครื่องสำรองไม่ถูก 🤖 จัดการอัตโนมัติย้ายไปเส้นของสาขาอื่น และไม่ถูกนับเป็นเครื่องจอดว่าง (เลือกขาย/ใส่เครื่องจอดว่าง/ปุ่มเพิ่มเครื่องบนแผนที่)","ย้ายเครื่องหรือเรือสำรองไปเส้นอื่นด้วยมือ จะเลิกเป็นตัวสำรองให้เอง"]],
  ["1.39","22 พ.ย. 2569",["🛟 เครื่องบินและเรือสำรองของสาขา: ตั้งจากหน้าเครื่องบิน/เรือ เครื่องสำรองจอดรอที่สาขา ออกไปช่วยเส้นทางของสาขานั้นเมื่อคนหรือสินค้าล้น และกลับเมื่อที่พอ 3 วัน ใช้ได้ทั้งเครื่องโดยสาร เครื่องขนสินค้า และเรือ"]],
  ["1.38","21 พ.ย. 2569",["ตารางสินค้าแยกประเภท (เครื่องบินและเรือ) มีช่อง “ค้าง/วัน” และ “สะสมรอ” พร้อมคำอธิบาย","หน้าเส้นทางผู้โดยสารบอก “คนค้าง/วัน” และ “คนสะสมรอบิน”"]],
  ["1.37","21 พ.ย. 2569",["ฝูงบิน: เลือกหลายลำเพื่อขายทีเดียว ทั้งเครื่องบินและเรือในหน้าเดียว (โหมดสินค้า) พร้อมปุ่มเลือกด่วน: จอดว่างทั้งหมด / สภาพต่ำ / อายุเกิน 10 ปี และบอกเงินที่จะได้ก่อนยืนยัน"]],
@@ -1474,7 +1475,7 @@ function renderApp(){
   $("#haptg").onclick=()=>{S.haptic=S.haptic===false;save();$("#haplbl").textContent=S.haptic===false?"สั่นเมื่อซื้อ/ได้รางวัล: ปิดอยู่":"สั่นเมื่อซื้อ/ได้รางวัล: เปิดอยู่";if(S.haptic!==false)buzz(20)};
   $("#badge").onclick=()=>openSheet(liverySheet({}));
   $$("[data-sp]").forEach(b=>b.onclick=()=>{speed=+b.dataset.sp;paused=false;updateTop()});
-  $$("[data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;renderView(true);window.scrollTo(0,0)});
+  $$("[data-tab]").forEach(b=>b.onclick=()=>{if(b.dataset.tab!==tab){fSelMode=false;fSel.clear();rSelMode=false;rSel.clear()}tab=b.dataset.tab;renderView(true);window.scrollTo(0,0)});
   applyFeat();renderView(true);updateTop();
   if(S.over)showOver();
 }
@@ -1559,7 +1560,7 @@ function progCheck(){if(!S||!S.prog||S.over)return;if(S.progDay===S.day)return;
 // new tabs / mode switch / buttons appear without closing whatever sheet is open
 function refreshChrome(){const nav=$("nav.tabs .wrap");if(!nav)return;
   nav.innerHTML=TABS.filter(t=>tabOK(t[0])).map(([k,n])=>`<button data-tab="${k}">${ICONS[k]}<span>${n}</span></button>`).join("");
-  $$("[data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;renderView(true);window.scrollTo(0,0)});
+  $$("[data-tab]").forEach(b=>b.onclick=()=>{if(b.dataset.tab!==tab){fSelMode=false;fSel.clear();rSelMode=false;rSel.clear()}tab=b.dataset.tab;renderView(true);window.scrollTo(0,0)});
   const r2=$(".row2");if(r2&&has("cargo")&&!r2.querySelector(".bmode")){r2.insertAdjacentHTML("afterbegin",bmHTML());$$("[data-bm]").forEach(b=>b.onclick=()=>setBM(b.dataset.bm))}
   applyFeat();if(!sheetFn)renderView();else updateTop()}
 function nextFeat(){const f=featQ.shift();if(!f){featBusy=false;return}featBusy=true;
@@ -1748,7 +1749,8 @@ function rebalance(maxMoves,quiet,K){let moved=0;K=K||bm();
   for(const p of idle){if(moved>=maxMoves)break;const m=model(p.m),t=moveTargets(K).find(r=>rd(r)<=m.range);if(!t)break;
     t.planes.push(p.id);p.route=t.id;t.last=null;moved++;if(!quiet)addNews(`🤖 ใส่ ${p.reg} (จอดว่าง) เข้าเส้น ${t.from}→${t.dest} ที่${K==="cargo"?"สินค้า":"คน"}ล้น`)}
   for(const r of advRoutes(K).filter(r=>rLoad(r)<.55&&r.planes.length>=2).sort((a,b)=>rLoad(a)-rLoad(b))){if(moved>=maxMoves)break;
-    const id=r.planes[r.planes.length-1],p=plane(id),m=model(p.m),t=moveTargets(K).find(x=>x!==r&&rd(x)<=m.range);if(!t)continue;
+    const id=[...r.planes].reverse().find(x=>{const q=plane(x);return q&&!q.reserve});if(id==null)continue;   // reserves only serve their own branch
+    const p=plane(id),m=model(p.m),t=moveTargets(K).find(x=>x!==r&&rd(x)<=m.range);if(!t)continue;
     if(!r.last)continue;const was=Math.round(rLoad(r)*100);   // read before the route's results are cleared
     r.planes=r.planes.filter(x=>x!==id);t.planes.push(id);p.route=t.id;r.last=null;t.last=null;moved++;
     if(!quiet)addNews(`🤖 ย้าย ${p.reg} จาก ${r.from}→${r.dest} (เต็ม ${was}%) ไป ${t.from}→${t.dest} ที่${K==="cargo"?"สินค้า":"คน"}ล้น`)}
@@ -2117,7 +2119,7 @@ function popRouteHTML(r){const c=calc(r),dc=city(r.dest),cgo=rkind(r)==="cargo",
     <div class="small ${st[0]}">${st[1]}</div></div>
    <div class="row between"><span class="small muted">${r.planes.length} ลำ · ${c.legs} เที่ยว/วัน</span><span class="num ${c.profit<0?"bad":"good"}" style="font-weight:700">${c.profit>=0?"+":""}${money(c.profit,true)}/วัน</span></div>`;
   if(!pop.add)h+=`<div class="row" style="gap:6px"><button class="btn primary sm" style="flex:1" data-popadd>+ เพิ่มเครื่องบิน</button><button class="btn sm" style="flex:1" data-poproute="${r.id}">ปรับราคา/ละเอียด</button></div>`;
-  else{const idle=S.fleet.filter(p=>!p.route&&fitsKind(model(p.m),r)&&model(p.m).range>=c.d&&p.down<=S.day).slice(0,4);
+  else{const idle=S.fleet.filter(p=>!p.route&&!p.reserve&&fitsKind(model(p.m),r)&&model(p.m).range>=c.d&&p.down<=S.day).slice(0,4);
     const {opts:ab,bd:abd}=airBuys(r),buys=ab.filter(o=>o.v).slice(0,4),bestId=abd.fast;
     h+=fleetPlanHTML(r)+`<div class="eyebrow">เพิ่มเครื่องบิน · กำไรต่อวันหลังเพิ่ม</div><div class="poplist">`;
     for(const p of idle){const m=model(p.m),cc=whatIf(r,[p.id]),dlt=cc.profit-c.profit;h+=`<button data-popas="${p.id}"><span><b>${p.reg}</b> ${m.name}<br><span class="muted">จอดว่าง · ${m.seats?m.seats+" ที่นั่ง":m.cargo+" ตัน"}</span></span><span class="num ${dlt<0?"bad":"good"}">${dlt>=0?"+":""}${money(dlt,true)}</span></button>`}
@@ -2495,7 +2497,7 @@ function shipSheet(sid,st){
        `<div class="row" style="gap:6px;flex-wrap:wrap">${pbList().map(c=>{const n=S.lanes.filter(x=>x.from===c&&canDock(m,x)).length;return `<button class="btn sm" data-srsv="${c}" ${n?"":"disabled"}>${port(c).n} <span class="muted">${n} เส้น</span></button>`}).join("")}</div>`}</div>`:""}
      <div class="row">${l?`<button class="btn" style="flex:1" id="sground">ถอดออกจากเส้นทาง</button>`:""}<button class="btn danger" style="flex:1" id="ssell">${st.confirm?"ยืนยันขาย "+money(v,true):"ขาย "+money(v,true)}</button></div>`};
   fn.bind=()=>{const sh=shipById(sid);if(!sh)return;const detach=()=>{const l=S.lanes.find(x=>x.id===sh.lane);if(l)l.ships=l.ships.filter(x=>x!==sh.id);sh.lane=null};
-    const mv=$("#smv");if(mv)mv.onchange=()=>{if(!mv.value)return;detach();const l=S.lanes.find(x=>x.id===+mv.value);l.ships.push(sh.id);sh.lane=l.id;save();toast(`${sh.reg} ย้ายไป ${laneNo(l)}`);closeSheet()};
+    const mv=$("#smv");if(mv)mv.onchange=()=>{if(!mv.value)return;detach();delete sh.reserve;const l=S.lanes.find(x=>x.id===+mv.value);l.ships.push(sh.id);sh.lane=l.id;save();toast(`${sh.reg} ย้ายไป ${laneNo(l)}`);closeSheet()};
     const g=$("#sground");if(g)g.onclick=()=>{detach();save();drawSheet()};
     $$("[data-srsv]").forEach(b=>b.onclick=()=>{detach();sh.reserve=b.dataset.srsv;sh.rsvOk=0;save();toast(`${sh.reg} เป็นเรือสำรองของ ${port(sh.reserve).n} แล้ว`);drawSheet()});
     const so=$("#srsvoff");if(so)so.onclick=()=>{delete sh.reserve;save();toast(`${sh.reg} เลิกเป็นเรือสำรองแล้ว`);drawSheet()};
@@ -2967,7 +2969,7 @@ const selFilters=[["all","ทั้งหมด",r=>true],["full","เต็ม 
 function toolsBarHTML(RL){if(!has("tools")||!RL.length)return "";
   if(!rSelMode)return `<div class="toolbar"><button class="btn sm" id="selon">☑ เลือกหลายเส้น</button><button class="btn sm" id="planall">🛒 ซื้อตามแผนทุกเส้นที่ล้น</button><span class="muted small">🧰 ตัวช่วยพิเศษ</span></div>`;
   const n=RL.filter(r=>rSel.has(r.id)).length;
-  return `<div class="toolbar sel"><b class="small">☑ เลือกแล้ว ${n} เส้น</b><div class="row" style="gap:4px;flex-wrap:wrap">${selFilters.map(([k,t,f])=>`<button class="btn sm" data-selq="${k}">${t} <span class="muted">${RL.filter(f).length}</span></button>`).join("")}<button class="btn sm" data-selq="none">ล้าง</button></div>
+  return `<div class="toolbar sel"><div class="row between"><b class="small">☑ เลือกแล้ว ${n} เส้น</b><button class="x" id="selx" aria-label="ปิดการเลือก">✕</button></div><div class="row" style="gap:4px;flex-wrap:wrap">${selFilters.map(([k,t,f])=>`<button class="btn sm" data-selq="${k}">${t} <span class="muted">${RL.filter(f).length}</span></button>`).join("")}<button class="btn sm" data-selq="none">ล้าง</button></div>
     <div class="row" style="gap:6px"><button class="btn sm primary" id="selgo" ${n?"":"disabled"}>⚙️ ปรับเส้นที่เลือก</button><button class="btn sm" id="seloff">เสร็จ</button></div><div class="muted small">แตะการ์ดเส้นทางเพื่อเลือกหรือเอาออก</div></div>`}
 function multiSheet(st){const fn=()=>{const L=S.routes.filter(r=>rSel.has(r.id));if(!L.length)return head("ยังไม่ได้เลือกเส้นทาง");
    const pax=L.filter(r=>rkind(r)==="pax"),sum=f=>L.reduce((a,r)=>a+f(r),0),now=sum(r=>calc(r).profit);
@@ -3175,10 +3177,11 @@ function sellSelected(){let n=0,v=0;
   for(const k of [...fSel]){if(k[0]==="p"){const p=plane(+k.slice(1));if(!p)continue;const r=S.routes.find(x=>x.id===p.route);if(r){r.planes=r.planes.filter(x=>x!==p.id);r.last=null}const val=resale(p);S.cash+=val;v+=val;S.fleet=S.fleet.filter(x=>x!==p);n++}
     else{const sh=shipById(+k.slice(1));if(!sh)continue;const l=S.lanes.find(x=>x.id===sh.lane);if(l)l.ships=l.ships.filter(x=>x!==sh.id);const val=shipResale(sh);S.cash+=val;v+=val;S.ships=S.ships.filter(x=>x!==sh);n++}}
   fSel.clear();fSellOk=false;addNews(`💸 ขายเครื่องบิน/เรือ ${n} ลำ ได้ ${money(v)}`);save();toast(`ขาย ${n} ลำ ได้ ${money(v,true)}`);renderView()}
+if(!window._escSel){window._escSel=1;document.addEventListener("keydown",e=>{if(e.key!=="Escape"||sheetFn)return;if(fSelMode){fSelMode=false;fSel.clear();fSellOk=false;renderView()}else if(typeof rSelMode!=="undefined"&&rSelMode){rSelMode=false;rSel.clear();renderView()}})}
 function sellBarHTML(){const KC=bm()==="cargo";
-  if(!fSelMode)return `<div class="toolbar"><button class="btn sm" id="fselon">☑ เลือกหลายลำเพื่อขาย${KC&&has("sea")?" (เครื่องบินและเรือ)":""}</button></div>`;
+  if(!fSelMode)return "";
   const {v,n}=selValue(),mine=p=>KC===!model(p.m).seats,onRoute=[...fSel].filter(k=>k[0]==="p"?(plane(+k.slice(1))||{}).route:(shipById(+k.slice(1))||{}).lane).length;
-  return `<div class="toolbar sel sellbar"><b class="small">☑ เลือกแล้ว ${n} ลำ · ขายได้ราว <span class="good">${money(v,true)}</span></b>
+  return `<div class="toolbar sel sellbar"><div class="row between"><b class="small">☑ เลือกแล้ว ${n} ลำ · ขายได้ราว <span class="good">${money(v,true)}</span></b><button class="x" id="fselx" aria-label="ปิดการเลือก">✕</button></div>
     <div class="row" style="gap:4px;flex-wrap:wrap"><button class="btn sm" data-fq="idle">🅿️ จอดว่างทั้งหมด</button><button class="btn sm" data-fq="worn">⚠️ สภาพต่ำกว่า 40%</button><button class="btn sm" data-fq="old">⏳ อายุเกิน 10 ปี</button><button class="btn sm" data-fq="none">ล้าง</button></div>
     ${onRoute?`<div class="small warn">${onRoute} ลำในที่เลือกกำลังทำงานอยู่ ขายแล้วเส้นทางนั้นจะมีเครื่อง/เรือน้อยลง</div>`:""}
     <div class="row" style="gap:6px"><button class="btn sm danger" id="fsell" ${n?"":"disabled"}>${fSellOk?`ยืนยันขาย ${n} ลำ · ${money(v,true)}`:`💸 ขาย ${n} ลำ`}</button><button class="btn sm" id="fseloff">เสร็จ</button></div>
@@ -3186,11 +3189,11 @@ function sellBarHTML(){const KC=bm()==="cargo";
 function fleetHTML(){
   const FK=bm(),KC=FK==="cargo";
   const nP=S.fleet.filter(p=>model(p.m).seats).length,nC=S.fleet.length-nP,mine=KC?nC:nP;
-  return `${firstStepsHTML()}<div class="row between"><h2>${KC?"ฝูงบินขนสินค้า":"ฝูงบินโดยสาร"} <span class="muted num small">${mine} ลำ</span></h2><button class="btn sm" id="livery"><span class="dotlv" style="background:${S.livery.tail}"></span>ลายและโลโก้</button></div>
+  return `${firstStepsHTML()}<div class="row between"><h2>${KC?"ฝูงบินขนสินค้า":"ฝูงบินโดยสาร"} <span class="muted num small">${mine} ลำ</span></h2><div class="row" style="gap:6px">${(S.fleet.length||S.ships.length)?`<button class="btn sm ${fSelMode?"on":""}" id="${fSelMode?"fseloff2":"fselon"}">${fSelMode?"✕ เลิกเลือก":"☑ เลือกเพื่อขาย"}</button>`:""}<button class="btn sm" id="livery"><span class="dotlv" style="background:${S.livery.tail}"></span>ลายและโลโก้</button></div></div>
   ${(S.fleet.length||S.ships.length)?sellBarHTML():""}
   ${mine?fleetBoxHTML(FK):`<div class="panel muted">${KC?`ยังไม่มีเครื่องบินขนสินค้า ลำที่ถูกที่สุดคือ ${(()=>{const m=MODELS.filter(x=>!x.seats&&mOpen(x)).sort((a,b)=>a.price-b.price)[0];return m?`${m.name} ราคา ${money(m.price)}`:"—"})()}`:"ยังไม่มีเครื่องบินโดยสาร"} · กดปุ่มซื้อด้านล่าง</div>`}
   ${S.fleet.length?`<label class="tg panel"><input type="checkbox" id="amx" ${S.autoMx?"checked":""}> ส่งซ่อมบำรุงอัตโนมัติเมื่อสภาพต่ำกว่า 50%</label>`:""}
-  ${has("tools")&&S.fleet.length?(()=>{const worn=S.fleet.filter(p=>p.cond<60&&p.down<=S.day),wc=worn.reduce((a,p)=>a+mxCost(p),0),idle=S.fleet.filter(p=>!p.route&&p.down<=S.day).length;
+  ${has("tools")&&S.fleet.length?(()=>{const worn=S.fleet.filter(p=>p.cond<60&&p.down<=S.day),wc=worn.reduce((a,p)=>a+mxCost(p),0),idle=S.fleet.filter(p=>!p.route&&!p.reserve&&p.down<=S.day).length;
     return `<div class="toolbar"><span class="muted small">🧰 ตัวช่วยพิเศษ</span><button class="btn sm" id="mxall" ${worn.length&&S.cash>=wc?"":"disabled"}>🔧 ซ่อมทุกลำที่สภาพต่ำกว่า 60% (${worn.length} ลำ · ${money(wc,true)})</button><button class="btn sm" id="idleall" ${idle?"":"disabled"}>🅿️ ใส่เครื่องจอดว่างทั้งหมดเข้าเส้นที่ล้น (${idle} ลำ)</button></div>`})():""}
   <div class="shopbar"><button class="btn primary" data-shop="air">🛒 ซื้อเครื่องบิน${KC?"ขนสินค้า":""}เพิ่ม</button><button class="btn" data-pick="air">🧭 ช่วยเลือกรุ่น</button></div>
   ${KC&&has("sea")?`<div class="modesec"><span>🚢 เรือ</span></div>${shipsOwnedHTML()}`:""}`;
@@ -3378,16 +3381,16 @@ function bindView(rest){
   $$("[data-route]").forEach(b=>b.onclick=()=>{const id=+b.dataset.route;
     if(rSelMode&&tab==="routes"&&b.classList.contains("strip")){if(rSel.has(id))rSel.delete(id);else rSel.add(id);renderView();return}
     openSheet(routeSheet(id,{}))});
-  {const on=$("#selon");if(on)on.onclick=()=>{rSelMode=true;rSel.clear();renderView()};const off=$("#seloff");if(off)off.onclick=()=>{rSelMode=false;rSel.clear();renderView()};
+  {const on=$("#selon");if(on)on.onclick=()=>{rSelMode=true;rSel.clear();renderView()};for(const id of ["#seloff","#selx"]){const off=$(id);if(off)off.onclick=()=>{rSelMode=false;rSel.clear();renderView()}}
    const go=$("#selgo");if(go)go.onclick=()=>openSheet(multiSheet({}));
    $$("[data-selq]").forEach(b=>b.onclick=()=>{const k=b.dataset.selq,RL=S.routes.filter(r=>rkind(r)===bm());if(k==="none"){rSel.clear()}else{const f=selFilters.find(x=>x[0]===k)[2];rSel.clear();for(const r of RL)if(f(r))rSel.add(r.id)}renderView()});
    const pa=$("#planall");if(pa)pa.onclick=()=>{rSel.clear();for(const r of S.routes.filter(r=>rkind(r)===bm()&&r.planes.length))if(fleetPlan(r))rSel.add(r.id);if(!rSel.size)return toast("ไม่มีเส้นที่ล้นจนต้องเพิ่มเครื่อง");rSelMode=true;renderView();openSheet(multiSheet({}))}}
   $$("[data-plane]").forEach(b=>b.onclick=()=>tapPlane(+b.dataset.plane));
-  {const on=$("#fselon");if(on)on.onclick=()=>{fSelMode=true;fSel.clear();fSellOk=false;renderView()};const off=$("#fseloff");if(off)off.onclick=()=>{fSelMode=false;fSel.clear();fSellOk=false;renderView()};
+  {const on=$("#fselon");if(on)on.onclick=()=>{fSelMode=true;fSel.clear();fSellOk=false;renderView()};const offF=()=>{fSelMode=false;fSel.clear();fSellOk=false;renderView()};for(const id of ["#fseloff","#fseloff2","#fselx"]){const off=$(id);if(off)off.onclick=offF}
    const sl=$("#fsell");if(sl)sl.onclick=()=>{if(!fSellOk){fSellOk=true;renderView();return}sellSelected()};
    $$("[data-fq]").forEach(b=>b.onclick=()=>{const k=b.dataset.fq,KC=bm()==="cargo";if(k==="none"){fSel.clear()}else{
-     for(const p of S.fleet.filter(p=>KC===!model(p.m).seats))if(k==="idle"?!p.route&&p.down<=S.day:k==="worn"?p.cond<40:p.age>3650)fSel.add("p"+p.id);
-     if(KC)for(const sh of S.ships)if(k==="idle"?!S.lanes.some(l=>l.id===sh.lane):k==="old"?sh.age>3650:false)fSel.add("s"+sh.id)}fSellOk=false;renderView()})}
+     for(const p of S.fleet.filter(p=>KC===!model(p.m).seats))if(k==="idle"?!p.route&&!p.reserve&&p.down<=S.day:k==="worn"?p.cond<40:p.age>3650)fSel.add("p"+p.id);
+     if(KC)for(const sh of S.ships)if(k==="idle"?!S.lanes.some(l=>l.id===sh.lane)&&!sh.reserve:k==="old"?sh.age>3650:false)fSel.add("s"+sh.id)}fSellOk=false;renderView()})}
   $$("[data-ff]").forEach(b=>b.onclick=()=>{fFilt=b.dataset.ff;renderView()});
   $$("[data-sf]").forEach(b=>b.onclick=()=>{sFilt=b.dataset.sf;renderView()});
   const fv=$("#fview");if(fv)fv.onclick=()=>{const big=S.ui_fview?S.ui_fview==="row":S.fleet.length>24;S.ui_fview=big?"card":"row";save();renderView()};
@@ -3800,7 +3803,7 @@ function planeSheet(pid,st){
        `<div class="row" style="gap:6px;flex-wrap:wrap">${S.bases.map(b=>{const n=S.routes.filter(x=>x.from===b&&fitsKind(m,x)&&rd(x)<=m.range).length;return `<button class="btn sm" data-rsv="${b}" ${n?"":"disabled"}>${b} <span class="muted">${n} เส้น</span></button>`}).join("")}</div>`}</div>`:""}
      <div class="row">${r?`<button class="btn" style="flex:1" id="ground">ถอดออกจากเส้นทาง</button>`:""}<button class="btn danger" style="flex:1" id="sell">${st.confirm?"ยืนยันขาย "+money(sell,true):"ขาย "+money(sell,true)}</button></div>`};
   fn.bind=()=>{const p=plane(pid);if(!p)return;const detach=()=>{const r=S.routes.find(x=>x.id===p.route);if(r){r.planes=r.planes.filter(x=>x!==p.id);r.last=null}p.route=null};
-    const mv=$("#mv");if(mv)mv.onchange=()=>{if(!mv.value)return;detach();const r=S.routes.find(x=>x.id===+mv.value);r.planes.push(p.id);p.route=r.id;r.last=null;save();toast(`${p.reg} ย้ายไปบิน ${fno(r)}`);closeSheet()};
+    const mv=$("#mv");if(mv)mv.onchange=()=>{if(!mv.value)return;detach();delete p.reserve;const r=S.routes.find(x=>x.id===+mv.value);r.planes.push(p.id);p.route=r.id;r.last=null;save();toast(`${p.reg} ย้ายไปบิน ${fno(r)}`);closeSheet()};
     {const sl=$("[data-pck1]");if(sl)sl.onchange=()=>{p.ck=sl.value;const r=S.routes.find(x=>x.id===p.route);if(r)r.last=null;save();drawSheet()}}
     const g=$("#ground");if(g)g.onclick=()=>{detach();save();drawSheet()};
     $("#mx").onclick=()=>{startMx(p,false);save();toast(`${p.reg} เข้าโรงซ่อมแล้ว`);drawSheet()};
