@@ -508,8 +508,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.40";
+const GAME_VERSION="1.41";
 const CHANGELOG=[
+ ["1.41","22 พ.ย. 2569",["ดูง่ายขึ้นว่าเครื่องบิน/เรือสำรองทำงานอยู่ไหม: แท็บฝูงบินแยกกลุ่ม “🛟 สำรอง · กำลังช่วยงาน” กับ “🛟 สำรอง · จอดรอที่สาขา/ท่า”","แต่ละลำมีป้าย “🛟 กำลังช่วย” ตามด้วยเส้นที่บินอยู่ หรือ “🛟 จอดรอที่ …” (เรือเคยขึ้นว่าจอดว่าง)"]],
  ["1.40","22 พ.ย. 2569",["ปิดโหมดเลือกได้หลายทาง: ปุ่ม ✕ ในแถบ ปุ่ม “✕ เลิกเลือก” ข้างหัวข้อ ปุ่ม Esc และปิดเองเมื่อเปลี่ยนแท็บ (ทั้งเลือกขายในฝูงบินและเลือกหลายเส้นทาง)","ปุ่ม “☑ เลือกเพื่อขาย” ย้ายไปอยู่ข้างหัวข้อฝูงบิน ไม่เป็นกล่องใหญ่","เครื่องสำรองไม่ถูก 🤖 จัดการอัตโนมัติย้ายไปเส้นของสาขาอื่น และไม่ถูกนับเป็นเครื่องจอดว่าง (เลือกขาย/ใส่เครื่องจอดว่าง/ปุ่มเพิ่มเครื่องบนแผนที่)","ย้ายเครื่องหรือเรือสำรองไปเส้นอื่นด้วยมือ จะเลิกเป็นตัวสำรองให้เอง"]],
  ["1.39","22 พ.ย. 2569",["🛟 เครื่องบินและเรือสำรองของสาขา: ตั้งจากหน้าเครื่องบิน/เรือ เครื่องสำรองจอดรอที่สาขา ออกไปช่วยเส้นทางของสาขานั้นเมื่อคนหรือสินค้าล้น และกลับเมื่อที่พอ 3 วัน ใช้ได้ทั้งเครื่องโดยสาร เครื่องขนสินค้า และเรือ"]],
  ["1.38","21 พ.ย. 2569",["ตารางสินค้าแยกประเภท (เครื่องบินและเรือ) มีช่อง “ค้าง/วัน” และ “สะสมรอ” พร้อมคำอธิบาย","หน้าเส้นทางผู้โดยสารบอก “คนค้าง/วัน” และ “คนสะสมรอบิน”"]],
@@ -2381,7 +2382,7 @@ function seaHTML(){const lp=S.lanes.reduce((a,l)=>a+laneAvg(l),0),tpd=S.lanes.re
       <div style="min-width:0"><div class="iata" style="font-size:15px">${a.n} → ${b.n}</div><div class="sub">${c.km.toLocaleString()} กม. ทางทะเล · ราว ${Math.round(days)} วัน${viaText(c.sp).length?" · ผ่าน"+viaText(c.sp)[0]:""}</div><div class="sub">${lfTag(ld,"ระวางเต็ม")}</div></div>
       <div class="right"><div class="num ${c.profit<0?"bad":"good"}">${money(c.profit,true)}</div><div class="sub">เฉลี่ย/วัน</div></div></button>`}).join("")}</div>`:`<div class="panel muted small">ยังไม่มีเส้นทางเรือ เปิดเส้นทางระหว่างท่าเรือสองแห่งในภูมิภาคที่ปลดล็อกแล้ว แล้วซื้อเรือใส่ เรือช้ากว่าเครื่องบินมาก แต่ขนตู้สินค้าได้ครั้งละหลายพันตู้</div>`}
   ${S.ships.length?`<h2>กองเรือของคุณ</h2><div class="hangar">${S.ships.map(sh=>{const m=shipM(sh.m),l=S.lanes.find(x=>x.id===sh.lane);
-    return `<button class="pcard ${l?"":"idle"}" data-ship="${sh.id}" style="border-bottom-color:${l?"var(--port)":"var(--muted)"}">${shipArt(m)}<div class="row between"><b class="num">${sh.reg}</b><span class="small">${l?`${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:'<span class="muted">จอดว่าง</span>'}</span></div><div class="small muted">${m.name}</div></button>`}).join("")}</div>`:""}
+    return `<button class="pcard ${l?"":"idle"}" data-ship="${sh.id}" style="border-bottom-color:${l?"var(--port)":"var(--muted)"}">${shipArt(m)}<div class="row between"><b class="num">${sh.reg}</b><span class="small">${l?`${sh.reserve?'<span class="rsvtag">🛟 กำลังช่วย</span> ':""}${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:sh.reserve?`<span class="muted">🛟 จอดรอที่ ${port(sh.reserve).n}</span>`:'<span class="muted">จอดว่าง</span>'}</span></div><div class="small muted">${m.name}</div></button>`}).join("")}</div>`:""}
   <h2>อู่ต่อเรือ <span class="muted num small">${SHIPS.length} รุ่น</span></h2>
   <button class="btn pickbtn" data-pick="sea">🧭 ไม่รู้จะใช้เรือแบบไหน? ให้เกมช่วยเลือกตามเส้นทาง</button>
   <div class="seg scrollx">${SCATS.map(([k,n])=>`<button data-scat="${k}" class="${scat===k?"on":""}">${n}</button>`).join("")}</div>
@@ -3204,7 +3205,7 @@ function fleetHTML(){
 let fFilt="all",fQ="",sFilt="all",sQ="";
 const planeState=p=>p.down>S.day?"shop":p.route&&S.routes.some(r=>r.id===p.route)?"fly":p.reserve?"rsv":"idle";
 function planeCardHTML(p){const m=model(p.m),r=S.routes.find(x=>x.id===p.route),shop=p.down>S.day;
-    const st=shop?`<span class="warn">ในโรงซ่อม ${p.down-S.day} วัน</span>`:r?`บิน ${r.from} → ${r.dest}`:'<span class="muted">จอดว่าง</span>';
+    const st=shop?`<span class="warn">ในโรงซ่อม ${p.down-S.day} วัน</span>`:r?(p.reserve?`<span class="rsvtag">🛟 กำลังช่วย</span> ${r.from}→${r.dest}`:`บิน ${r.from} → ${r.dest}`):p.reserve?`<span class="muted">🛟 จอดรอที่ ${p.reserve}</span>`:'<span class="muted">จอดว่าง</span>';
     const cc=p.cond<40?"low":p.cond<70?"mid":"";
     return `<button class="pcard ${shop?"shop":r?"":"idle"}${fSelMode?(fSel.has("p"+p.id)?" picked":" pickable"):""}" data-plane="${p.id}">${planeArt(m)}
       <div class="row between"><b class="num">${p.reg}</b><span class="small">${st}</span></div>
@@ -3212,17 +3213,18 @@ function planeCardHTML(p){const m=model(p.m),r=S.routes.find(x=>x.id===p.route),
       <div class="row" style="gap:8px"><div class="lf cond ${cc}" style="flex:1;margin:0;max-width:none"><i style="width:${p.cond}%"></i></div><span class="num small ${p.cond<40?"bad":"muted"}">${Math.round(p.cond)}%</span></div></button>`}
 function planeRowHTML(p){const m=model(p.m),r=S.routes.find(x=>x.id===p.route),st=planeState(p);
   return `<button class="prow ${st}${fSelMode?(fSel.has("p"+p.id)?" picked":" pickable"):""}" data-plane="${p.id}"><span class="pst">${st==="idle"?"🅿️":st==="shop"?"🔧":st==="rsv"?"🛟":p.reserve?"🛟":"✈"}</span><b class="num">${p.reg}</b><span class="small pm">${m.name}</span>
-    <span class="small">${st==="shop"?`<span class="warn">ซ่อม ${p.down-S.day} วัน</span>`:r?`${r.from}→${r.dest}${p.reserve?" 🛟":""}`:p.reserve?`<span class="muted">สำรอง ${p.reserve}</span>`:'<span class="muted">จอดว่าง</span>'}</span><span class="num small ${p.cond<40?"bad":p.cond<70?"warn":"muted"}">${Math.round(p.cond)}%</span></button>`}
+    <span class="small">${st==="shop"?`<span class="warn">ซ่อม ${p.down-S.day} วัน</span>`:r?(p.reserve?`<span class="rsvtag">🛟 กำลังช่วย</span> ${r.from}→${r.dest}`:`${r.from}→${r.dest}`):p.reserve?`<span class="muted">🛟 จอดรอที่ ${p.reserve}</span>`:'<span class="muted">จอดว่าง</span>'}</span><span class="num small ${p.cond<40?"bad":p.cond<70?"warn":"muted"}">${Math.round(p.cond)}%</span></button>`}
 function fleetListHTML(k){const big=S.ui_fview?S.ui_fview==="row":S.fleet.length>24,q=fQ.trim().toLowerCase();
   let L=S.fleet.filter(p=>(k==="cargo")===!model(p.m).seats);
   if(q)L=L.filter(p=>{const m=model(p.m),r=S.routes.find(x=>x.id===p.route);return (p.reg+" "+m.name+" "+(r?r.from+" "+r.dest+" "+city(r.dest).n:"")).toLowerCase().includes(q)});
   if(fFilt==="low")L=L.filter(p=>p.cond<50);else if(fFilt==="rsvall")L=L.filter(p=>p.reserve);else if(fFilt!=="all")L=L.filter(p=>planeState(p)===fFilt);
   if(!L.length)return `<div class="panel muted small">ไม่มีเครื่องบินที่ตรงกับตัวกรอง</div>`;
   const one=p=>big?planeRowHTML(p):planeCardHTML(p),wrap=a=>big?`<div class="prows">${a.map(one).join("")}</div>`:`<div class="hangar">${a.map(one).join("")}</div>`;
-  const idle=L.filter(p=>planeState(p)==="idle"),shop=L.filter(p=>planeState(p)==="shop"),fly=L.filter(p=>planeState(p)==="fly"),rsv=L.filter(p=>planeState(p)==="rsv");
+  const idle=L.filter(p=>planeState(p)==="idle"),shop=L.filter(p=>planeState(p)==="shop"),fly=L.filter(p=>planeState(p)==="fly"&&!p.reserve),rsvOut=L.filter(p=>planeState(p)==="fly"&&p.reserve),rsv=L.filter(p=>planeState(p)==="rsv");
   let h="";
   if(idle.length)h+=`<div class="fsec idle"><b>🅿️ จอดว่าง ${idle.length} ลำ</b><span class="small muted">ไม่ได้ทำงานแต่ยังเสียค่าคงที่ · แตะเพื่อใส่เข้าเส้นทางหรือขาย</span></div>${wrap(idle)}`;
-  if(rsv.length)h+=`<div class="fsec rsv"><b>🛟 สำรองที่สาขา ${rsv.length} ลำ</b><span class="small muted">พร้อมออกไปช่วยเส้นทางของสาขาที่ล้น</span></div>${wrap(rsv)}`;
+  if(rsvOut.length)h+=`<div class="fsec rsv"><b>🛟 สำรอง · กำลังช่วยงาน ${rsvOut.length} ลำ</b><span class="small muted">ถูกดึงไปบินเส้นที่ล้น · จะกลับสาขาเองเมื่อที่นั่ง/ระวางพอ ${RSV_BACK} วันติด</span></div>${wrap(rsvOut)}`;
+  if(rsv.length)h+=`<div class="fsec rsv"><b>🛟 สำรอง · จอดรอที่สาขา ${rsv.length} ลำ</b><span class="small muted">พร้อมออกไปช่วยเส้นทางของสาขาที่ล้น</span></div>${wrap(rsv)}`;
   if(shop.length)h+=`<div class="fsec shop"><b>🔧 อยู่ในโรงซ่อม ${shop.length} ลำ</b></div>${wrap(shop)}`;
   if(fly.length){h+=`<div class="fsec fly"><b>✈ ทำงานอยู่ ${fly.length} ลำ</b><span class="small muted">เรียงตามเส้นทาง</span></div>`;
     const by=new Map();for(const p of fly){const r=S.routes.find(x=>x.id===p.route);if(!by.has(r))by.set(r,[]);by.get(r).push(p)}
@@ -3239,11 +3241,11 @@ function shipListHTML(){const q=sQ.trim().toLowerCase();let L=S.ships.slice();
   if(sFilt==="idle")L=L.filter(sh=>!S.lanes.some(x=>x.id===sh.lane));else if(sFilt==="work")L=L.filter(sh=>S.lanes.some(x=>x.id===sh.lane));
   if(!L.length)return `<div class="panel muted small">ไม่มีเรือที่ตรงกับตัวกรอง</div>`;
   const big=S.ui_fview?S.ui_fview==="row":S.ships.length>16;
-  const one=sh=>{const m=shipM(sh.m),l=S.lanes.find(x=>x.id===sh.lane);return big?`<button class="prow ${l?"fly":"idle"}${fSelMode?(fSel.has("s"+sh.id)?" picked":" pickable"):""}" data-ship="${sh.id}"><span class="pst">${l?"🚢":"🅿️"}</span><b class="num">${sh.reg}</b><span class="small pm">${m.name}</span><span class="small">${l?`${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:'<span class="muted">จอดว่าง</span>'}</span><span></span></button>`:
-    `<button class="pcard ${l?"":"idle"}${fSelMode?(fSel.has("s"+sh.id)?" picked":" pickable"):""}" data-ship="${sh.id}" style="border-bottom-color:${l?"var(--port)":"var(--muted)"}">${shipArt(m)}<div class="row between"><b class="num">${sh.reg}</b><span class="small">${l?`${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:'<span class="muted">จอดว่าง</span>'}</span></div><div class="small muted">${m.name}</div><div>${carryShip(sh)}</div>${l&&sh.yn!=null?`<div class="small">${earnTxt(sh.yn)}</div>`:""}</button>`};
+  const one=sh=>{const m=shipM(sh.m),l=S.lanes.find(x=>x.id===sh.lane);return big?`<button class="prow ${l?"fly":"idle"}${fSelMode?(fSel.has("s"+sh.id)?" picked":" pickable"):""}" data-ship="${sh.id}"><span class="pst">${sh.reserve?"🛟":l?"🚢":"🅿️"}</span><b class="num">${sh.reg}</b><span class="small pm">${m.name}</span><span class="small">${l?`${sh.reserve?'<span class="rsvtag">🛟 กำลังช่วย</span> ':""}${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:sh.reserve?`<span class="muted">🛟 จอดรอที่ ${port(sh.reserve).n}</span>`:'<span class="muted">จอดว่าง</span>'}</span><span></span></button>`:
+    `<button class="pcard ${l?"":"idle"}${fSelMode?(fSel.has("s"+sh.id)?" picked":" pickable"):""}" data-ship="${sh.id}" style="border-bottom-color:${l?"var(--port)":"var(--muted)"}">${shipArt(m)}<div class="row between"><b class="num">${sh.reg}</b><span class="small">${l?`${sh.reserve?'<span class="rsvtag">🛟 กำลังช่วย</span> ':""}${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:sh.reserve?`<span class="muted">🛟 จอดรอที่ ${port(sh.reserve).n}</span>`:'<span class="muted">จอดว่าง</span>'}</span></div><div class="small muted">${m.name}</div><div>${carryShip(sh)}</div>${l&&sh.yn!=null?`<div class="small">${earnTxt(sh.yn)}</div>`:""}</button>`};
   const wrap=a=>big?`<div class="prows">${a.map(one).join("")}</div>`:`<div class="hangar">${a.map(one).join("")}</div>`;
-  const idle=L.filter(sh=>!S.lanes.some(x=>x.id===sh.lane)&&!sh.reserve),work=L.filter(sh=>S.lanes.some(x=>x.id===sh.lane)),rsvS=L.filter(sh=>sh.reserve&&!S.lanes.some(x=>x.id===sh.lane));
-  return (rsvS.length?`<div class="fsec rsv"><b>🛟 สำรองที่ท่า ${rsvS.length} ลำ</b><span class="small muted">พร้อมออกไปช่วยเส้นทางของท่าที่ตู้ล้น</span></div>${wrap(rsvS)}`:"")+(idle.length?`<div class="fsec idle"><b>🅿️ จอดว่าง ${idle.length} ลำ</b><span class="small muted">แตะเพื่อใส่เข้าเส้นทางเรือ</span></div>${wrap(idle)}`:"")+(work.length?`<div class="fsec fly"><b>🚢 แล่นอยู่ ${work.length} ลำ</b></div>${wrap(work)}`:"")}
+  const idle=L.filter(sh=>!S.lanes.some(x=>x.id===sh.lane)&&!sh.reserve),work=L.filter(sh=>S.lanes.some(x=>x.id===sh.lane)&&!sh.reserve),rsvOutS=L.filter(sh=>sh.reserve&&S.lanes.some(x=>x.id===sh.lane)),rsvS=L.filter(sh=>sh.reserve&&!S.lanes.some(x=>x.id===sh.lane));
+  return (rsvOutS.length?`<div class="fsec rsv"><b>🛟 สำรอง · กำลังช่วยงาน ${rsvOutS.length} ลำ</b><span class="small muted">ถูกดึงไปช่วยเส้นที่ตู้ล้น · จะกลับท่าเองเมื่อตู้ลดลง</span></div>${wrap(rsvOutS)}`:"")+(rsvS.length?`<div class="fsec rsv"><b>🛟 สำรอง · จอดรอที่ท่า ${rsvS.length} ลำ</b><span class="small muted">พร้อมออกไปช่วยเส้นทางของท่าที่ตู้ล้น</span></div>${wrap(rsvS)}`:"")+(idle.length?`<div class="fsec idle"><b>🅿️ จอดว่าง ${idle.length} ลำ</b><span class="small muted">แตะเพื่อใส่เข้าเส้นทางเรือ</span></div>${wrap(idle)}`:"")+(work.length?`<div class="fsec fly"><b>🚢 แล่นอยู่ ${work.length} ลำ</b></div>${wrap(work)}`:"")}
 function shipsOwnedHTML(){
   return `<div class="row between"><h2>กองเรือของคุณ <span class="muted num small">${S.ships.length} ลำ</span></h2></div>
   ${S.ships.length?`<div class="fbar"><div class="seg fchips">${[["all","ทั้งหมด",S.ships.length],["idle","🅿️ จอดว่าง",S.ships.filter(sh=>!S.lanes.some(x=>x.id===sh.lane)).length],["work","🚢 แล่นอยู่",S.ships.filter(sh=>S.lanes.some(x=>x.id===sh.lane)).length]].map(([v,t,c])=>`<button data-sf="${v}" class="${sFilt===v?"on":""}">${t} <b class="num">${c}</b></button>`).join("")}</div>

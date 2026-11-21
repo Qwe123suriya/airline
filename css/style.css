@@ -913,3 +913,7 @@ button.ptr{cursor:pointer}button.ptr:hover{background:var(--grid)}
 .sellbar{position:sticky;top:calc(var(--barh,8px) + 4px);z-index:5;background:var(--paper)}
 .ktab.k6{grid-template-columns:minmax(0,1.5fr) repeat(5,minmax(0,1fr))}.ktab.k6>span:nth-child(-n+6){text-align:right}.ktab.k6>span:first-child{text-align:left}.ktab b.bad{color:var(--bad)}.ktab b.good{color:var(--good)}
 .fsec.rsv{border-left-color:#3A8FD9;background:rgba(58,143,217,.10)}
+
+.rsvtag{background:#e8f0ff;color:#1d4ed8;border-radius:6px;padding:0 5px;font-weight:600;white-space:nowrap}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rsvtag{background:#1e2a4a;color:#9db8ff}}
+:root[data-theme="dark"] .rsvtag{background:#1e2a4a;color:#9db8ff}
