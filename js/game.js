@@ -378,6 +378,15 @@ function seaPath(A,B){const shut=suezShut(),key=A+B+(shut?"x":"");if(seaCache.ha
   const pts=smoothLane(raw);
   const via=[];for(let u=best;u&&u!=="@";u=prev[u])via.unshift(u);const cum=[0];for(let i=1;i<pts.length;i++)cum.push(cum[i-1]+seaHav(pts[i-1],pts[i]));const r={pts,km:Math.round(bestD),via,cum};seaCache.set(key,r);return r}
 
+/* 🛟 Reserve depots: one aircraft depot and one ship depot per region. Made-up places that only park reserves: no route
+   or lane starts there and they are not airports or ports of the network. See reserveTick for how reserves go out and back. */
+const AIR_DEPOTS={th:["ฐานสำรองฟ้าสยาม",15.3,100.4],sea:["ฐานสำรองหมู่เกาะใต้",2.5,111.8],ea:["ฐานสำรองมังกรเมฆ",34.5,113.5],sa:["ฐานสำรองทะเลทรายทอง",23.5,77.5],oc:["ฐานสำรองแผ่นดินแดง",-25.5,134.0],eu:["ฐานสำรองป่าดำ",48.6,10.2],na:["ฐานสำรองทุ่งกว้าง",38.6,-97.5],sam:["ฐานสำรองที่ราบสูง",-15.6,-50.5],af:["ฐานสำรองเส้นศูนย์สูตร",0.5,24.0]};
+const SEA_DEPOT_N={th:"อู่สำรองอ่าวไทย",sea:"อู่สำรองช่องแคบ",ea:"อู่สำรองทะเลจีน",sa:"อู่สำรองทะเลอาหรับ",oc:"อู่สำรองทะเลแทสมัน",eu:"อู่สำรองทะเลเหนือ",na:"อู่สำรองแอตแลนติก",sam:"อู่สำรองแปซิฟิกใต้",af:"อู่สำรองแหลมใต้"};
+const DEPOTS=[...REGIONS.map(R=>{const a=AIR_DEPOTS[R.id]||[R.n,R.lab[1],R.lab[0]];return {id:"A_"+R.id,c:"A_"+R.id,kind:"air",reg:R.id,n:a[0],lat:a[1],lon:a[2]}}),
+  ...REGIONS.map(R=>{const ps=PORTS.filter(q=>q.reg===R.id).sort((a,b)=>b.w-a.w);if(!ps.length)return null;const an=ps[0],wp=SEAWP[an.wp[0]]||[an.lat,an.lon];return {id:"S_"+R.id,c:"S_"+R.id,kind:"sea",reg:R.id,n:SEA_DEPOT_N[R.id]||"อู่สำรอง",anchor:an.c,lat:wp[0],lon:wp[1]}}).filter(Boolean)];
+const depot=id=>DEPOTS.find(d=>d.id===id);
+const depotsOpen=k=>DEPOTS.filter(d=>d.kind===k&&S.unlocked.includes(d.reg));
+const regName=id=>(REGIONS.find(R=>R.id===id)||{n:""}).n;
 /* sea freight dial: container rates were too low for ships to ever pay back (tuned with a lane bot) */
 let SEA_X=2.3;
 const SHIPS=[
@@ -489,7 +498,7 @@ function settleShips(T){
       if(N<=sh.ld)continue;const n0=sh.ld;sh.ld=N;if(sh.down>S.day)continue;
       for(let n=Math.max(n0+1,N-3);n<=N;n++)sailLeg(l,sh,m,lc,n)}}}
 function sailLeg(l,sh,m,lc,n){const bkk=shipK(sh,m),sf=lc.sK?lc.sK[bkk]:1;
-  if(sf<1){sh.wacc=(sh.wacc||0)+sf;if(sh.wacc<1-1e-9){sh.waiting=1;return}sh.wacc-=1}sh.waiting=0;   // still waiting for cargo in port
+  if(sf<1){sh.wacc=(sh.wacc||0)+sf;if(sh.wacc<1-1e-9){sh.waiting=1;sh.wport=n%2===1?l.to:l.from;return}sh.wacc-=1}sh.waiting=0;   // still waiting for cargo in port
   const f=shipLoadF(m,bkk),ld=lc.loadK[bkk],arr=port(n%2===1?l.from:l.to),capT=m.teu*f;let teu=capT*ld*(.9+Math.random()*.2);
   if(l.bk&&l.bk[bkk]>0&&teu<capT){const tk=Math.min(capT-teu,l.bk[bkk]);l.bk[bkk]-=tk;teu+=tk}
   const o={srev:teu*TEU_RATE(lc.km)*SEA_RATE[bkk]*specX(m)*pk("cargo")*(1-((bkk==="r"&&!shipSpec(m)?SPOIL:0)+LATE)*(1-sf)),sfuel:lc.km*m.cpk*fuelNow()*pk("fuel"),sport:portFee(arr,m),teu,voy:1};
@@ -518,8 +527,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.44";
+const GAME_VERSION="1.45";
 const CHANGELOG=[
+ ["1.45","22 พ.ย. 2569",["แก้บัคใหญ่ระบบสินค้าทางอากาศ: เครื่องขนสินค้าไม่เคยขนของค้าง (📥 สะสม) เลย ของค้างจึงพอกพูนไม่ลด ตอนนี้ขนของค้างเมื่อมีที่ว่างแล้ว","เรือที่ ⏳ รอสินค้า แสดงจอดอยู่ในท่าบนแผนที่ ไม่แล่นไปมาเหมือนเรือทำงาน","ระบบสำรองใหม่: ยกเลิกสำรองรายสาขา ใช้ 🛟 ฐานเครื่องบินสำรองและอู่เรือสำรองทวีปละแห่ง (ที่จอดอย่างเดียว ไม่มีเส้นทางของตัวเอง)","เมื่อเส้นไหนล้น ระบบส่งตัวสำรองจากฐานที่ใกล้ที่สุดไปช่วย ไปได้ทุกที่ในโลก แต่เส้นที่ช่วยต้องอยู่ในพิสัยเครื่อง/เรือ บนแผนที่เห็นเครื่องหรือเรือเดินทางไป (ไม่มีเส้น) ค่าน้ำมันเที่ยวไป-กลับคิดตามระยะ","พอเส้นนั้นมีที่ว่างพอ 3 วันติด ตัวสำรองจะเดินทางกลับฐาน และเส้นนั้นจะเรียกตัวสำรองใหม่ได้อีกใน 7 วัน (กันการส่งไปกลับไปมา)","ตัวสำรองเดิมของแต่ละสาขาย้ายไปอยู่ฐานของทวีปนั้นให้อัตโนมัติ · ดูภาพรวมฐานได้ที่แท็บสาขา"]],
  ["1.44","22 พ.ย. 2569",["เพิ่มเรือสินค้า 10 รุ่น: ห้องเย็นเล็ก 400 TEU, ชายฝั่งด่วน 900 TEU, ฟีดเดอร์ 1,000 TEU, ฟีดเดอร์แม็กซ์ 2,800 TEU, เรือขนรถ 4,500 คัน, พานาแมกซ์ด่วน 4,500 TEU, อีโคกลาง 6,800 TEU, โพสต์พานาแมกซ์ 10,000 TEU, นีโอพานาแมกซ์อีโค 15,000 TEU และ VLCS 20,000 TEU","รวมเรือปกติเป็น 26 รุ่น (ไม่นับเรือแห่งอนาคตและฝูงพิเศษ)"]],
  ["1.43","22 พ.ย. 2569",["เครื่องจอดว่างในหน้าเส้นทางบอกความจุแล้ว: ขนได้กี่ตัน (หรือกี่ที่นั่ง) ต่อเที่ยว บินได้กี่เที่ยวต่อวัน และรวมต่อวันเท่าไร พร้อมชนิดสินค้าที่ตั้งไว้"]],
  ["1.42","22 พ.ย. 2569",["หน้าเส้นทาง (เครื่องบินและเรือ) บอกแล้วว่าเครื่อง/เรือที่จอดว่างแต่ละลำคุ้มไหม: ขึ้นกำไรต่อวันที่จะเพิ่มขึ้นถ้าใส่ลำนั้น เรียงจากคุ้มสุด ลำที่ดีที่สุดมีป้าย ⭐ คุ้มสุด ลำที่ไม่ช่วยขึ้นสีแดงว่าไม่คุ้ม","รายการเครื่อง/เรือจอดว่างในหน้าเส้นทางไม่รวมตัวสำรองแล้ว (ตัวสำรองระบบส่งไปช่วยเอง)"]],
@@ -1021,7 +1031,8 @@ function flyLeg(r,p,m,c,d,a,b,n){
   const lf=c.cap?Math.min(1,c.demand/c.cap):0;let pax=Math.min(m.seats,Math.round(m.seats*lf*(.88+Math.random()*.24)));
   const tk=planeK(p),shr=tk==="mix"?ckShare(r):null,mixAvg=shr?CK.reduce((x,k)=>x+shr[k]*CK_RATE[k],0):1,   // belly cargo: mixed kinds at the old average rate; premiums are for freighters
   parts=tk==="mix"?CK.map(k=>[k,m.cargo*shr[k]]):[[tk,m.cargo*CK_LOAD[tk]]],rnd=.9+Math.random()*.2,ck={};let cargo=0,bp=0,bc=0,crev=0;
-  {const B=cbkObj(r);for(const [k,pl] of parts){const q=c.cK&&c.cK[k],cl=q&&q.cap?Math.min(1,q.dem/q.cap):0;let x=Math.min(pl,pl*cl*rnd),b0=0;   // never more than the hold takesif(B[k]>0&&x<pl){b0=Math.min(pl-x,B[k]);B[k]-=b0}
+  {const B=cbkObj(r);for(const [k,pl] of parts){const q=c.cK&&c.cK[k],cl=q&&q.cap?Math.min(1,q.dem/q.cap):0;let x=Math.min(pl,pl*cl*rnd),b0=0;   // never more than the hold takes
+    if(B[k]>0&&x<pl){b0=Math.min(pl-x,B[k]);B[k]-=b0}
     crev+=(x*c.crate+b0*Math.min(c.crate,1))*cgRate(d)*pk("cargo")*CK_RATE[k]/(shr?mixAvg:1)*(c.wpen?c.wpen[k]:1);ck["ck_"+k]=x+b0;cargo+=x+b0;bc+=b0}}
   if(r.bk>=1&&pax<m.seats){bp=Math.min(m.seats-pax,Math.floor(r.bk));r.bk-=bp;pax+=bp}
 
@@ -1769,37 +1780,65 @@ function rebalance(maxMoves,quiet,K){let moved=0;K=K||bm();
     r.planes=r.planes.filter(x=>x!==id);t.planes.push(id);p.route=t.id;r.last=null;t.last=null;moved++;
     if(!quiet)addNews(`🤖 ย้าย ${p.reg} จาก ${r.from}→${r.dest} (เต็ม ${was}%) ไป ${t.from}→${t.dest} ที่${K==="cargo"?"สินค้า":"คน"}ล้น`)}
   return moved}
-/* 🛟 Branch reserves. An aircraft or ship can be put in the reserve of one branch (airport branch for aircraft,
-   port branch for ships). Every day, when a route/lane that STARTS at that branch is short (people/freight left
-   behind beyond the threshold, or a backlog piling up) and the reserve fits (kind, range, port depth), one reserve per
-   route per day is sent to help. When that route has room to spare again for 3 days, the helper goes back to reserve.
-   A reserve never helps a route of another branch. Parked reserves pay the parked upkeep rate. */
-const RSV_SHORT=.1,RSV_BACK=3;
-const rsvPlanes=c=>S.fleet.filter(p=>p.reserve===c),rsvShips=c=>S.ships.filter(sh=>sh.reserve===c);
+/* 🛟 Reserves. An aircraft or ship put in reserve parks at a reserve depot (DEPOTS). Every day, for each route / sea lane
+   whose demand overflows (people or freight left behind beyond the threshold, or a backlog piling up), one free reserve that
+   fits (kind, range for that route, port depth) is sent from the depot nearest to the route's starting point. It travels
+   there first (any distance; on the map the aircraft / ship is seen moving, without a line), then works the route. When the
+   route has room to spare for 3 days in a row it travels back to its depot. The travel costs fuel. Parked reserves pay
+   the parked upkeep rate. */
+const RSV_SHORT=.1,RSV_BACK=3,RSV_COOL=7;   // a route a reserve just left waits a week before it can call one again (no back-and-forth)
+const rsvPlanesAt=id=>S.fleet.filter(p=>p.reserve===id),rsvShipsAt=id=>S.ships.filter(sh=>sh.reserve===id);
+const nowT=()=>S.day+acc/DAY_MS;
+const durTxt=d=>d<1?`${Math.max(1,Math.round(d*24))} ชม.`:`${d.toFixed(1)} วัน`;
+const ferDaysP=(m,km)=>(km/m.speed+1)/24,ferDaysS=(m,km)=>km/m.speed/24+.25;
 function routeShort(r){const L=r.last;if(!L||!r.planes.length&&!r.last)return 0;if(rkind(r)==="cargo"){const left=Math.max(0,(L.cdem||0)-(L.ccap||0));return left+bkCargo(r)*.3>Math.max(5,(L.cdem||0)*RSV_SHORT)?left+bkCargo(r)*.3:0}
   // auto-priced routes hide a shortage behind higher fares: count the people who would fly at the standard fare
   const dem=r.pmode==="auto"?calc(r,baseFare(rd(r))).demand:(L.demand||0),left=Math.max(0,dem-(L.cap||0));return left+(r.bk||0)*.3>Math.max(20,dem*RSV_SHORT)?left+(r.bk||0)*.3:0}
 function laneShortNow(l){const c=laneCalc(l),D=["d","r","o"].reduce((a,k)=>a+(c.DK[k]||0),0),x=seaShort(c)+bkSea(l)*.2;return x>Math.max(20,D*RSV_SHORT)?x:0}
-function reserveTick(){if(!S.fleet.some(p=>p.reserve)&&!S.ships.some(sh=>sh.reserve))return;
-  // send helpers out
-  for(const code of S.bases){const free=rsvPlanes(code).filter(p=>!p.route&&p.down<=S.day);if(!free.length)continue;
-    const need=S.routes.filter(r=>r.from===code&&r.planes.length).map(r=>({r,x:routeShort(r)})).filter(o=>o.x>0).sort((a,b)=>b.x-a.x);
-    for(const {r} of need){const p=free.find(q=>!q.route&&fitsKind(model(q.m),r)&&model(q.m).range>=rd(r));if(!p)continue;
-      r.planes.push(p.id);p.route=r.id;p.rsvOk=0;r.last=null;addNews(`🛟 ส่งเครื่องสำรอง ${p.reg} จากสาขา ${code} ไปช่วยเส้น ${r.from}→${r.dest} ที่${rkind(r)==="cargo"?"สินค้า":"คน"}ล้น`)}}
-  for(const code of pbList()){const free=rsvShips(code).filter(sh=>!sh.lane);if(!free.length)continue;
-    const need=S.lanes.filter(l=>l.from===code&&l.ships.length).map(l=>({l,x:laneShortNow(l)})).filter(o=>o.x>0).sort((a,b)=>b.x-a.x);
-    for(const {l} of need){const sh=free.find(q=>!q.lane&&canDock(shipM(q.m),l));if(!sh)continue;
-      l.ships.push(sh.id);sh.lane=l.id;sh.rsvOk=0;addNews(`🛟 ส่งเรือสำรอง ${sh.reg} จากท่า ${port(code).n} ไปช่วย ${laneNo(l)} ที่ตู้ล้น`)}}
+// saves from before the depots: a reserve of a branch / port branch moves to the depot of that region
+function rsvMigrate(){for(const p of S.fleet)if(p.reserve&&!depot(p.reserve)){const R=regionOf(p.reserve)||regionOf(S.hub);p.reserve="A_"+R.id}
+  for(const sh of S.ships)if(sh.reserve&&!depot(sh.reserve)){const pt=port(sh.reserve),d=(pt&&depot("S_"+pt.reg))||depotsOpen("sea")[0]||DEPOTS.find(x=>x.kind==="sea");sh.reserve=d.id}}
+function sendPlane(p,from,to,goal,rid){const m=model(p.m),km=dist(from,to),T=nowT();
+  p.fer={a:{c:from.c,lat:from.lat,lon:from.lon},b:{c:to.c,lat:to.lat,lon:to.lon},t0:T,t1:T+ferDaysP(m,km),goal,rid:rid??null};
+  const fc=km*m.cpk*fuelNow()*pk("fuel");S.cash-=fc;addT(S.today,{fuelC:fc})}
+function sendShip(sh,fromPort,toPort,goal,lid,dp){const m=shipM(sh.m),sp=fromPort===toPort?null:seaPath(fromPort,toPort),km=sp?sp.km:0,T=nowT();
+  const pa=port(fromPort),pb=port(toPort),mid=sp?sp.pts:[[pa.lat,pa.lon],[pb.lat,pb.lon]];
+  const pts=goal==="lane"?[[dp.lat,dp.lon],...mid]:[...mid,[dp.lat,dp.lon]];
+  sh.fer={pts,km,t0:T,t1:T+ferDaysS(m,km),goal,lid:lid??null};
+  const fc=km*m.cpk*fuelNow()*pk("fuel");S.cash-=fc;addT(S.today,{sfuel:fc})}
+// reserves reach the route they were sent to (called with the game clock, like settleFlights)
+function ferryTick(T){
+  for(const p of S.fleet){const f=p.fer;if(!f||T<f.t1)continue;delete p.fer;
+    if(f.goal==="route"){const r=S.routes.find(x=>x.id===f.rid);if(r&&!p.route){r.planes.push(p.id);p.route=r.id;p.rsvOk=0;p.lk=null;r.last=null;addNews(`🛟 เครื่องสำรอง ${p.reg} ถึง ${r.from} แล้ว เริ่มช่วยเส้น ${r.from}→${r.dest}`)}}}
+  for(const sh of S.ships){const f=sh.fer;if(!f||T<f.t1)continue;delete sh.fer;
+    if(f.goal==="lane"){const l=S.lanes.find(x=>x.id===f.lid);if(l&&!sh.lane){l.ships.push(sh.id);sh.lane=l.id;sh.rsvOk=0;sh.lk=null;addNews(`🛟 เรือสำรอง ${sh.reg} ถึง${port(l.from).n}แล้ว เริ่มช่วย ${laneNo(l)}`)}}}}
+function reserveTick(){rsvMigrate();if(!S.fleet.some(p=>p.reserve)&&!S.ships.some(sh=>sh.reserve))return;
+  // send helpers out: nearest depot first
+  {const free=S.fleet.filter(p=>p.reserve&&!p.route&&!p.fer&&p.down<=S.day&&depot(p.reserve));
+   if(free.length){const going=new Set(S.fleet.filter(p=>p.fer&&p.fer.goal==="route").map(p=>p.fer.rid));
+    const need=S.routes.filter(r=>r.planes.length&&!going.has(r.id)&&!(r.rsvCool>S.day)).map(r=>({r,x:routeShort(r)})).filter(o=>o.x>0).sort((a,b)=>b.x-a.x);
+    for(const {r} of need){const a=city(r.from),d=rd(r);let best=null,bd=Infinity;
+      for(const p of free){if(p.route||p.fer)continue;const m=model(p.m);if(!fitsKind(m,r)||m.range<d)continue;const dd=dist(depot(p.reserve),a);if(dd<bd){bd=dd;best=p}}
+      if(!best)continue;const dp=depot(best.reserve);sendPlane(best,dp,a,"route",r.id);
+      addNews(`🛟 ส่งเครื่องสำรอง ${best.reg} จาก${dp.n} ไปช่วยเส้น ${r.from}→${r.dest} ที่${rkind(r)==="cargo"?"สินค้า":"คน"}ล้น · ถึงในราว ${durTxt(best.fer.t1-best.fer.t0)}`)}}}
+  {const free=S.ships.filter(sh=>sh.reserve&&!sh.lane&&!sh.fer&&!(sh.down>S.day)&&depot(sh.reserve));
+   if(free.length){const going=new Set(S.ships.filter(sh=>sh.fer&&sh.fer.goal==="lane").map(sh=>sh.fer.lid));
+    const need=S.lanes.filter(l=>l.ships.length&&!going.has(l.id)&&!(l.rsvCool>S.day)).map(l=>({l,x:laneShortNow(l)})).filter(o=>o.x>0).sort((a,b)=>b.x-a.x);
+    for(const {l} of need){let best=null,bd=Infinity;
+      for(const sh of free){if(sh.lane||sh.fer)continue;const m=shipM(sh.m);if(!canDock(m,l))continue;const dp=depot(sh.reserve),dd=dp.anchor===l.from?0:seaPath(dp.anchor,l.from).km;if(dd<bd){bd=dd;best=sh}}
+      if(!best)continue;const dp=depot(best.reserve);sendShip(best,dp.anchor,l.from,"lane",l.id,dp);
+      addNews(`🛟 ส่งเรือสำรอง ${best.reg} จาก${dp.n} ไปช่วย ${laneNo(l)} ที่ตู้ล้น · ถึงในราว ${durTxt(best.fer.t1-best.fer.t0)}`)}}}
   // bring helpers home when their route has room again for a few days
   for(const p of S.fleet.filter(p=>p.reserve&&p.route)){const r=S.routes.find(x=>x.id===p.route);if(!r){p.route=null;continue}
-    if(r.from!==p.reserve){continue}   // moved by hand to another route: leave it
     const L=r.last;const roomy=L&&!routeShort(r)&&rLoad(r)<.8&&(rkind(r)==="cargo"?bkCargo(r)<1:(r.bk||0)<1);
     p.rsvOk=roomy?(p.rsvOk||0)+1:0;
-    if(p.rsvOk>=RSV_BACK&&r.planes.length>1){r.planes=r.planes.filter(x=>x!==p.id);p.route=null;p.rsvOk=0;r.last=null;addNews(`↩️ เครื่องสำรอง ${p.reg} กลับเข้าสาขา ${p.reserve} (เส้น ${r.from}→${r.dest} ที่นั่งพอแล้ว)`)}}
-  for(const sh of S.ships.filter(sh=>sh.reserve&&sh.lane)){const l=S.lanes.find(x=>x.id===sh.lane);if(!l){sh.lane=null;continue}if(l.from!==sh.reserve)continue;
+    if(p.rsvOk>=RSV_BACK&&r.planes.length>1){const dp=depot(p.reserve);r.planes=r.planes.filter(x=>x!==p.id);p.route=null;p.rsvOk=0;r.last=null;r.rsvCool=S.day+RSV_COOL;if(dp)sendPlane(p,city(r.from),dp,"home");
+      addNews(`↩️ เครื่องสำรอง ${p.reg} บินกลับ${dp?dp.n:"ฐาน"} (เส้น ${r.from}→${r.dest} ${rkind(r)==="cargo"?"ระวาง":"ที่นั่ง"}พอแล้ว)`)}}
+  for(const sh of S.ships.filter(sh=>sh.reserve&&sh.lane)){const l=S.lanes.find(x=>x.id===sh.lane);if(!l){sh.lane=null;continue}
+
     const c=laneCalc(l),roomy=!laneShortNow(l)&&Math.max(c.load||0,c.loadr||0,c.loado||0)<.8&&bkSea(l)<1;
     sh.rsvOk=roomy?(sh.rsvOk||0)+1:0;
-    if(sh.rsvOk>=RSV_BACK&&l.ships.length>1){l.ships=l.ships.filter(x=>x!==sh.id);sh.lane=null;sh.rsvOk=0;addNews(`↩️ เรือสำรอง ${sh.reg} กลับเข้าท่า ${port(sh.reserve).n}`)}}}
+    if(sh.rsvOk>=RSV_BACK&&l.ships.length>1){const dp=depot(sh.reserve);l.ships=l.ships.filter(x=>x!==sh.id);sh.lane=null;sh.rsvOk=0;l.rsvCool=S.day+RSV_COOL;if(dp)sendShip(sh,l.from,dp.anchor,"home",null,dp);addNews(`↩️ เรือสำรอง ${sh.reg} แล่นกลับ${dp?dp.n:"อู่สำรอง"}`)}}}
 function autoAdvTick(){if(!S.autoAdv)return;S.autoMx=true;
   let n=0;for(const r of S.routes)if(rkind(r)==="pax"&&r.pmode!=="auto"&&r.last&&(r.last.lf>=.95||r.last.lf<.6)){r.pmode="auto";r.last=null;n++}
   if(n)addNews(`🤖 เปลี่ยน ${n} เส้นทางที่เต็มเกินหรือว่างเกินเป็นราคาอัตโนมัติ`);
@@ -2395,7 +2434,7 @@ function seaHTML(){const lp=S.lanes.reduce((a,l)=>a+laneAvg(l),0),tpd=S.lanes.re
       <div style="min-width:0"><div class="iata" style="font-size:15px">${a.n} → ${b.n}</div><div class="sub">${c.km.toLocaleString()} กม. ทางทะเล · ราว ${Math.round(days)} วัน${viaText(c.sp).length?" · ผ่าน"+viaText(c.sp)[0]:""}</div><div class="sub">${lfTag(ld,"ระวางเต็ม")}</div></div>
       <div class="right"><div class="num ${c.profit<0?"bad":"good"}">${money(c.profit,true)}</div><div class="sub">เฉลี่ย/วัน</div></div></button>`}).join("")}</div>`:`<div class="panel muted small">ยังไม่มีเส้นทางเรือ เปิดเส้นทางระหว่างท่าเรือสองแห่งในภูมิภาคที่ปลดล็อกแล้ว แล้วซื้อเรือใส่ เรือช้ากว่าเครื่องบินมาก แต่ขนตู้สินค้าได้ครั้งละหลายพันตู้</div>`}
   ${S.ships.length?`<h2>กองเรือของคุณ</h2><div class="hangar">${S.ships.map(sh=>{const m=shipM(sh.m),l=S.lanes.find(x=>x.id===sh.lane);
-    return `<button class="pcard ${l?"":"idle"}" data-ship="${sh.id}" style="border-bottom-color:${l?"var(--port)":"var(--muted)"}">${shipArt(m)}<div class="row between"><b class="num">${sh.reg}</b><span class="small">${l?`${sh.reserve?'<span class="rsvtag">🛟 กำลังช่วย</span> ':""}${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:sh.reserve?`<span class="muted">🛟 จอดรอที่ ${port(sh.reserve).n}</span>`:'<span class="muted">จอดว่าง</span>'}</span></div><div class="small muted">${m.name}</div></button>`}).join("")}</div>`:""}
+    return `<button class="pcard ${l?"":"idle"}" data-ship="${sh.id}" style="border-bottom-color:${l?"var(--port)":"var(--muted)"}">${shipArt(m)}<div class="row between"><b class="num">${sh.reg}</b><span class="small">${l?`${sh.reserve?'<span class="rsvtag">🛟 กำลังช่วย</span> ':""}${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:sh.reserve?rsvLbl(sh,1):'<span class="muted">จอดว่าง</span>'}</span></div><div class="small muted">${m.name}</div></button>`}).join("")}</div>`:""}
   <h2>อู่ต่อเรือ <span class="muted num small">${SHIPS.length} รุ่น</span></h2>
   <button class="btn pickbtn" data-pick="sea">🧭 ไม่รู้จะใช้เรือแบบไหน? ให้เกมช่วยเลือกตามเส้นทาง</button>
   <div class="seg scrollx">${SCATS.map(([k,n])=>`<button data-scat="${k}" class="${scat===k?"on":""}">${n}</button>`).join("")}</div>
@@ -2506,17 +2545,17 @@ function shipSheet(sid,st){
   const fn=()=>{const sh=shipById(sid);if(!sh)return head("ไม่พบเรือ");const m=shipM(sh.m),l=S.lanes.find(x=>x.id===sh.lane),v=shipResale(sh);
     return head(sh.reg,m.name+" · "+m.tag)+shipArt(m)+`<div class="kv"><div><div class="k">ความจุ</div><div class="v">${m.teu.toLocaleString()} TEU</div></div><div><div class="k">ความเร็ว</div><div class="v">${m.speed} กม./ชม.</div></div>
       <div><div class="k">แล่นได้ไกล</div><div class="v">${m.rng.toLocaleString()} กม.</div></div><div><div class="k">ท่าเรือ</div><div class="v">${m.deep?"น้ำลึกเท่านั้น":"ทุกท่า"}</div></div>
-      <div><div class="k">สถานะ</div><div class="v" style="font-family:var(--f-body)">${l?`${laneNo(l)} · ${port(l.from).n} ↔ ${port(l.to).n}`:"จอดว่าง"}</div></div><div><div class="k">อายุเรือ</div><div class="v">${(sh.age/365).toFixed(1)} ปี</div></div></div>
+      <div><div class="k">สถานะ</div><div class="v" style="font-family:var(--f-body)">${l?`${laneNo(l)} · ${port(l.from).n} ↔ ${port(l.to).n}`:sh.reserve?rsvLbl(sh,1):"จอดว่าง"}</div></div><div><div class="k">อายุเรือ</div><div class="v">${(sh.age/365).toFixed(1)} ปี</div></div></div>
      ${S.lanes.some(x=>x!==l)?`<label class="f">ย้ายไปเส้นทางเรือ<select id="smv"><option value="">เลือกเส้นทาง</option>${S.lanes.filter(x=>x!==l).map(x=>{const ok=canDock(m,x);return `<option value="${x.id}" ${ok?"":"disabled"}>${laneNo(x)} · ${port(x.from).n} → ${port(x.to).n}${ok?"":" · "+(m.rng<laneKm(x)?"ไปไม่ถึง":"เทียบท่าไม่ได้")}</option>`}).join("")}</select></label>`:""}
-     ${pbList().length?`<div class="kbox"><b>🛟 เรือสำรองของสาขาท่าเรือ</b><div class="small muted">ตั้งเป็นเรือสำรองแล้ว เรือจะจอดรอที่ท่า และออกไปช่วยเส้นทางเรือที่ออกจากท่านั้นเมื่อตู้ล้น แล้วกลับเมื่อตู้ไม่ล้นแล้ว (ช่วยได้เฉพาะเส้นของท่าเดียวกัน)</div>
-       ${sh.reserve?`<div class="row between"><span class="small">ตอนนี้: สำรองที่ <b>${port(sh.reserve).n}</b> ${l?`· กำลังช่วย ${laneNo(l)}`:"· จอดรอ"}</span><button class="btn sm" id="srsvoff">เลิกเป็นเรือสำรอง</button></div>`:
-       `<div class="row" style="gap:6px;flex-wrap:wrap">${pbList().map(c=>{const n=S.lanes.filter(x=>x.from===c&&canDock(m,x)).length;return `<button class="btn sm" data-srsv="${c}" ${n?"":"disabled"}>${port(c).n} <span class="muted">${n} เส้น</span></button>`}).join("")}</div>`}</div>`:""}
+     ${has("sea")&&depotsOpen("sea").length?`<div class="kbox"><b>🛟 เรือสำรอง</b><div class="small muted">เรือสำรองจอดที่อู่สำรอง (ที่จอดอย่างเดียว) เมื่อเส้นไหนตู้ล้น ระบบส่งเรือจากอู่ที่ใกล้ที่สุดแล่นไปช่วย ไปได้ทุกที่ แต่เส้นที่ช่วยต้องไม่เกินพิสัยเรือ ${m.rng.toLocaleString()} กม. และเทียบท่าได้ พอตู้ไม่ล้น ${RSV_BACK} วันติดจะแล่นกลับอู่</div>
+       ${sh.reserve?`<div class="row between"><span class="small">ตอนนี้: ${l?`<span class="rsvtag">🛟 กำลังช่วย</span> ${laneNo(l)} (อู่: ${(depot(sh.reserve)||{n:"-"}).n})`:rsvLbl(sh,1)}</span><button class="btn sm" id="srsvoff">เลิกเป็นเรือสำรอง</button></div>`:
+       `<div class="row" style="gap:6px;flex-wrap:wrap">${depotsOpen("sea").map(d=>`<button class="btn sm" data-srsv="${d.id}">${d.n} <span class="muted">${regName(d.reg)}</span></button>`).join("")}</div>`}</div>`:""}
      <div class="row">${l?`<button class="btn" style="flex:1" id="sground">ถอดออกจากเส้นทาง</button>`:""}<button class="btn danger" style="flex:1" id="ssell">${st.confirm?"ยืนยันขาย "+money(v,true):"ขาย "+money(v,true)}</button></div>`};
   fn.bind=()=>{const sh=shipById(sid);if(!sh)return;const detach=()=>{const l=S.lanes.find(x=>x.id===sh.lane);if(l)l.ships=l.ships.filter(x=>x!==sh.id);sh.lane=null};
-    const mv=$("#smv");if(mv)mv.onchange=()=>{if(!mv.value)return;detach();delete sh.reserve;const l=S.lanes.find(x=>x.id===+mv.value);l.ships.push(sh.id);sh.lane=l.id;save();toast(`${sh.reg} ย้ายไป ${laneNo(l)}`);closeSheet()};
+    const mv=$("#smv");if(mv)mv.onchange=()=>{if(!mv.value)return;detach();delete sh.reserve;delete sh.fer;const l=S.lanes.find(x=>x.id===+mv.value);l.ships.push(sh.id);sh.lane=l.id;save();toast(`${sh.reg} ย้ายไป ${laneNo(l)}`);closeSheet()};
     const g=$("#sground");if(g)g.onclick=()=>{detach();save();drawSheet()};
-    $$("[data-srsv]").forEach(b=>b.onclick=()=>{detach();sh.reserve=b.dataset.srsv;sh.rsvOk=0;save();toast(`${sh.reg} เป็นเรือสำรองของ ${port(sh.reserve).n} แล้ว`);drawSheet()});
-    const so=$("#srsvoff");if(so)so.onclick=()=>{delete sh.reserve;save();toast(`${sh.reg} เลิกเป็นเรือสำรองแล้ว`);drawSheet()};
+    $$("[data-srsv]").forEach(b=>b.onclick=()=>{const l0=S.lanes.find(x=>x.id===sh.lane),dp=depot(b.dataset.srsv);detach();delete sh.fer;sh.reserve=dp.id;sh.rsvOk=0;if(l0)sendShip(sh,l0.from,dp.anchor,"home",null,dp);save();toast(`${sh.reg} เป็นเรือสำรองแล้ว${l0?` กำลังแล่นไป${dp.n}`:` จอดที่${dp.n}`}`);drawSheet()});
+    const so=$("#srsvoff");if(so)so.onclick=()=>{delete sh.reserve;delete sh.fer;save();toast(`${sh.reg} เลิกเป็นเรือสำรองแล้ว`);drawSheet()};
     $("#ssell").onclick=()=>{if(!st.confirm){st.confirm=1;drawSheet();return}const v=shipResale(sh);detach();S.cash+=v;S.ships=S.ships.filter(x=>x!==sh);addNews(`ขายเรือ ${sh.reg} ได้ ${money(v)}`);save();closeSheet()}};
   return fn}
 function portSheet(code){const fn=()=>{const pt=port(code),R=REGIONS.find(x=>x.id===pt.reg),ls=S.lanes.filter(l=>l.from===code||l.to===code),open=portOpen(code);
@@ -2827,7 +2866,13 @@ function ratingHTML(){const R=S.rating;if(!R||!has("rank"))return "";const cats=
    ${weakest?`<div class="rtip">💡 ด้านที่ควรพัฒนา: <b>${RCATS.find(x=>x[0]===weakest[0])[1]}</b> · ${weakest[1].tip}</div>`:`<div class="rtip">เริ่มบินหรือเดินเรือเพื่อรับเรตติ้งแรก</div>`}</div>`}
 let brReg=null,brSeg="air";
 function branchHTML(){if(bm()!=="cargo"||!has("sea"))brSeg="air";const seg=bm()!=="cargo"||!has("sea")?"":`<div class="seg"><button data-brseg="air" class="${brSeg==="air"?"on":""}">✈ สาขาสนามบิน <span class="num muted small">${S.bases.length}</span></button><button data-brseg="sea" class="${brSeg==="sea"?"on":""}">⚓ สาขาท่าเรือ <span class="num muted small">${pbList().length}</span></button></div>`;
-  return seg+(brSeg==="sea"?portBranchHTML():airBranchHTML())}
+  return seg+depotPanelHTML(brSeg==="sea"?"sea":"air")+(brSeg==="sea"?portBranchHTML():airBranchHTML())}
+function depotPanelHTML(k){if(k==="air"?!has("branch"):!has("sea"))return "";const ds=depotsOpen(k);if(!ds.length)return "";
+  const all=k==="air"?S.fleet:S.ships,on=o=>k==="air"?o.route:o.lane,n=all.filter(o=>o.reserve).length;
+  return `<details class="more panel depots" ${n?"open":""}><summary>🛟 ${k==="air"?"ฐานเครื่องบินสำรอง":"อู่เรือสำรอง"} ${ds.length} แห่ง · ตัวสำรอง ${n} ลำ</summary>
+   <div class="small muted">ที่จอด${k==="air"?"เครื่องบิน":"เรือ"}สำรองอย่างเดียว ไม่มีเส้นทางของตัวเอง เมื่อเส้นไหน${k==="air"?"คนหรือสินค้า":"ตู้"}ล้น ระบบส่งตัวสำรองจากที่ใกล้ที่สุดไปช่วย ไปได้ทุกที่ในโลก แต่เส้นที่ช่วยต้องอยู่ในพิสัย · ตั้งตัวสำรองได้จากหน้า${k==="air"?"เครื่องบิน":"เรือ"}ในแท็บฝูงบิน</div>
+   <div class="prows">${ds.map(d=>{const L=all.filter(o=>o.reserve===d.id),wait=L.filter(o=>!on(o)&&!o.fer).length,out=L.filter(o=>on(o)).length,go=L.filter(o=>o.fer).length;
+     return `<div class="prow"><span class="pst">🛟</span><b>${d.n}</b><span class="small pm">${regName(d.reg)}</span><span class="small">${L.length?`จอดรอ ${wait} · ช่วยงาน ${out}${go?` · เดินทาง ${go}`:""}`:'<span class="muted">ว่าง</span>'}</span></div>`}).join("")}</div></details>`}
 /* Containers at one port branch: every sea lane touching it, whether its containers overflow the ships
    (TEU left behind a day + backlog waiting), and the biggest container flows nobody carries yet. */
 const kindsTxt=o=>Object.entries(o).filter(([k,v])=>v>=1).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${CK_E[k]} ${CK_N[k]} ${Math.round(v).toLocaleString()}`).join(" · ");
@@ -2853,7 +2898,6 @@ function portBranchHTML(){
       <div class="small muted">${REGIONS.find(R=>R.id===pt.reg).n}${pt.deep?" · ท่าเรือน้ำลึก":""}</div></div><button class="btn sm" data-pbroute="${code}">+ เส้นทางเรือ</button></div>
       <div class="kv" style="grid-template-columns:repeat(3,1fr)"><div><div class="k">เส้นทางเรือ</div><div class="v">${ls.length}</div></div><div><div class="k">เรือ</div><div class="v">${sh}</div></div><div><div class="k">กำไร/วัน</div><div class="v ${pf<0?"bad":"good"}">${money(pf,true)}</div></div></div>
       <div class="small muted">ตู้สินค้า +${Math.round((pBoost(code)-1)*100)}% · ค่าท่าเรือ −${Math.round(15*(lv-1))}% · ค่าดูแล ${money(pBranchUpkeep(code),true)}/วัน</div>
-      ${(()=>{const rs=rsvShips(code),out=rs.filter(sh=>sh.lane).length;return rs.length?`<div class="small">🛟 เรือสำรอง ${rs.length} ลำ · ออกไปช่วยอยู่ ${out} ลำ</div>`:`<div class="small muted">🛟 ยังไม่มีเรือสำรอง · ตั้งได้จากหน้าเรือในแท็บฝูงบิน</div>`})()}
       ${portBoxHTML(code)}
       <div class="row">${lv<BR_MAX?`<button class="btn sm ${S.cash>=pBranchUp(code)?"primary":""}" style="flex:1" data-pbup="${code}" ${S.cash>=pBranchUp(code)?"":"disabled"}>อัปเกรดเป็นระดับ ${lv+1} · ${money(pBranchUp(code),true)}</button>`:`<span class="small good" style="flex:1">ระดับสูงสุดแล้ว</span>`}
       <button class="btn sm danger" data-pbclose="${code}" ${S.lanes.some(l=>l.from===code)?"disabled":""}>ปิดสาขา</button></div></div>`}).join("");
@@ -2942,7 +2986,6 @@ function airBranchHTML(){const KC=bm()==="cargo";
       <div class="small muted">${c.n} · ${regionOf(code).n}${code===S.hub?" · สำนักงานใหญ่":""}</div></div><button class="btn sm" data-brroute="${code}">+ เส้นทาง</button></div>
       <div class="kv" style="grid-template-columns:repeat(3,1fr)"><div><div class="k">${KC?"เส้นสินค้า":"เส้นทาง"}</div><div class="v">${rs.length}</div></div><div><div class="k">${KC?"เครื่องขนสินค้า":"เครื่องบิน"}</div><div class="v">${pl}</div></div><div><div class="k">กำไรเมื่อวาน</div><div class="v ${pf<0?"bad":"good"}">${money(pf,true)}</div></div></div>
       <div class="small muted">${KC?"สินค้า":"ผู้โดยสาร"} +${Math.round((brBoost(code)-1)*100)}% · ค่าสนามบิน −${Math.round(15*(lv-1))}% · ค่าดูแล ${branchUpkeep(code)?money(branchUpkeep(code),true)+"/วัน":"ฟรี"}</div>
-      ${(()=>{const rp=rsvPlanes(code).filter(p=>KC===!model(p.m).seats),out=rp.filter(p=>p.route).length;return rp.length?`<div class="small">🛟 เครื่องสำรอง ${rp.length} ลำ · ออกไปช่วยอยู่ ${out} ลำ</div>`:`<div class="small muted">🛟 ยังไม่มีเครื่องสำรอง · ตั้งได้จากหน้าเครื่องบินในแท็บฝูงบิน</div>`})()}
       ${KC?cargoBranchHTML(code):wishesHTML(code,6)}
       <div class="row">${lv<BR_MAX?`<button class="btn sm ${S.cash>=branchUpCost(code)?"primary":""}" style="flex:1" data-brup="${code}" ${S.cash>=branchUpCost(code)?"":"disabled"}>อัปเกรดเป็นระดับ ${lv+1} · ${money(branchUpCost(code),true)}</button>`:`<span class="small good" style="flex:1">ระดับสูงสุดแล้ว</span>`}
       ${code!==S.hub?`<button class="btn sm danger" data-brclose="${code}" ${rs.length?"disabled":""} title="${rs.length?"ปิดเส้นทางจากสาขานี้ก่อน":""}">ปิดสาขา</button>`:""}</div></div>`}).join("");
@@ -3218,28 +3261,33 @@ function fleetHTML(){
    Filter chips and a search box (registration, model or airport code) make a fleet of hundreds easy to search.
    Big fleets show as compact rows; the player can switch between rows and cards. */
 let fFilt="all",fQ="",sFilt="all",sQ="";
-const planeState=p=>p.down>S.day?"shop":p.route&&S.routes.some(r=>r.id===p.route)?"fly":p.reserve?"rsv":"idle";
+const planeState=p=>p.down>S.day?"shop":p.route&&S.routes.some(r=>r.id===p.route)?"fly":p.fer?"fer":p.reserve?"rsv":"idle";
+function rsvLbl(o,isShip){const f=o.fer,dp=depot(o.reserve);
+  if(f){const left=Math.max(0,f.t1-nowT());if(f.goal==="route"||f.goal==="lane"){const r=isShip?S.lanes.find(x=>x.id===f.lid):S.routes.find(x=>x.id===f.rid);
+      return `<span class="rsvtag">🛟 กำลังเดินทางไปช่วย</span> ${r?(isShip?laneNo(r):r.from+"→"+r.dest):""} · ถึงในอีก ${durTxt(left)}`}
+    return `<span class="muted">↩️ กำลังกลับ${dp?dp.n:"ฐาน"} · อีก ${durTxt(left)}</span>`}
+  return `<span class="muted">🛟 จอดรอที่${dp?dp.n:"ฐานสำรอง"}</span>`}
 function planeCardHTML(p){const m=model(p.m),r=S.routes.find(x=>x.id===p.route),shop=p.down>S.day;
-    const st=shop?`<span class="warn">ในโรงซ่อม ${p.down-S.day} วัน</span>`:r?(p.reserve?`<span class="rsvtag">🛟 กำลังช่วย</span> ${r.from}→${r.dest}`:`บิน ${r.from} → ${r.dest}`):p.reserve?`<span class="muted">🛟 จอดรอที่ ${p.reserve}</span>`:'<span class="muted">จอดว่าง</span>';
+    const st=shop?`<span class="warn">ในโรงซ่อม ${p.down-S.day} วัน</span>`:r?(p.reserve?`<span class="rsvtag">🛟 กำลังช่วย</span> ${r.from}→${r.dest}`:`บิน ${r.from} → ${r.dest}`):p.reserve?rsvLbl(p):'<span class="muted">จอดว่าง</span>';
     const cc=p.cond<40?"low":p.cond<70?"mid":"";
     return `<button class="pcard ${shop?"shop":r?"":"idle"}${fSelMode?(fSel.has("p"+p.id)?" picked":" pickable"):""}" data-plane="${p.id}">${planeArt(m)}
       <div class="row between"><b class="num">${p.reg}</b><span class="small">${st}</span></div>
       <div class="small muted">${m.name} · ${m.seats?m.seats+" ที่นั่ง":m.cargo+" ตัน"}</div>${m.seats?"":`<div>${carryPlane(p)}</div>`}${r&&p.yn!=null?`<div class="small">${earnTxt(p.yn)}</div>`:""}
       <div class="row" style="gap:8px"><div class="lf cond ${cc}" style="flex:1;margin:0;max-width:none"><i style="width:${p.cond}%"></i></div><span class="num small ${p.cond<40?"bad":"muted"}">${Math.round(p.cond)}%</span></div></button>`}
 function planeRowHTML(p){const m=model(p.m),r=S.routes.find(x=>x.id===p.route),st=planeState(p);
-  return `<button class="prow ${st}${fSelMode?(fSel.has("p"+p.id)?" picked":" pickable"):""}" data-plane="${p.id}"><span class="pst">${st==="idle"?"🅿️":st==="shop"?"🔧":st==="rsv"?"🛟":p.reserve?"🛟":"✈"}</span><b class="num">${p.reg}</b><span class="small pm">${m.name}</span>
-    <span class="small">${st==="shop"?`<span class="warn">ซ่อม ${p.down-S.day} วัน</span>`:r?(p.reserve?`<span class="rsvtag">🛟 กำลังช่วย</span> ${r.from}→${r.dest}`:`${r.from}→${r.dest}`):p.reserve?`<span class="muted">🛟 จอดรอที่ ${p.reserve}</span>`:'<span class="muted">จอดว่าง</span>'}</span><span class="num small ${p.cond<40?"bad":p.cond<70?"warn":"muted"}">${Math.round(p.cond)}%</span></button>`}
+  return `<button class="prow ${st}${fSelMode?(fSel.has("p"+p.id)?" picked":" pickable"):""}" data-plane="${p.id}"><span class="pst">${st==="idle"?"🅿️":st==="shop"?"🔧":st==="rsv"||st==="fer"?"🛟":p.reserve?"🛟":"✈"}</span><b class="num">${p.reg}</b><span class="small pm">${m.name}</span>
+    <span class="small">${st==="shop"?`<span class="warn">ซ่อม ${p.down-S.day} วัน</span>`:r?(p.reserve?`<span class="rsvtag">🛟 กำลังช่วย</span> ${r.from}→${r.dest}`:`${r.from}→${r.dest}`):p.reserve?rsvLbl(p):'<span class="muted">จอดว่าง</span>'}</span><span class="num small ${p.cond<40?"bad":p.cond<70?"warn":"muted"}">${Math.round(p.cond)}%</span></button>`}
 function fleetListHTML(k){const big=S.ui_fview?S.ui_fview==="row":S.fleet.length>24,q=fQ.trim().toLowerCase();
   let L=S.fleet.filter(p=>(k==="cargo")===!model(p.m).seats);
   if(q)L=L.filter(p=>{const m=model(p.m),r=S.routes.find(x=>x.id===p.route);return (p.reg+" "+m.name+" "+(r?r.from+" "+r.dest+" "+city(r.dest).n:"")).toLowerCase().includes(q)});
   if(fFilt==="low")L=L.filter(p=>p.cond<50);else if(fFilt==="rsvall")L=L.filter(p=>p.reserve);else if(fFilt!=="all")L=L.filter(p=>planeState(p)===fFilt);
   if(!L.length)return `<div class="panel muted small">ไม่มีเครื่องบินที่ตรงกับตัวกรอง</div>`;
   const one=p=>big?planeRowHTML(p):planeCardHTML(p),wrap=a=>big?`<div class="prows">${a.map(one).join("")}</div>`:`<div class="hangar">${a.map(one).join("")}</div>`;
-  const idle=L.filter(p=>planeState(p)==="idle"),shop=L.filter(p=>planeState(p)==="shop"),fly=L.filter(p=>planeState(p)==="fly"&&!p.reserve),rsvOut=L.filter(p=>planeState(p)==="fly"&&p.reserve),rsv=L.filter(p=>planeState(p)==="rsv");
+  const idle=L.filter(p=>planeState(p)==="idle"),shop=L.filter(p=>planeState(p)==="shop"),fly=L.filter(p=>planeState(p)==="fly"&&!p.reserve),rsvOut=L.filter(p=>planeState(p)==="fly"&&p.reserve||planeState(p)==="fer"),rsv=L.filter(p=>planeState(p)==="rsv");
   let h="";
   if(idle.length)h+=`<div class="fsec idle"><b>🅿️ จอดว่าง ${idle.length} ลำ</b><span class="small muted">ไม่ได้ทำงานแต่ยังเสียค่าคงที่ · แตะเพื่อใส่เข้าเส้นทางหรือขาย</span></div>${wrap(idle)}`;
-  if(rsvOut.length)h+=`<div class="fsec rsv"><b>🛟 สำรอง · กำลังช่วยงาน ${rsvOut.length} ลำ</b><span class="small muted">ถูกดึงไปบินเส้นที่ล้น · จะกลับสาขาเองเมื่อที่นั่ง/ระวางพอ ${RSV_BACK} วันติด</span></div>${wrap(rsvOut)}`;
-  if(rsv.length)h+=`<div class="fsec rsv"><b>🛟 สำรอง · จอดรอที่สาขา ${rsv.length} ลำ</b><span class="small muted">พร้อมออกไปช่วยเส้นทางของสาขาที่ล้น</span></div>${wrap(rsv)}`;
+  if(rsvOut.length)h+=`<div class="fsec rsv"><b>🛟 สำรอง · กำลังช่วยงาน/เดินทาง ${rsvOut.length} ลำ</b><span class="small muted">ถูกส่งไปบินเส้นที่ล้น · จะบินกลับฐานเองเมื่อที่นั่ง/ระวางพอ ${RSV_BACK} วันติด</span></div>${wrap(rsvOut)}`;
+  if(rsv.length)h+=`<div class="fsec rsv"><b>🛟 สำรอง · จอดรอที่ฐาน ${rsv.length} ลำ</b><span class="small muted">พร้อมบินไปช่วยเส้นที่ล้นได้ทุกที่ในโลก (เส้นนั้นต้องอยู่ในพิสัยเครื่อง)</span></div>${wrap(rsv)}`;
   if(shop.length)h+=`<div class="fsec shop"><b>🔧 อยู่ในโรงซ่อม ${shop.length} ลำ</b></div>${wrap(shop)}`;
   if(fly.length){h+=`<div class="fsec fly"><b>✈ ทำงานอยู่ ${fly.length} ลำ</b><span class="small muted">เรียงตามเส้นทาง</span></div>`;
     const by=new Map();for(const p of fly){const r=S.routes.find(x=>x.id===p.route);if(!by.has(r))by.set(r,[]);by.get(r).push(p)}
@@ -3256,11 +3304,11 @@ function shipListHTML(){const q=sQ.trim().toLowerCase();let L=S.ships.slice();
   if(sFilt==="idle")L=L.filter(sh=>!S.lanes.some(x=>x.id===sh.lane));else if(sFilt==="work")L=L.filter(sh=>S.lanes.some(x=>x.id===sh.lane));
   if(!L.length)return `<div class="panel muted small">ไม่มีเรือที่ตรงกับตัวกรอง</div>`;
   const big=S.ui_fview?S.ui_fview==="row":S.ships.length>16;
-  const one=sh=>{const m=shipM(sh.m),l=S.lanes.find(x=>x.id===sh.lane);return big?`<button class="prow ${l?"fly":"idle"}${fSelMode?(fSel.has("s"+sh.id)?" picked":" pickable"):""}" data-ship="${sh.id}"><span class="pst">${sh.reserve?"🛟":l?"🚢":"🅿️"}</span><b class="num">${sh.reg}</b><span class="small pm">${m.name}</span><span class="small">${l?`${sh.reserve?'<span class="rsvtag">🛟 กำลังช่วย</span> ':""}${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:sh.reserve?`<span class="muted">🛟 จอดรอที่ ${port(sh.reserve).n}</span>`:'<span class="muted">จอดว่าง</span>'}</span><span></span></button>`:
-    `<button class="pcard ${l?"":"idle"}${fSelMode?(fSel.has("s"+sh.id)?" picked":" pickable"):""}" data-ship="${sh.id}" style="border-bottom-color:${l?"var(--port)":"var(--muted)"}">${shipArt(m)}<div class="row between"><b class="num">${sh.reg}</b><span class="small">${l?`${sh.reserve?'<span class="rsvtag">🛟 กำลังช่วย</span> ':""}${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:sh.reserve?`<span class="muted">🛟 จอดรอที่ ${port(sh.reserve).n}</span>`:'<span class="muted">จอดว่าง</span>'}</span></div><div class="small muted">${m.name}</div><div>${carryShip(sh)}</div>${l&&sh.yn!=null?`<div class="small">${earnTxt(sh.yn)}</div>`:""}</button>`};
+  const one=sh=>{const m=shipM(sh.m),l=S.lanes.find(x=>x.id===sh.lane);return big?`<button class="prow ${l?"fly":"idle"}${fSelMode?(fSel.has("s"+sh.id)?" picked":" pickable"):""}" data-ship="${sh.id}"><span class="pst">${sh.reserve?"🛟":l?"🚢":"🅿️"}</span><b class="num">${sh.reg}</b><span class="small pm">${m.name}</span><span class="small">${l?`${sh.reserve?'<span class="rsvtag">🛟 กำลังช่วย</span> ':""}${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:sh.reserve?rsvLbl(sh,1):'<span class="muted">จอดว่าง</span>'}</span><span></span></button>`:
+    `<button class="pcard ${l?"":"idle"}${fSelMode?(fSel.has("s"+sh.id)?" picked":" pickable"):""}" data-ship="${sh.id}" style="border-bottom-color:${l?"var(--port)":"var(--muted)"}">${shipArt(m)}<div class="row between"><b class="num">${sh.reg}</b><span class="small">${l?`${sh.reserve?'<span class="rsvtag">🛟 กำลังช่วย</span> ':""}${laneNo(l)} ${l.from.slice(2)}→${l.to.slice(2)}`:sh.reserve?rsvLbl(sh,1):'<span class="muted">จอดว่าง</span>'}</span></div><div class="small muted">${m.name}</div><div>${carryShip(sh)}</div>${l&&sh.yn!=null?`<div class="small">${earnTxt(sh.yn)}</div>`:""}</button>`};
   const wrap=a=>big?`<div class="prows">${a.map(one).join("")}</div>`:`<div class="hangar">${a.map(one).join("")}</div>`;
-  const idle=L.filter(sh=>!S.lanes.some(x=>x.id===sh.lane)&&!sh.reserve),work=L.filter(sh=>S.lanes.some(x=>x.id===sh.lane)&&!sh.reserve),rsvOutS=L.filter(sh=>sh.reserve&&S.lanes.some(x=>x.id===sh.lane)),rsvS=L.filter(sh=>sh.reserve&&!S.lanes.some(x=>x.id===sh.lane));
-  return (rsvOutS.length?`<div class="fsec rsv"><b>🛟 สำรอง · กำลังช่วยงาน ${rsvOutS.length} ลำ</b><span class="small muted">ถูกดึงไปช่วยเส้นที่ตู้ล้น · จะกลับท่าเองเมื่อตู้ลดลง</span></div>${wrap(rsvOutS)}`:"")+(rsvS.length?`<div class="fsec rsv"><b>🛟 สำรอง · จอดรอที่ท่า ${rsvS.length} ลำ</b><span class="small muted">พร้อมออกไปช่วยเส้นทางของท่าที่ตู้ล้น</span></div>${wrap(rsvS)}`:"")+(idle.length?`<div class="fsec idle"><b>🅿️ จอดว่าง ${idle.length} ลำ</b><span class="small muted">แตะเพื่อใส่เข้าเส้นทางเรือ</span></div>${wrap(idle)}`:"")+(work.length?`<div class="fsec fly"><b>🚢 แล่นอยู่ ${work.length} ลำ</b></div>${wrap(work)}`:"")}
+  const idle=L.filter(sh=>!S.lanes.some(x=>x.id===sh.lane)&&!sh.reserve),work=L.filter(sh=>S.lanes.some(x=>x.id===sh.lane)&&!sh.reserve),rsvOutS=L.filter(sh=>sh.reserve&&(S.lanes.some(x=>x.id===sh.lane)||sh.fer)),rsvS=L.filter(sh=>sh.reserve&&!S.lanes.some(x=>x.id===sh.lane)&&!sh.fer);
+  return (rsvOutS.length?`<div class="fsec rsv"><b>🛟 สำรอง · กำลังช่วยงาน/เดินทาง ${rsvOutS.length} ลำ</b><span class="small muted">ถูกส่งไปช่วยเส้นที่ตู้ล้น · จะแล่นกลับอู่สำรองเองเมื่อตู้ลดลง</span></div>${wrap(rsvOutS)}`:"")+(rsvS.length?`<div class="fsec rsv"><b>🛟 สำรอง · จอดรอที่อู่สำรอง ${rsvS.length} ลำ</b><span class="small muted">พร้อมแล่นไปช่วยเส้นที่ตู้ล้นได้ทุกที่ (เส้นนั้นต้องอยู่ในพิสัยเรือ)</span></div>${wrap(rsvS)}`:"")+(idle.length?`<div class="fsec idle"><b>🅿️ จอดว่าง ${idle.length} ลำ</b><span class="small muted">แตะเพื่อใส่เข้าเส้นทางเรือ</span></div>${wrap(idle)}`:"")+(work.length?`<div class="fsec fly"><b>🚢 แล่นอยู่ ${work.length} ลำ</b></div>${wrap(work)}`:"")}
 function shipsOwnedHTML(){
   return `<div class="row between"><h2>กองเรือของคุณ <span class="muted num small">${S.ships.length} ลำ</span></h2></div>
   ${S.ships.length?`<div class="fbar"><div class="seg fchips">${[["all","ทั้งหมด",S.ships.length],["idle","🅿️ จอดว่าง",S.ships.filter(sh=>!S.lanes.some(x=>x.id===sh.lane)).length],["work","🚢 แล่นอยู่",S.ships.filter(sh=>S.lanes.some(x=>x.id===sh.lane)).length]].map(([v,t,c])=>`<button data-sf="${v}" class="${sFilt===v?"on":""}">${t} <b class="num">${c}</b></button>`).join("")}</div>
@@ -3819,17 +3867,17 @@ function planeSheet(pid,st){
      <div class="muted small" style="margin-top:6px">ยิ่งสภาพต่ำ ยิ่งเสี่ยงเครื่องขัดข้องกลางทาง โอกาสวันนี้ ${((100-p.cond)*.012).toFixed(2)}%</div></div>
      <button class="btn" id="mx" ${shop||p.cond>=99||S.cash<mc?"disabled":""}>ส่งซ่อมบำรุงตอนนี้ ${money(mc,true)} · 2 วัน</button>
      ${S.routes.some(x=>x!==r&&fitsKind(m,x))?`<label class="f">ย้ายไปบินเส้นทาง (เครื่องนี้บินได้ ${m.range.toLocaleString()} กม.)<select id="mv"><option value="">เลือกเส้นทาง</option>${S.routes.filter(x=>x!==r&&fitsKind(m,x)).map(x=>{const dd=rd(x),go=dd<=m.range;return `<option value="${x.id}" ${go?"":"disabled"}>${fno(x)} · ${x.from} → ${x.dest} · ${dd.toLocaleString()} กม.${go?"":" · ไม่สามารถบินได้"}</option>`}).join("")}</select></label>`:""}
-     ${has("branch")?`<div class="kbox"><b>🛟 เครื่องสำรองของสาขา</b><div class="small muted">ตั้งเป็นเครื่องสำรองแล้ว เครื่องจะจอดรอที่สาขา และออกไปช่วยเส้นทางที่บินออกจากสาขานั้นเมื่อ${m.seats?"คน":"สินค้า"}ล้น แล้วกลับเมื่อที่นั่งพอ (ช่วยได้เฉพาะเส้นของสาขาเดียวกัน)</div>
-       ${p.reserve?`<div class="row between"><span class="small">ตอนนี้: สำรองที่ <b>${p.reserve}</b> ${r?`· กำลังช่วยเส้น ${r.from}→${r.dest}`:"· จอดรอ"}</span><button class="btn sm" id="rsvoff">เลิกเป็นเครื่องสำรอง</button></div>`:
-       `<div class="row" style="gap:6px;flex-wrap:wrap">${S.bases.map(b=>{const n=S.routes.filter(x=>x.from===b&&fitsKind(m,x)&&rd(x)<=m.range).length;return `<button class="btn sm" data-rsv="${b}" ${n?"":"disabled"}>${b} <span class="muted">${n} เส้น</span></button>`}).join("")}</div>`}</div>`:""}
+     ${has("branch")?`<div class="kbox"><b>🛟 เครื่องสำรอง</b><div class="small muted">เครื่องสำรองจอดที่ฐานสำรอง (ที่จอดอย่างเดียว) เมื่อเส้นไหน${m.seats?"คน":"สินค้า"}ล้น ระบบส่งเครื่องจากฐานที่ใกล้ที่สุดบินไปช่วย ไปได้ทุกที่ในโลก แต่เส้นที่ช่วยต้องไม่เกินพิสัยเครื่อง ${m.range.toLocaleString()} กม. พอ${m.seats?"ที่นั่ง":"ระวาง"}พอ ${RSV_BACK} วันติดจะบินกลับฐาน · ค่าน้ำมันเที่ยวไป-กลับคิดตามระยะ</div>
+       ${p.reserve?`<div class="row between"><span class="small">ตอนนี้: ${r?`<span class="rsvtag">🛟 กำลังช่วย</span> ${r.from}→${r.dest} (ฐาน: ${(depot(p.reserve)||{n:"-"}).n})`:rsvLbl(p)}</span><button class="btn sm" id="rsvoff">เลิกเป็นเครื่องสำรอง</button></div>`:
+       `<div class="row" style="gap:6px;flex-wrap:wrap">${depotsOpen("air").map(d=>`<button class="btn sm" data-rsv="${d.id}">${d.n} <span class="muted">${regName(d.reg)} · ${Math.round(dist(r?city(r.from):city(S.hub),d)).toLocaleString()} กม.</span></button>`).join("")}</div>`}</div>`:""}
      <div class="row">${r?`<button class="btn" style="flex:1" id="ground">ถอดออกจากเส้นทาง</button>`:""}<button class="btn danger" style="flex:1" id="sell">${st.confirm?"ยืนยันขาย "+money(sell,true):"ขาย "+money(sell,true)}</button></div>`};
   fn.bind=()=>{const p=plane(pid);if(!p)return;const detach=()=>{const r=S.routes.find(x=>x.id===p.route);if(r){r.planes=r.planes.filter(x=>x!==p.id);r.last=null}p.route=null};
-    const mv=$("#mv");if(mv)mv.onchange=()=>{if(!mv.value)return;detach();delete p.reserve;const r=S.routes.find(x=>x.id===+mv.value);r.planes.push(p.id);p.route=r.id;r.last=null;save();toast(`${p.reg} ย้ายไปบิน ${fno(r)}`);closeSheet()};
+    const mv=$("#mv");if(mv)mv.onchange=()=>{if(!mv.value)return;detach();delete p.reserve;delete p.fer;const r=S.routes.find(x=>x.id===+mv.value);r.planes.push(p.id);p.route=r.id;r.last=null;save();toast(`${p.reg} ย้ายไปบิน ${fno(r)}`);closeSheet()};
     {const sl=$("[data-pck1]");if(sl)sl.onchange=()=>{p.ck=sl.value;const r=S.routes.find(x=>x.id===p.route);if(r)r.last=null;save();drawSheet()}}
     const g=$("#ground");if(g)g.onclick=()=>{detach();save();drawSheet()};
     $("#mx").onclick=()=>{startMx(p,false);save();toast(`${p.reg} เข้าโรงซ่อมแล้ว`);drawSheet()};
-    $$("[data-rsv]").forEach(b=>b.onclick=()=>{detach();p.reserve=b.dataset.rsv;p.rsvOk=0;save();toast(`${p.reg} เป็นเครื่องสำรองของสาขา ${p.reserve} แล้ว`);drawSheet()});
-    const ro=$("#rsvoff");if(ro)ro.onclick=()=>{delete p.reserve;save();toast(`${p.reg} เลิกเป็นเครื่องสำรองแล้ว${p.route?" (ยังบินเส้นเดิมต่อ)":""}`);drawSheet()};
+    $$("[data-rsv]").forEach(b=>b.onclick=()=>{const r0=S.routes.find(x=>x.id===p.route),from=r0?city(r0.from):city(S.hub),dp=depot(b.dataset.rsv);detach();delete p.fer;p.reserve=dp.id;p.rsvOk=0;sendPlane(p,from,dp,"home");save();toast(`${p.reg} เป็นเครื่องสำรองแล้ว กำลังบินไป${dp.n}`);drawSheet()});
+    const ro=$("#rsvoff");if(ro)ro.onclick=()=>{delete p.reserve;delete p.fer;save();toast(`${p.reg} เลิกเป็นเครื่องสำรองแล้ว${p.route?" (ยังบินเส้นเดิมต่อ)":""}`);drawSheet()};
     $("#sell").onclick=()=>{if(!st.confirm){st.confirm=1;drawSheet();return}const m=model(p.m),v=resale(p);detach();S.cash+=v;S.fleet=S.fleet.filter(x=>x!==p);addNews(`ขาย ${m.name} ${p.reg} ได้ ${money(v)}`);save();closeSheet()}};
   return fn}
 function baseSheet(st){
@@ -4131,7 +4179,8 @@ function drawMap(){
    for(const l of S.lanes){const o=laneScr.get(l.id);if(!o)continue;
      l.ships.forEach((id,i)=>{const sh=shipById(id);if(!sh||sh.down>S.day)return;const m=shipM(sh.m),Ld=legDaysS(m,o.km),sail=sailDays(m,o.km)/Ld;
        const t0=animDay/Ld+(sh.off||0),leg=Math.floor(t0),f=t0-leg,back=leg%2===1,len=(8+Math.sqrt(m.teu)/9)*zp*(vmode()==='sea'?1.3:1),sz=len/20;let pos,ang;
-       if(f<sail){shipsAtSea++;const e=f/sail,t=back?1-e:e;pos=at(o,t);const nx=at(o,t+(back?-.004:.004));ang=Math.atan2(nx[1]-pos[1],nx[0]-pos[0]);
+       if(sh.waiting&&sh.wport&&(sh.wport===l.from||sh.wport===l.to)){const pc=port(sh.wport),[px,py]=PX(vlon(pc.lon),pc.lat);pos=[px+7*zp+i*3,py+5*zp];ang=0}   // waiting for cargo: stays in port
+       else if(f<sail){shipsAtSea++;const e=f/sail,t=back?1-e:e;pos=at(o,t);const nx=at(o,t+(back?-.004:.004));ang=Math.atan2(nx[1]-pos[1],nx[0]-pos[0]);
          x.strokeStyle=paper;x.lineWidth=1.2;x.globalAlpha=.5;for(let j=1;j<=3;j++){const pp=at(o,t-(back?-1:1)*.006*j);x.beginPath();x.arc(pp[0],pp[1],.8+j*.5,0,7);x.stroke()}x.globalAlpha=1}
        else{const pc=port(back?l.from:l.to),[px,py]=PX(vlon(pc.lon),pc.lat);pos=[px+7*zp+i*3,py+5*zp];ang=0}
        x.save();x.translate(...pos);x.rotate(ang);x.scale(sz,sz);x.lineWidth=2.2/sz;x.strokeStyle=paper;x.lineJoin="round";x.stroke(HULL);
@@ -4163,6 +4212,21 @@ function drawMap(){
   for(const [code,list] of parked){const c=city(code),[px,py]=PX(vlon(c.lon),c.lat);
     const n=Math.min(list.length,3);list.slice(0,n).forEach(([kind,m],i)=>{
       drawAircraft(x,[px+(i-(n-1)/2)*12*zp,py+12*zp],-Math.PI/2,kind,.5*zp,m.seats?S.livery.tail:cargoCol,paper,0)})}
+  // 🛟 reserve depots that hold reserves, and reserves travelling to / from them (no line, only the aircraft or ship moving)
+  {const used=new Set([...S.fleet.map(p=>p.reserve),...S.ships.map(sh=>sh.reserve)].filter(Boolean));
+   for(const d of DEPOTS){if(!used.has(d.id)||(d.kind==="air"?vmode()==='sea':vmode()==='air'))continue;const [px,py]=PX(vlon(d.lon),d.lat);
+     x.fillStyle=paper;x.strokeStyle=d.kind==="air"?acc:portCol;x.lineWidth=1.6;x.beginPath();if(x.roundRect)x.roundRect(px-7,py-7,14,14,4);else x.rect(px-7,py-7,14,14);x.fill();x.stroke();
+     x.font="10px sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillStyle=ink;x.fillText("🛟",px,py+.5);x.textAlign="start";
+     const n=d.kind==="air"?rsvPlanesAt(d.id).filter(p=>!p.route&&!p.fer).length:rsvShipsAt(d.id).filter(sh=>!sh.lane&&!sh.fer).length;
+     if(n){x.font="600 10px 'IBM Plex Mono', monospace";x.lineWidth=3;x.strokeStyle=paper;x.strokeText(String(n),px+9,py-7);x.fillStyle=ink;x.fillText(String(n),px+9,py-7)}}
+   if(vmode()!=='sea')for(const p of S.fleet){const f=p.fer;if(!f)continue;const m=model(p.m),u=clamp((animDay-f.t0)/((f.t1-f.t0)||1),0,1),pts=gcPath(f.a,f.b).map(q=>PX(q[0],q[1]));
+     const pos=onPath(pts,u),a0=onPath(pts,Math.max(0,u-.01)),a1=onPath(pts,Math.min(1,u+.01)),ang=Math.atan2(a1[1]-a0[1],a1[0]-a0[0]);
+     drawAircraft(x,pos,ang,aircraftKind(m),.62*(tab==="map"?1.1:1)*zp,m.seats?S.livery.tail:cargoCol,paper,1)}
+   if(vmode()!=='air'){const HULL2=new Path2D("M11 0C10-1.3 8.3-2.2 6.2-2.2H-9.2Q-10.4-2.2-10.4-1V1Q-10.4 2.2-9.2 2.2H6.2C8.3 2.2 10 1.3 11 0Z");
+     for(const sh of S.ships){const f=sh.fer;if(!f||f.pts.length<2)continue;const m=shipM(sh.m),scr=unwrapPts(f.pts),cum=[0];for(let i=1;i<scr.length;i++)cum.push(cum[i-1]+Math.hypot(scr[i][0]-scr[i-1][0],scr[i][1]-scr[i-1][1]));
+       const tot=cum[cum.length-1]||1,u=clamp((animDay-f.t0)/((f.t1-f.t0)||1),0,1),k=u*tot;let i=1;while(i<cum.length-1&&cum[i]<k)i++;
+       const A=scr[i-1],B=scr[i],w=(k-cum[i-1])/((cum[i]-cum[i-1])||1),pos=[A[0]+(B[0]-A[0])*w,A[1]+(B[1]-A[1])*w],ang=Math.atan2(B[1]-A[1],B[0]-A[0]),sz=(8+Math.sqrt(m.teu)/9)*zp/20;
+       x.save();x.translate(...pos);x.rotate(ang);x.scale(sz,sz);x.lineWidth=2.2/sz;x.strokeStyle=paper;x.stroke(HULL2);x.fillStyle=m.reefer||m.roro?"#E9EDF2":"#26313F";x.fill(HULL2);x.restore()}}}
   // landing payouts float up from the arrival airport
   const tnow=performance.now();floaters=floaters.filter(f=>tnow-f.t0<1600);
   x.font="600 11px 'IBM Plex Mono', monospace";x.textBaseline="middle";
@@ -4197,11 +4261,11 @@ function drawChart(){
 function frame(now){
   const dt=Math.min(250,now-lastTick);lastTick=now;
   if(S&&!S.over&&!paused){acc+=dt*speed;
-    while(acc>=DAY_MS){settleFlights(S.day+1-1e-7);settleShips(S.day+1-1e-7);acc-=DAY_MS;simDay();
+    while(acc>=DAY_MS){settleFlights(S.day+1-1e-7);settleShips(S.day+1-1e-7);ferryTick(S.day+1-1e-7);acc-=DAY_MS;simDay();
       // no full redraw while the player is typing in a search box (it would lose the cursor)
       if(!sheetFn){if(tab==="home")refreshHome();else if(tab==="map")refreshMapTab();else if(!(document.activeElement&&document.activeElement.matches("input[type=search],input[type=text]")))renderView()}
       updateTop();if(S.over){showOver();break}}}
-  if(S&&!S.over&&!paused){settleFlights(S.day+acc/DAY_MS);settleShips(S.day+acc/DAY_MS)}
+  if(S&&!S.over&&!paused){settleFlights(S.day+acc/DAY_MS);settleShips(S.day+acc/DAY_MS);ferryTick(S.day+acc/DAY_MS)}
   if(S&&!S.over&&now-(frame.mc||0)>1200){frame.mc=now;checkMissions();lvlCheck();msCheck();liveHome();dailyCheck();const rn=$("#rankno");if(rn){rn.textContent="#"+rank();const rp=$("#rankpanel");if(rp&&!rp.hidden&&!rp.querySelector("details[open]"))rp.innerHTML=rankPanelHTML()}}
   if(S&&afk&&pendingDec){const d=pendingDec;pendingDec=null;const i=d.c.length-1,msg=d.c[i][2]();addNews(`${d.e} ${msg} (AFK เลือกให้)`);afk.log.unshift(`${d.e} ${d.t}: เลือก "${d.c[i][0]}"`);save()}
   if(S&&afk&&now-(frame.ak||0)>500){frame.ak=now;afkTick()}
