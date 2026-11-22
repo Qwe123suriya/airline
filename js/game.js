@@ -527,8 +527,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.47";
+const GAME_VERSION="1.48";
 const CHANGELOG=[
+ ["1.48","22 พ.ย. 2569",["💡 คำแนะนำเส้นทางมีตั้งแต่วันแรกทุกสนามบิน: ถ้าเมืองที่คนอยากไปมากที่สุดอยู่ไกลเกินเครื่องที่ซื้อได้ด้วยเงินตอนนี้ (เช่น เริ่มที่โอ๊คแลนด์ ไนโรบี ซานฮวน) เกมจะแนะนำเส้นที่บินได้จริงและคาดว่ากำไรแทน มีป้าย “✈ บินได้ด้วยทุนตอนนี้”"]],
  ["1.47","22 พ.ย. 2569",["หน้าเริ่มเกมใหม่: ไม่สุ่มแล้ว ถามทีละขั้น 6 ขั้น · ชื่อสายการบิน → ภูมิภาค → สนามบินฐาน → ทุนและน้ำมัน → คู่แข่ง → สรุปตั๋ว (กดแก้ย้อนแต่ละขั้นได้)","สนามบินฐานมีคะแนนความเหมาะสม 0–100 เรียงจากเหมาะสุด พร้อมเหตุผล: คนเดินทางจากเมืองใกล้ ๆ จำนวนเมืองในระยะบินง่าย ราคาเครื่องลำแรก ค่าสนามบิน และท่าเรือใกล้เคียง · 3 อันดับแรกมีป้าย ⭐ แนะนำ","ยังสุ่มได้: ทุกขั้นมีตัวเลือก 🎲 และมีปุ่ม “สุ่มทั้งหมดแล้วเริ่มเลย” แบบเดิม","ความยากรวม (ดาว) นับความเหมาะสมของสนามบิน ทุน น้ำมัน และความเก่งของคู่แข่ง"]],
  ["1.46","22 พ.ย. 2569",["💾 สำรอง / ย้ายเซฟ (เมนู ···): ดาวน์โหลดไฟล์เซฟ หรือคัดลอกรหัสเซฟ แล้วนำเข้าในเครื่องใหม่ได้ · หน้าเริ่มเกมมีปุ่ม “💾 นำเข้าเซฟ” ด้วย","เกมตรวจไฟล์/รหัสก่อนนำเข้าเสมอ และบอกชื่อสายการบิน ปี เส้นทาง และเงินให้ดูก่อนกดยืนยัน","เตรียมหน้าเว็บให้ Google ค้นเจอ: คำอธิบายเกม robots.txt และ sitemap"]],
  ["1.45","22 พ.ย. 2569",["แก้บัคใหญ่ระบบสินค้าทางอากาศ: เครื่องขนสินค้าไม่เคยขนของค้าง (📥 สะสม) เลย ของค้างจึงพอกพูนไม่ลด ตอนนี้ขนของค้างเมื่อมีที่ว่างแล้ว","เรือที่ ⏳ รอสินค้า แสดงจอดอยู่ในท่าบนแผนที่ ไม่แล่นไปมาเหมือนเรือทำงาน","ระบบสำรองใหม่: ยกเลิกสำรองรายสาขา ใช้ 🛟 ฐานเครื่องบินสำรองและอู่เรือสำรองทวีปละแห่ง (ที่จอดอย่างเดียว ไม่มีเส้นทางของตัวเอง)","เมื่อเส้นไหนล้น ระบบส่งตัวสำรองจากฐานที่ใกล้ที่สุดไปช่วย ไปได้ทุกที่ในโลก แต่เส้นที่ช่วยต้องอยู่ในพิสัยเครื่อง/เรือ บนแผนที่เห็นเครื่องหรือเรือเดินทางไป (ไม่มีเส้น) ค่าน้ำมันเที่ยวไป-กลับคิดตามระยะ","พอเส้นนั้นมีที่ว่างพอ 3 วันติด ตัวสำรองจะเดินทางกลับฐาน และเส้นนั้นจะเรียกตัวสำรองใหม่ได้อีกใน 7 วัน (กันการส่งไปกลับไปมา)","ตัวสำรองเดิมของแต่ละสาขาย้ายไปอยู่ฐานของทวีปนั้นให้อัตโนมัติ · ดูภาพรวมฐานได้ที่แท็บสาขา"]],
@@ -3056,10 +3057,18 @@ function wishesHTML(code,n){const ws=wishesOf(code).slice(0,n||6);if(!ws.length)
 function oppsList(){const seen=new Set(),out=[];
   for(const code of S.bases)for(const w of wishesOf(code)){if(w.st!=="want")continue;const k=[code,w.c.c].sort().join("-");if(seen.has(k))continue;seen.add(k);
     const fc=routeForecast(code,w.c.c,"pax");out.push({from:code,w,fc,profit:fc.best?fc.best.profit:-1e15})}
+  /* The biggest wishes are often too far for any aircraft the money buys yet (Auckland, Nairobi, San Juan on day 1).
+     Then also suggest the best routes that can be flown now: open cities within reach of an affordable aircraft. */
+  const ok=()=>out.filter(o=>o.fc.best).length;
+  if(ok()<3){const maxR=Math.max(0,...MODELS.filter(m=>m.seats&&mOpen(m)&&priceFor(m)<=S.cash-3e6).map(m=>m.range*.95));
+    for(const code of S.bases){if(ok()>=5)break;let tried=0;
+      for(const w of wishCache.all.get(code)||[]){if(ok()>=5||tried>=12)break;if(!isOpen(w.c.c)||w.d>maxR)continue;
+        const k=[code,w.c.c].sort().join("-");if(seen.has(k)||S.routes.some(x=>rkind(x)==="pax"&&((x.from===code&&x.dest===w.c.c)||(x.dest===code&&x.from===w.c.c))))continue;
+        seen.add(k);tried++;const fc=routeForecast(code,w.c.c,"pax");if(fc.best&&fc.best.profit>0)out.push({from:code,w:{...w,st:"want",alt:1},fc,profit:fc.best.profit})}}}
   return out.sort((a,b)=>b.profit-a.profit)}
 function oppsHTML(){if(rseg!=="pax")return "";const L=oppsList().slice(0,5);if(!L.length)return "";
   return `<div class="opps"><div class="row between"><b>💡 ผู้โดยสารเรียกร้องเส้นทางใหม่</b><span class="muted small">${L.length} เส้นทาง · จากทุกสาขา</span></div>
-    ${L.map(({from,w,fc})=>{const b=fc.best;return `<div class="opp"><span class="opp-rt"><b class="num">${from} → ${w.c.c}</b><small>${city(from).n} → ${w.c.n} · ${w.d.toLocaleString()} กม.</small></span>
+    ${L.map(({from,w,fc})=>{const b=fc.best;return `<div class="opp"><span class="opp-rt"><b class="num">${from} → ${w.c.c}</b><small>${city(from).n} → ${w.c.n} · ${w.d.toLocaleString()} กม.${w.alt?" · ✈ บินได้ด้วยทุนตอนนี้":""}</small></span>
       <span class="opp-dem"><b class="num">${Math.round(w.dem).toLocaleString()}</b><small>คน/วัน</small></span>
       <span class="opp-pf ${!b?"muted":b.profit>=0?"good":"bad"}"><b class="num">${b?(b.profit>=0?"+":"−")+money(Math.abs(b.profit),true):"—"}</b><small>${b?"กำไร/วัน":"ยังไม่มีเครื่อง"}</small></span>
       <button class="btn sm primary" data-wish="${from}>${w.c.c}">เปิด</button></div>`}).join("")}</div>`}
