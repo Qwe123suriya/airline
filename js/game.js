@@ -364,7 +364,7 @@ function smoothLane(P){if(P.length<3)return P;const out=[P[0]];
     for(let k=0;k<=8;k++){const t=k/8,u=1-t;out.push([u*u*p1[0]+2*u*t*B[0]+t*t*p2[0],u*u*p1[1]+2*u*t*B[1]+t*t*p2[1]])}}
   out.push(P[P.length-1]);return out}
 // Shortest lane path between two ports: [{lat,lon}...] plus distance in km
-function seaPath(A,B){const shut=suezShut(),key=A+B+(shut?"x":"");if(seaCache.has(key))return seaCache.get(key);
+function seaPath(A,B,open){const shut=!open&&suezShut(),key=A+B+(shut?"x":"");if(seaCache.has(key))return seaCache.get(key);
   const pa=port(A),pb=port(B),G=seaGraph(),dist={},prev={},done=new Set(),Q=[];
   for(const w of pa.wp){dist[w]=seaHav([pa.lat,pa.lon],SEAWP[w]);prev[w]="@";Q.push(w)}
   const goal=new Set(pb.wp);let best=null,bestD=Infinity;
@@ -440,7 +440,9 @@ let TEU_RATE=km=>SEA_X*(700+1.05*km);
 const portFee=(pt,m)=>pt.fee*1000*(m.teu/5000+.1)*(1-.15*Math.max(0,pbl(pt.c)-1))*pk("fee");
 const portOpen=c=>S.unlocked.includes(port(c).reg);
 const deepOK=(m,l)=>!m.deep||(port(l.from).deep&&port(l.to).deep);
-const laneKm=l=>seaPath(l.from,l.to).km;
+// range rule uses the normal route: while the Suez Canal is shut ships detour round the Cape and refuel on the way,
+// so a temporary closure never makes a ship "unable to reach" its own lane
+const laneKm=l=>seaPath(l.from,l.to,true).km;
 const canDock=(m,l)=>deepOK(m,l)&&m.rng>=laneKm(l);
 // why a ship can't work a lane ("" when it can)
 const dockWhy=(m,l)=>m.rng<laneKm(l)?`ไปไม่ถึง · แล่นได้ไกลสุด ${m.rng.toLocaleString()} กม. (เส้นนี้ ${laneKm(l).toLocaleString()} กม.)`:deepOK(m,l)?"":"เทียบท่าไม่ได้ · ต้องเป็นท่าน้ำลึกทั้งสองฝั่ง";
@@ -527,8 +529,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.48";
+const GAME_VERSION="1.49";
 const CHANGELOG=[
+ ["1.49","22 พ.ย. 2569",["แก้: ตอนคลองสุเอซปิด เรือเส้นเอเชีย–ยุโรปที่พิสัยไม่ถึงเส้นทางอ้อมแหลมกู๊ดโฮป ถูกตีว่า “ไปไม่ถึง” ทั้งที่ยังแล่นและได้เงินปกติ ตอนนี้การตรวจพิสัยใช้ระยะทางปกติ เรืออ้อมไปเติมน้ำมันระหว่างทางได้ (ยังใช้เวลาเดินทางนานขึ้นตามจริง)"]],
  ["1.48","22 พ.ย. 2569",["💡 คำแนะนำเส้นทางมีตั้งแต่วันแรกทุกสนามบิน: ถ้าเมืองที่คนอยากไปมากที่สุดอยู่ไกลเกินเครื่องที่ซื้อได้ด้วยเงินตอนนี้ (เช่น เริ่มที่โอ๊คแลนด์ ไนโรบี ซานฮวน) เกมจะแนะนำเส้นที่บินได้จริงและคาดว่ากำไรแทน มีป้าย “✈ บินได้ด้วยทุนตอนนี้”"]],
  ["1.47","22 พ.ย. 2569",["หน้าเริ่มเกมใหม่: ไม่สุ่มแล้ว ถามทีละขั้น 6 ขั้น · ชื่อสายการบิน → ภูมิภาค → สนามบินฐาน → ทุนและน้ำมัน → คู่แข่ง → สรุปตั๋ว (กดแก้ย้อนแต่ละขั้นได้)","สนามบินฐานมีคะแนนความเหมาะสม 0–100 เรียงจากเหมาะสุด พร้อมเหตุผล: คนเดินทางจากเมืองใกล้ ๆ จำนวนเมืองในระยะบินง่าย ราคาเครื่องลำแรก ค่าสนามบิน และท่าเรือใกล้เคียง · 3 อันดับแรกมีป้าย ⭐ แนะนำ","ยังสุ่มได้: ทุกขั้นมีตัวเลือก 🎲 และมีปุ่ม “สุ่มทั้งหมดแล้วเริ่มเลย” แบบเดิม","ความยากรวม (ดาว) นับความเหมาะสมของสนามบิน ทุน น้ำมัน และความเก่งของคู่แข่ง"]],
  ["1.46","22 พ.ย. 2569",["💾 สำรอง / ย้ายเซฟ (เมนู ···): ดาวน์โหลดไฟล์เซฟ หรือคัดลอกรหัสเซฟ แล้วนำเข้าในเครื่องใหม่ได้ · หน้าเริ่มเกมมีปุ่ม “💾 นำเข้าเซฟ” ด้วย","เกมตรวจไฟล์/รหัสก่อนนำเข้าเสมอ และบอกชื่อสายการบิน ปี เส้นทาง และเงินให้ดูก่อนกดยืนยัน","เตรียมหน้าเว็บให้ Google ค้นเจอ: คำอธิบายเกม robots.txt และ sitemap"]],
