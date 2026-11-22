@@ -310,7 +310,10 @@ const PORTS=[
  ["AUSYD","ซิดนีย์",-33.97,151.21,4,900,"oc",0,"SYDO"],["AUMEL","เมลเบิร์น",-37.84,144.92,5,900,"oc",0,"PPH"],["AUBNE","บริสเบน",-27.38,153.17,3,900,"oc",0,"BNEO"],
  ["AUFRE","ฟรีแมนเทิล (เพิร์ท)",-32.05,115.74,2,900,"oc",0,"FREO"],["NZAKL","โอ๊คแลนด์",-36.84,174.78,2,900,"oc",0,"HAU"],
 ].map(([c,n,lat,lon,w,fee,reg,deep,wp])=>({c,n,lat,lon,w,fee,reg,deep:!!deep,wp:wp.split(" ")}));
-const port=c=>PORTS.find(p=>p.c===c);
+/* fast look-ups by id: an index per list, rebuilt when the list is replaced or its length changes */
+const idx=(key)=>{let arr=null,len=-1,m=null;return (list,id)=>{if(list!==arr||list.length!==len){arr=list;len=list.length;m=new Map();for(const x of list)m.set(x[key],x)}const v=m.get(id);return v&&v[key]===id?v:list.find(x=>x[key]===id)}};
+const _port=idx("c"),_shipM=idx("id"),_ship=idx("id"),_city=idx("c"),_model=idx("id"),_plane=idx("id");
+const port=c=>_port(PORTS,c);
 // Open-water lane points [lat, lon]
 const SEAWP={
  GTHN:[12.4,100.6],GTH:[10.5,102.0],GTHS:[7.6,101.9],CAM:[7.8,104.3],SGS:[1.3,104.45],MLKS:[1.15,103.45],MLK:[2.9,100.9],MLKN:[5.8,98.0],ACEH:[6.3,94.5],AND:[15.6,96.2],
@@ -428,10 +431,10 @@ const SHIPS=[
 const SHIP_RNG={rfs:6000,csx:5500,fd1:6500,fmx:14000,ro3:20000,pmf:22000,ec6:26000,p10:28000,npe:30000,v20:30000,cst:5000,rfr:9000,fdr:8000,rfl:15000,fdx:10000,sub:18000,rfx:13000,ro1:14000,ro2:24000,pmx:24000,ppx:28000,eco:30000,npx:30000,vlc:30000,ulc:30000,ult:30000};
 SHIPS.forEach(m=>m.rng=SHIP_RNG[m.id]||30000);
 const SHIP_MAX=Math.max(...SHIPS.map(m=>m.rng));
-const shipM=id=>SHIPS.find(m=>m.id===id);
+const shipM=id=>_shipM(SHIPS,id);
 function shipBadges(m){const b=[];if(m.speed>=44)b.push(["⚡ เร็ว","#D9822B"]);if(m.eco)b.push(["🌿 ประหยัด","#2F9A5E"]);if(m.reefer)b.push(["❄ ห้องเย็น · เรือเฉพาะ","#3A7BC8"]);if(m.roro)b.push(["🚗 ขนรถ · เรือเฉพาะ","#B4532A"]);if(!m.reefer&&!m.roro)b.push(["🔀 เรือรวม · ขนได้ทุกอย่าง","#5B6B80"]);if(m.deep)b.push(["⚓ น้ำลึก","#5B6B80"]);if(m.price<=2e8)b.push(["💰 เริ่มต้น","#8A6D1F"]);
   return b.length?`<span class="sbadges">${b.map(([t,c])=>`<span style="color:${c};border-color:color-mix(in srgb,${c} 40%,transparent)">${t}</span>`).join("")}</span>`:""}
-const shipById=id=>S.ships.find(x=>x.id===id);
+const shipById=id=>_ship(S.ships,id);
 const portH=m=>18+Math.sqrt(m.teu)*.25;
 const sailDays=(m,km)=>km/m.speed/24;
 const legDaysS=(m,km)=>sailDays(m,km)+portH(m)/24;
@@ -529,8 +532,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.50";
+const GAME_VERSION="1.51";
 const CHANGELOG=[
+ ["1.51","22 พ.ย. 2569",["เอาระบบเชื่อม Spotify (เพลงบนหน้าพักสายตา) ออก","เกมช่วงกลางถึงท้ายเร็วขึ้นมาก: เปิดหน้าเส้นทางเร็วขึ้นราว 15 เท่า แท็บการเงินราว 16 เท่า คำนวณแต่ละวันเร็วขึ้นเกินครึ่ง และแผนที่วาดลื่นขึ้น","⚡ ตั้งค่าใหม่ “ความลื่นและกันเกมค้าง”: ความลื่นของแผนที่ (อัตโนมัติ / ลื่น / ประหยัด / ประหยัดมาก) และลดความเร็วเองเมื่อเกมคำนวณไม่ทัน","กันเกมค้าง: ถ้าเกิดข้อผิดพลาด เกมยังเดินต่อ ถ้าเกิดซ้ำจะหยุดเวลาแล้วให้เลือกเล่นต่อ ลดความเร็ว หรือกู้คืนเซฟ","🗂️ เซฟสำรองอัตโนมัติทุก 10 นาทีที่เล่น และก่อนนำเข้าเซฟหรือเริ่มเกมใหม่ (เก็บ 3 ชุดล่าสุด) กู้คืนได้ที่ 💾 สำรอง / ย้ายเซฟ","ถ้าเซฟหลักเสียหาย เกมจะเสนอให้กู้คืนจากเซฟสำรอง · ถ้าพื้นที่เบราว์เซอร์เต็มจนบันทึกไม่ได้ เกมจะเตือน (เดิมเงียบ)"]],
  ["1.50","22 พ.ย. 2569",["⚙️ หน้าตั้งค่าใหม่ (เมนู ··· และหน้าเริ่มเกม): การแสดงผล · การแจ้งเตือนและประกาศ · การเล่น · เสียงและการสั่น · ข้อมูลและเวอร์ชัน","การแสดงผล: โหมดแสง ขนาดตัวอักษร (เล็กถึงใหญ่มาก) ลดแอนิเมชัน เปิด/ปิดเอฟเฟกต์ฉลอง ตัวเลขเงินลอย ป้ายจำนวนคนบนแผนที่ และแบบรายการฝูงบิน","การแจ้งเตือน: ข้อความเด้ง (ทั้งหมด / เฉพาะที่กด / ปิด) ป๊อปอัปปลดล็อก รางวัลรายวันและสรุปรายได้ตอนกลับมา (แสดงหน้าต่างหรือรับอัตโนมัติ) และเลือกประเภทข่าวที่แสดง","การเล่น: ความเร็วตอนเปิดเกม ซ่อมอัตโนมัติ จัดการอัตโนมัติ ความเก่งของคู่แข่ง","🔊 เสียงประกอบใหม่ (ซื้อ ได้รางวัล ได้เงิน มีประกาศ) ปรับความดังได้ · การสั่นย้ายมาอยู่ในตั้งค่า","จัดหน้าให้เป็นระเบียบ: แท็บเล็ตใช้ความกว้างจอมากขึ้น การ์ดสาขาเต็มแถว หัวข้อที่มีปุ่มไม่เบียดกัน ปุ่มสูงเท่ากัน มือถือปุ่มโหมดคน/สินค้าไม่ถูกตัด"]],
  ["1.49","22 พ.ย. 2569",["แก้: ตอนคลองสุเอซปิด เรือเส้นเอเชีย–ยุโรปที่พิสัยไม่ถึงเส้นทางอ้อมแหลมกู๊ดโฮป ถูกตีว่า “ไปไม่ถึง” ทั้งที่ยังแล่นและได้เงินปกติ ตอนนี้การตรวจพิสัยใช้ระยะทางปกติ เรืออ้อมไปเติมน้ำมันระหว่างทางได้ (ยังใช้เวลาเดินทางนานขึ้นตามจริง)"]],
  ["1.48","22 พ.ย. 2569",["💡 คำแนะนำเส้นทางมีตั้งแต่วันแรกทุกสนามบิน: ถ้าเมืองที่คนอยากไปมากที่สุดอยู่ไกลเกินเครื่องที่ซื้อได้ด้วยเงินตอนนี้ (เช่น เริ่มที่โอ๊คแลนด์ ไนโรบี ซานฮวน) เกมจะแนะนำเส้นที่บินได้จริงและคาดว่ากำไรแทน มีป้าย “✈ บินได้ด้วยทุนตอนนี้”"]],
@@ -586,13 +590,13 @@ let CARGO_RATE=8;const cgRate=d=>CARGO_RATE*(1500+.85*d);/* baht per tonne at ra
 
 const $=s=>document.querySelector(s);
 const $$=s=>document.querySelectorAll(s);
-const city=c=>CITIES.find(x=>x.c===c);
-const model=id=>MODELS.find(m=>m.id===id);
+const city=c=>_city(CITIES,c);
+const model=id=>_model(MODELS,id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
 /* ⚙️ Device preferences (this browser only, not part of the save): display, notifications, sound, game start.
    Settings that belong to one airline (auto maintenance, rivals, haptics, pop-ups of unlocks) live in S. */
-const PREF_DEF={font:"m",motion:"auto",toast:"all",fx:true,floats:true,sound:true,vol:.5,speed0:1,daily:"popup",away:"popup",news:{}};
+const PREF_DEF={font:"m",motion:"auto",toast:"all",fx:true,floats:true,sound:true,vol:.5,speed0:1,daily:"popup",away:"popup",news:{},mapfps:"auto",lagGuard:true};
 let PREF=(()=>{try{return Object.assign({},PREF_DEF,JSON.parse(localStorage.getItem("airline-prefs")||"{}"))}catch(e){return {...PREF_DEF}}})();
 const savePref=()=>{try{localStorage.setItem("airline-prefs",JSON.stringify(PREF))}catch(e){}};
 let reduce=false;
@@ -636,8 +640,22 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",
 
 let S=null, tab="home", paused=false, speed=1, sheetFn=null, lastTick=performance.now(), acc=0, dispCash=0, lastFloat=0, seenNews=0;
 
-function load(){try{const t=localStorage.getItem(KEY);if(t)return migrate(JSON.parse(t))}catch(e){}return null}
-function save(){try{if(S)localStorage.setItem(KEY,JSON.stringify(S));else localStorage.removeItem(KEY)}catch(e){}}
+let loadNote="";
+function load(){let t=null;try{t=localStorage.getItem(KEY)}catch(e){}
+  if(t){try{return migrate(JSON.parse(t))}catch(e){loadNote="เซฟหลักเสียหาย"}}
+  // the main save is missing or broken: the newest automatic backup can be restored from ⚙️ → 💾 (it is gzip, so async)
+  if(loadNote)setTimeout(()=>{if(!S&&bkList().length)openSheet(saveSheet({note:"⚠️ เซฟหลักเสียหาย เลือกกู้คืนจากเซฟสำรองอัตโนมัติด้านล่างได้"}))},600);
+  return null}
+let saveFailAt=0;
+function save(){try{if(S)localStorage.setItem(KEY,JSON.stringify(S));else localStorage.removeItem(KEY);saveFailAt=0}
+  catch(e){   // storage full: make room by dropping the oldest backup and try once more, then tell the player (at most every 5 minutes)
+    try{const L=bkList();if(L.length){localStorage.removeItem(L[L.length-1].key);localStorage.setItem(KEY,JSON.stringify(S));return}}catch(e2){}
+    const now=Date.now();if(now-saveFailAt>3e5){saveFailAt=now;setTimeout(()=>toast("⚠️ บันทึกเกมไม่สำเร็จ พื้นที่เก็บข้อมูลของเบราว์เซอร์เต็ม · ส่งออกเซฟเก็บไว้ที่ ⚙️ → 💾"),0)}}}
+/* automatic backups: a compressed copy every 10 minutes of play and before importing / starting over, last 3 kept */
+const BK_KEYS=["airline-bk-0","airline-bk-1","airline-bk-2"];
+function bkList(){const out=[];for(const key of BK_KEYS){try{const t=localStorage.getItem(key);if(!t)continue;const o=JSON.parse(t);out.push({key,...o})}catch(e){}}return out.sort((a,b)=>b.t-a.t)}
+async function backupNow(why){if(!S)return;try{const code=await exportCode(),L=bkList(),free=BK_KEYS.find(k=>!L.some(x=>x.key===k))||L[L.length-1].key;
+  localStorage.setItem(free,JSON.stringify({t:Date.now(),why:why||"auto",name:S.name,day:S.day,cash:S.cash,code}))}catch(e){}}
 /* 💾 Save export / import: the save lives only in this browser, so players can move it to another device or keep a
    backup. The code is the save JSON, gzip-compressed when the browser can, in base64: "AIRSAVE1G:..." (or "AIRSAVE1:..."
    uncompressed). A file holds the same text. Import checks the save, then replaces the current game. */
@@ -654,6 +672,9 @@ async function decodeSave(txt){txt=(txt||"").trim().replace(/\s+/g,"");let json;
   else throw new Error("ไม่ใช่รหัสเซฟของเกมนี้");
   const o=JSON.parse(json);if(!o||typeof o!=="object"||!o.hub||!Array.isArray(o.fleet)||!Array.isArray(o.routes)||typeof o.cash!=="number")throw new Error("ข้อมูลเซฟไม่ครบหรือเสียหาย");return o}
 function saveSheet(st){st=st||{};const fn=()=>head("💾 สำรอง / ย้ายเซฟ","เซฟเก็บอยู่ในเบราว์เซอร์เครื่องนี้เท่านั้น ถ้าล้างข้อมูลเบราว์เซอร์หรือเปลี่ยนเครื่อง เซฟจะหาย ส่งออกเก็บไว้ แล้วนำเข้าในเครื่องใหม่ได้")+
+  (st.note?`<div class="panel small warn">${esc(st.note)}</div>`:"")+
+  (()=>{const L=bkList();return L.length?`<div class="kbox"><b>🗂️ เซฟสำรองอัตโนมัติ</b><div class="small muted">เก็บในเครื่องนี้ 3 ชุดล่าสุด · กดกู้คืนแล้วจะแทนที่เกมที่เล่นอยู่</div>
+    ${L.map(b=>`<div class="row between" style="gap:8px"><span class="small"><b>${esc(b.name||"")}</b> · ปีที่ ${Math.floor((b.day||0)/365)} วันที่ ${(b.day||0)%365} · ${money(b.cash||0,true)}<br><span class="muted">${new Date(b.t).toLocaleString("th-TH")}${b.why==="error"?" · หลังเจอข้อผิดพลาด":b.why==="import"?" · ก่อนนำเข้าเซฟ":b.why==="reset"?" · ก่อนเริ่มเกมใหม่":""}</span></span><button class="btn sm" data-bkr="${b.key}">กู้คืน</button></div>`).join("")}</div>`:""})()+
   (S?`<div class="kbox"><b>ส่งออกเซฟ</b><div class="small muted">${esc(S.name)} · ปีที่ ${Math.floor(S.day/365)} · ${S.routes.length} เส้นทาง · ${S.fleet.length} เครื่อง · ${(S.ships||[]).length} เรือ</div>
     <div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn primary" id="svdl">⬇️ ดาวน์โหลดไฟล์เซฟ</button><button class="btn" id="svcp">📋 คัดลอกรหัสเซฟ</button></div>
     ${st.code?`<textarea id="svcode" readonly rows="3" style="width:100%;font-family:var(--f-mono,monospace);font-size:11px">${st.code}</textarea><div class="small muted">รหัสยาว ${st.code.length.toLocaleString()} ตัวอักษร · ${st.copied?"คัดลอกแล้ว วางเก็บไว้ในโน้ตหรือส่งให้ตัวเองได้":"ถ้าคัดลอกอัตโนมัติไม่ได้ ให้กดค้างที่ช่องแล้วเลือกทั้งหมด"}</div>`:""}</div>`:"")+
@@ -669,7 +690,8 @@ function saveSheet(st){st=st||{};const fn=()=>head("💾 สำรอง / ย�
     const check=async txt=>{st.err=null;st.pending=null;try{st.pending=await decodeSave(txt)}catch(e){st.err=e.message||"อ่านเซฟไม่ได้"}drawSheet()};
     const f=$("#svfile");if(f)f.onchange=async()=>{const file=f.files&&f.files[0];if(!file)return;st.paste="";await check(await file.text())};
     const ck=$("#svchk");if(ck)ck.onclick=()=>{st.paste=$("#svin").value;check(st.paste)};
-    const ok=$("#svok");if(ok)ok.onclick=()=>{const o=st.pending;if(!o)return;try{S=migrate(o);dispCash=S.cash;seenNews=S.news&&S.news.length?S.news[0].id:0;save();sheetFn=null;$("#sheet").innerHTML="";tab="home";renderApp();toast(`นำเข้าเซฟ ${S.name} แล้ว`)}catch(e){st.err="นำเข้าไม่สำเร็จ: "+(e.message||e);st.pending=null;drawSheet()}}};
+    $$("[data-bkr]").forEach(b=>b.onclick=async()=>{const B=bkList().find(x=>x.key===b.dataset.bkr);if(!B)return;st.paste="";st.err=null;st.pending=null;try{st.pending=await decodeSave(B.code)}catch(e){st.err="เซฟสำรองชุดนี้อ่านไม่ได้: "+(e.message||e)}drawSheet()});
+    const ok=$("#svok");if(ok)ok.onclick=async()=>{const o=st.pending;if(!o)return;if(S)await backupNow("import");try{S=migrate(o);dispCash=S.cash;seenNews=S.news&&S.news.length?S.news[0].id:0;save();sheetFn=null;$("#sheet").innerHTML="";tab="home";renderApp();toast(`นำเข้าเซฟ ${S.name} แล้ว`)}catch(e){st.err="นำเข้าไม่สำเร็จ: "+(e.message||e);st.pending=null;drawSheet()}}};
   return fn}
 function migrate(s){
   s.bases??=[s.hub];s.mkt??=null;s.hedge??=null;s.ach??=[];s.autoMx??=true;s.totCargo??=0;
@@ -837,7 +859,7 @@ function newGame(){
 }
 
 /* ---------- simulation ---------- */
-const plane=id=>S.fleet.find(p=>p.id===id);
+const plane=id=>_plane(S.fleet,id);
 const rkind=r=>r.kind||"pax";
 const fitsKind=(m,r)=>rkind(r)==="cargo"?!m.seats:!!m.seats;
 const fno=r=>{const k=rkind(r),L=S.routes.filter(x=>rkind(x)===k),i=L.indexOf(r);return `${S.code} ${(k==="cargo"?800:100)+Math.max(0,i)*2+1}`};
@@ -1025,8 +1047,9 @@ const raiderK=r=>r.planes.some(id=>{const p=plane(id);return p&&p.down<=S.day&&m
 const AIR_MAX_P=Math.max(...MODELS.filter(m=>m.seats&&!m.future&&!m.super).map(m=>m.range)),AIR_MAX_C=Math.max(...MODELS.filter(m=>!m.seats&&!m.future&&!m.super).map(m=>m.range));
 let xfCache={k:null};
 const XF0={pax:0,cargo:0};
-function xferNet(){let sig=S.day*1e6+S.bases.length*7919+S.routes.length;for(const r of S.routes)sig+=r.id*31+r.planes.length*(r.kind==="cargo"?7:3);
-  const key=sig+":"+S.bases.join();if(xfCache.k===key)return xfCache;
+function xferNet(){const now=performance.now();if(xfCache.k&&xfCache.n===S.routes.length&&xfCache.d===S.day&&now-xfCache.t<40)return xfCache;   // checking the signature is itself O(routes): skip it inside one burst of calls
+  let sig=S.day*1e6+S.bases.length*7919+S.routes.length;for(const r of S.routes)sig+=r.id*31+(r.planes.length?1:0)*(r.kind==="cargo"?7:3);
+  const key=sig+":"+S.bases.join();if(xfCache.k===key){xfCache.t=now;return xfCache}
   const out={k:key,leg:new Map(),its:[]};
   for(const kind of ["pax","cargo"]){
     const adj=new Map(),add=(x,y,r)=>{if(!adj.has(x))adj.set(x,new Map());adj.get(x).set(y,r)};
@@ -1049,7 +1072,7 @@ function xferNet(){let sig=S.day*1e6+S.bases.length*7919+S.routes.length;for(con
     const ratio=new Map();for(const [r,v] of raw){const a=city(r.from),b=city(r.dest),d=dist(a,b),own=kind==="pax"?60*Math.sqrt(a.w*b.w)*distF(d):8*Math.sqrt(a.w*b.w)*cargoDistF(d);ratio.set(r,Math.min(1,XF_CAP*own/v))}
     for(const it of its){it.dem*=Math.min(...it.rs.map(r=>ratio.get(r)));it.rs=it.rs.map(r=>r.id);if(it.dem<.5)continue;
       for(const id of it.rs){const o=out.leg.get(id)||{pax:0,cargo:0};o[kind]+=it.dem;out.leg.set(id,o)}out.its.push(it)}}
-  out.its.sort((a,b)=>b.dem-a.dem);xfCache=out;return out}
+  out.its.sort((a,b)=>b.dem-a.dem);xfCache=out;out.n=S.routes.length;out.d=S.day;out.t=now;return out}
 const xferOf=r=>(r.id>0&&xferNet().leg.get(r.id))||XF0;
 // riders a NEW route from→dest would add by connecting at a branch (one change), for the route planner
 function xferGain(from,dest,kind){const N=new Map();
@@ -1063,6 +1086,9 @@ function viaHub(from,dest,kind){const mx=AIR_MAX(kind),a=city(from),b=city(dest)
   for(const c of CITIES){if(c.c===from||c.c===dest||!isOpen(c.c)||!aptTakes(c.c,kind))continue;const d1=dist(a,c),d2=dist(c,b);if(d1>mx||d2>mx)continue;
     const sc=d1+d2+(S.bases.includes(c.c)?0:4000)-c.w*150;if(!best||sc<best.sc)best={c,d1,d2,sc,base:S.bases.includes(c.c)}}
   return best}
+const calcHr=new Map();
+function calcH(r){const T=S.day*24+Math.floor((acc/DAY_MS)*24),sig=T+"|"+r.planes.join(",")+"|"+r.price+"|"+r.pmode+"|"+svcOf(r)+"|"+(r.cmode||"")+"|"+(r.crate||"")+"|"+(r.wait||0)+"|"+(r.freq||"")+"|"+S.events.length;
+  const o=calcHr.get(r.id);if(o&&o.sig===sig)return o.c;const c=calc(r);calcHr.set(r.id,{sig,c});if(calcHr.size>S.routes.length*2+50)calcHr.clear();return c}
 function calc(r,price,crate,svc){
   const a=city(r.from),b=city(r.dest),d=dist(a,b),base=baseFare(d),fuel=fuelNow()*pk("fuel");price=price??priceOf(r);
   const ps=r.planes.map(plane).filter(Boolean);
@@ -1153,7 +1179,7 @@ function laneGapD(l){const ss=l.ships.map(shipById).filter(Boolean);if(ss.length
   return ss.reduce((a,sh)=>a+legDaysS(shipM(sh.m),km),0)/ss.length*2/ss.length}
 function settleFlights(T){
   for(const r of S.routes){syncSpread(r);
-    const a=city(r.from),b=city(r.dest),d=dist(a,b),ground=grounded(r.from)||grounded(r.dest),c=calc(r);
+    const a=city(r.from),b=city(r.dest),d=dist(a,b),ground=grounded(r.from)||grounded(r.dest),c=calcH(r);
     for(const id of r.planes){const p=plane(id);if(!p)continue;const m=model(p.m),L=c.plan.get(p.id)||legsFor(m,d),fly=flyFrac(m,d,L);
       const key=String(r.id),N=Math.floor(legPhase(p,L,fly,T)-fly);
       if(p.lk!==key){p.lk=key;p.ld=N;continue}
@@ -1611,7 +1637,6 @@ function renderApp(){
         <button role="menuitem" id="verbtn"><span class="mi">ℹ️</span>เวอร์ชัน v${GAME_VERSION} · มีอะไรใหม่${updAvail?` <b class="warn">มีอัปเดต</b>`:""}</button>
         <button role="menuitem" id="help"><span class="mi">?</span>คู่มือระบบ</button>
         <button role="menuitem" id="fsbtn"><span class="mi">⛶</span><span id="fslbl">เต็มจอ (ซ่อนแถบเบราว์เซอร์)</span></button>
-        <button role="menuitem" id="spotbtn"><span class="mi">🎵</span>เชื่อม Spotify</button>
         <button role="menuitem" id="savebtn"><span class="mi">💾</span>สำรอง / ย้ายเซฟ (ส่งออก · นำเข้า)</button>
         <button role="menuitem" id="restart"><span class="mi"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 3.5v5h5"/></svg></span>เริ่มเกมใหม่</button>
        </div></div></div>
@@ -1630,7 +1655,6 @@ function renderApp(){
   $("#barmin").onclick=()=>{S.ui_barmin=!S.ui_barmin;save();applyBarMin()};applyBarMin();
   $("#restart").onclick=()=>{closeMore();openSheet(resetSheet)};
   $("#savebtn").onclick=()=>{closeMore();openSheet(saveSheet())};
-  $("#spotbtn").onclick=()=>{closeMore();openSheet(spotifySheet())};
   const fsToggle=()=>{if(fsEl())fsExit();else if(!fsEnter())toast("เบราว์เซอร์นี้เปิดเต็มจอไม่ได้ · ลองกด “เพิ่มไปยังหน้าจอหลัก” ในเมนูเบราว์เซอร์ แล้วเปิดเกมจากไอคอนนั้น")};
   $("#fsbtn").onclick=()=>{closeMore();fsToggle()};$("#fsq").onclick=fsToggle;updFsq();
   if(!window._fsl){window._fsl=1;const up=()=>{const l=$("#fslbl");if(l)l.textContent=fsEl()?"ออกจากเต็มจอ":"เต็มจอ (ซ่อนแถบเบราว์เซอร์)";updFsq();setTimeout(()=>{if($("#mapfull"))sizeFullMap()},250)};document.addEventListener("fullscreenchange",up);document.addEventListener("webkitfullscreenchange",up)}
@@ -2161,63 +2185,8 @@ function bindAirports(){
   const g=$("#apgo");if(g)g.onclick=()=>{const r=S.routes.find(x=>x.dest===selCity);
     if(r)openSheet(routeSheet(r.id,{}));else openSheet(newRouteSheet({from:S.hub,dest:selCity}))};
   const u=$("#apunlock");if(u)u.onclick=()=>openSheet(regionSheet({id:regionOf(selCity).id}))}
-/* ---------- Spotify "now playing" on the AFK sleep screen (PKCE login, runs entirely in the browser) ---------- */
-const SP={tok:null,np:null,npAt:0,poll:0,busy:false,err:""};
-const SP_CID="315a7dda32e14c3bbb53b28df463efce"; // this game's Spotify app (public client ID, no secret)
-const spGet=k=>{try{return localStorage.getItem("airline-sp-"+k)}catch(e){return null}};
-const spSet=(k,v)=>{try{v==null?localStorage.removeItem("airline-sp-"+k):localStorage.setItem("airline-sp-"+k,v)}catch(e){}};
-const spRedirect=()=>location.origin+location.pathname;
-const spLinked=()=>!!spGet("refresh");
-const b64u=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
-async function spLogin(cid){cid=(cid||"").trim();if(!/^[0-9a-f]{32}$/i.test(cid)){toast("Client ID ไม่ถูกต้อง ต้องเป็นตัวอักษร 32 ตัว");return}
-  if(!(window.crypto&&crypto.subtle)){toast("เบราว์เซอร์นี้เชื่อม Spotify ไม่ได้ (ต้องเปิดผ่าน https)");return}
-  spSet("cid",cid);const rnd=new Uint8Array(48);crypto.getRandomValues(rnd);const ver=b64u(rnd),st=b64u(crypto.getRandomValues(new Uint8Array(12)));
-  const ch=b64u(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(ver)));spSet("ver",ver);spSet("state",st);
-  const q=new URLSearchParams({response_type:"code",client_id:cid,scope:"user-read-currently-playing user-read-playback-state user-modify-playback-state",redirect_uri:spRedirect(),code_challenge_method:"S256",code_challenge:ch,state:st});
-  save();location.href="https://accounts.spotify.com/authorize?"+q}
-async function spToken(body){const r=await fetch("https://accounts.spotify.com/api/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams(body)});
-  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error_description||j.error||("HTTP "+r.status));
-  SP.tok=j.access_token;spSet("exp",String(Date.now()+(j.expires_in-60)*1000));spSet("acc",j.access_token);if(j.refresh_token)spSet("refresh",j.refresh_token);return j}
-async function spHandleRedirect(){const u=new URL(location.href),code=u.searchParams.get("code"),st=u.searchParams.get("state"),er=u.searchParams.get("error");
-  if(!code&&!er)return;history.replaceState(null,"",spRedirect());
-  if(er){toast("ยกเลิกการเชื่อม Spotify");return}
-  if(!st||st!==spGet("state")){toast("เชื่อม Spotify ไม่สำเร็จ ลองใหม่อีกครั้ง");return}
-  try{await spToken({grant_type:"authorization_code",code,redirect_uri:spRedirect(),client_id:spGet("cid")||SP_CID,code_verifier:spGet("ver")});spSet("ver",null);spSet("state",null);toast("🎵 เชื่อม Spotify แล้ว · เปิดโหมด AFK แล้วหรี่จอเพื่อดูเพลงที่กำลังฟัง")}
-  catch(e){toast("เชื่อม Spotify ไม่สำเร็จ: "+e.message)}}
-async function spAccess(){if(!spLinked())return null;const exp=+spGet("exp")||0,acc=spGet("acc");if(acc&&Date.now()<exp)return acc;
-  try{await spToken({grant_type:"refresh_token",refresh_token:spGet("refresh"),client_id:spGet("cid")||SP_CID});return SP.tok}catch(e){SP.err="หมดเวลาเชื่อม Spotify กรุณาเชื่อมใหม่";return null}}
-async function spApi(path,method="GET"){const t=await spAccess();if(!t)return null;const r=await fetch("https://api.spotify.com/v1"+path,{method,headers:{Authorization:"Bearer "+t}});
-  if(r.status===204||r.status===202)return {};if(r.status===401){spSet("acc",null);spSet("exp","0");return null}
-  if(r.status===403&&method!=="GET"){toast("ปุ่มควบคุมเพลงใช้ได้กับ Spotify Premium เท่านั้น");return null}
-  if(!r.ok)return null;return r.json().catch(()=>({}))}
-async function spPoll(){if(SP.busy||!spLinked())return;SP.busy=true;try{const j=await spApi("/me/player/currently-playing?additional_types=episode");
-    if(j&&j.item){const it=j.item,img=(it.album&&it.album.images||it.images||[]);SP.np={id:it.id,name:it.name,artist:(it.artists||[]).map(a=>a.name).join(", ")||(it.show&&it.show.name)||"",art:(img[img.length>1?1:0]||{}).url||"",dur:it.duration_ms||0,pos:j.progress_ms||0,play:!!j.is_playing};SP.npAt=Date.now();SP.err=""}
-    else if(j)SP.np=null}finally{SP.busy=false}spRender()}
-function spRender(){const box=$("#afkmusic");if(!box)return;if(!spLinked()){box.hidden=true;return}box.hidden=false;
-  const n=SP.np;if(!n){box.innerHTML=`<div class="amx muted">${SP.err||"🎵 Spotify ไม่ได้เล่นเพลงอยู่"}</div>`;return}
-  const pos=Math.min(n.dur,n.pos+(n.play?Date.now()-SP.npAt:0)),f=t=>`${Math.floor(t/6e4)}:${String(Math.floor(t/1e3)%60).padStart(2,"0")}`;
-  if(box.dataset.id!==n.id||box.dataset.play!==String(n.play)){box.dataset.id=n.id;box.dataset.play=n.play;
-    box.innerHTML=`${n.art?`<img src="${n.art}" alt="" width="56" height="56">`:`<div class="amart">🎵</div>`}<div class="amt"><b>${esc(n.name)}</b><span>${esc(n.artist)}</span><div class="ambar"><i id="ambar"></i></div><div class="amtime num"><span id="ampos"></span><span>${f(n.dur)}</span></div></div>
-      <div class="amctl"><button data-sp-c="prev" aria-label="เพลงก่อนหน้า">⏮</button><button data-sp-c="pp" aria-label="${n.play?"หยุด":"เล่น"}">${n.play?"⏸":"▶"}</button><button data-sp-c="next" aria-label="เพลงถัดไป">⏭</button></div>`;
-    box.querySelectorAll("[data-sp-c]").forEach(b=>b.onclick=async e=>{e.stopPropagation();const c=b.dataset.spC;
-      if(c==="pp")await spApi(n.play?"/me/player/pause":"/me/player/play","PUT");else await spApi(c==="next"?"/me/player/next":"/me/player/previous","POST");setTimeout(spPoll,400)})}
-  const bar=$("#ambar");if(bar)bar.style.width=(n.dur?pos/n.dur*100:0)+"%";const pe=$("#ampos");if(pe)pe.textContent=f(pos)}
-function spotifySheet(){const fn=()=>{const linked=spLinked(),cid=spGet("cid")||SP_CID,ru=spRedirect(),https=location.protocol==="https:";
-  return head("🎵 เชื่อม Spotify","โชว์เพลงที่กำลังฟังบนหน้าพักสายตา (โหมด AFK ตอนหรี่จอ)")+
-   (linked?`<div class="panel small good">เชื่อม Spotify แล้ว ✓</div><button class="btn" id="spoff">ยกเลิกการเชื่อม</button>`:
-   `<div class="stack small" style="gap:8px">
-     <div><b>1.</b> สร้างแอปที่ developer.spotify.com แล้วใส่ Redirect URI นี้ให้ตรงทุกตัว</div>
-     <div class="row" style="gap:6px"><input id="spru" readonly value="${esc(ru)}" style="flex:1;min-width:0" class="num"><button class="btn sm" id="spcopy">คัดลอก</button></div>
-     ${https?"":`<div class="bad">หน้านี้ไม่ได้เปิดผ่าน https · ให้เปิดจากเว็บ github.io ของคุณ</div>`}
-     <div><b>2.</b> เพิ่มอีเมล Spotify ของคนที่จะใช้ในหน้า User Management (ไม่เกิน 5 คน)</div>
-     <div><b>3.</b> วาง Client ID ที่นี่ แล้วกดเชื่อม</div>
-     <input id="spcid" placeholder="Client ID (32 ตัวอักษร)" value="${esc(cid)}" autocomplete="off" spellcheck="false" class="num">
-    </div><button class="btn primary" id="spgo">เชื่อม Spotify</button>`)+
-   `<div class="muted small">เกมขอแค่สิทธิ์ดูเพลงที่กำลังเล่นและกดเล่น/หยุด/ข้ามเพลง ข้อมูลเก็บในเบราว์เซอร์เครื่องนี้เท่านั้น ปุ่มควบคุมเพลงใช้ได้กับ Spotify Premium</div><button class="btn" data-x>ปิด</button>`};
- fn.bind=()=>{const g=$("#spgo");if(g)g.onclick=()=>spLogin($("#spcid").value);
-   const c=$("#spcopy");if(c)c.onclick=()=>{const i=$("#spru");i.select();try{navigator.clipboard.writeText(i.value)}catch(e){document.execCommand&&document.execCommand("copy")}toast("คัดลอก Redirect URI แล้ว")};
-   const o=$("#spoff");if(o)o.onclick=()=>{["acc","exp","refresh"].forEach(k=>spSet(k,null));SP.np=null;toast("ยกเลิกการเชื่อม Spotify แล้ว");drawSheet()}};
- return fn}
+// the old Spotify link is gone: forget anything it stored in this browser
+try{for(const k of ["cid","ver","state","exp","acc","refresh"])localStorage.removeItem("airline-sp-"+k)}catch(e){}
 /* Daily login reward (7-day streak, real calendar days) */
 let dailyShown=false;
 const DAILY_X=[1,1.5,2,2.5,3,4,8];
@@ -2815,11 +2784,11 @@ function startAfk(){if(!S||S.over)return;const fsMine=!fsEl()&&S.ui_fsafk!==fals
     <div class="row" style="gap:8px"><button class="btn afkdimb" id="afkdim">🌙 หรี่จอเลย</button><button class="btn primary afkx" id="afkx" style="flex:1">กลับมาเล่น</button></div>
     <div class="afkhint">ไม่แตะจอ 10 วินาที จอจะหรี่เองเหมือนโหมดนอนหลับ · แตะจอเพื่อปลุก</div></div>
     ${afkSceneHTML()}
-    <div class="afksleep" id="afks" aria-hidden="true"><div class="afkt num"><span id="afkh"></span><span class="afkcolon">:</span><span id="afkm"></span></div><div class="afkdate" id="afkdate"></div><div class="afkevt" id="afkevt"></div><div class="afksc num"><span id="afksc"></span><span class="afkplus" id="afkplus"></span></div><div class="afkmusic" id="afkmusic" hidden></div><div class="afksz">💤 AFK · แตะเพื่อปลุก</div></div>`;
+    <div class="afksleep" id="afks" aria-hidden="true"><div class="afkt num"><span id="afkh"></span><span class="afkcolon">:</span><span id="afkm"></span></div><div class="afkdate" id="afkdate"></div><div class="afkevt" id="afkevt"></div><div class="afksc num"><span id="afksc"></span><span class="afkplus" id="afkplus"></span></div><div class="afksz">💤 AFK · แตะเพื่อปลุก</div></div>`;
   el.querySelectorAll("[data-asp]").forEach(b=>b.onclick=()=>{speed=+b.dataset.asp;paused=false;updateTop();afkTick()});
   $("#afkx").onclick=stopAfk;$("#afkdim").onclick=()=>afkDim(true);
   afk.last=Date.now();afk.dim=false;
-  const poke=e=>{afk.last=Date.now();if(e.target.closest&&e.target.closest(".afkmusic"))return;if(afk.dim){afkDim(false);afk.swallow=Date.now();e.preventDefault();e.stopPropagation()}};
+  const poke=e=>{afk.last=Date.now();if(afk.dim){afkDim(false);afk.swallow=Date.now();e.preventDefault();e.stopPropagation()}};
   el.addEventListener("pointerdown",poke,true);el.addEventListener("touchstart",poke,{capture:true,passive:false});
   el.addEventListener("click",e=>{if(afk&&afk.swallow&&Date.now()-afk.swallow<600){e.preventDefault();e.stopPropagation()}},true);
   wakeOn();afkTick()}
@@ -2928,7 +2897,6 @@ function skyStop(){SKY.run=false;cancelAnimationFrame(SKY.raf)}
 function afkTick(){if(!afk)return;const el=$("#afk");if(!el)return;
   if(!afk.dim&&Date.now()-afk.last>10000)afkDim(true);
   if(afk.dim){const d=new Date(),hE=$("#afkh"),mE=$("#afkm");if(hE){hE.textContent=String(d.getHours()).padStart(2,"0");mE.textContent=String(d.getMinutes()).padStart(2,"0");const dd=$("#afkdate");if(dd)dd.textContent=d.toLocaleDateString("th-TH",{weekday:"long",day:"numeric",month:"long"})}
-    if(spLinked()){if(Date.now()-SP.poll>5000){SP.poll=Date.now();spPoll()}else spRender()}
     const sc=$("#afksc");if(sc){const e=S.cash-afk.c0;sc.textContent=`${money(S.cash,true)} · ${e>=0?"+":""}${money(e,true)}`}
     // a small "+฿" floats up whenever money comes in
     if(afk.lc==null)afk.lc=S.cash;const gain=S.cash-afk.lc;
@@ -3531,7 +3499,10 @@ function todayHTML(){const T=S.today||blankT();
    <div><div class="k">ผลต่างจากการขนส่ง</div><div class="v ${net>=0?"good":"bad"}">${money(net,true)}</div></div>
    <div><div class="k">ค่าคงที่ หักตอนเที่ยงคืน</div><div class="v">−${money(fixed,true)}</div></div></div>
    <div class="muted small">เงินเข้าทุกครั้งที่เครื่องบินลงจอด ส่วนค่าดูแลเครื่อง ค่าลูกเรือ และดอกเบี้ย หักรวมตอนขึ้นวันใหม่</div>`}
-function svcProj(i){const sv=S.service,rp=S.rep;S.service=i;S.rep=SERVICE[i].rep;let pax=0,profit=0;
+// projection for each service level (all routes × 3 levels): kept for the game day, it does not change within a day
+let svcPC={k:null,m:new Map()};
+function svcProj(i){const k=S.day+"|"+S.routes.length+"|"+S.fleet.length+"|"+S.service;if(svcPC.k!==k)svcPC={k,m:new Map()};if(svcPC.m.has(i))return svcPC.m.get(i);const o=svcProj0(i);svcPC.m.set(i,o);return o}
+function svcProj0(i){const sv=S.service,rp=S.rep;S.service=i;S.rep=SERVICE[i].rep;let pax=0,profit=0;
   for(const r of S.routes){const c=calc(r);pax+=c.pax;profit+=c.profit}S.service=sv;S.rep=rp;return {pax:Math.round(pax),profit}}
 function maxLoan(){return Math.max(0,Math.floor((fleetValue()*.35+50e6)/50e6)*50e6)}
 // yearly loan rate: 6% when lightly borrowed, up to ~36% when debt is close to everything you own
@@ -4073,6 +4044,10 @@ function settingsSheet(){
     ${S?tg("amx",S.autoMx,"ส่งซ่อมบำรุงอัตโนมัติ","ส่งเครื่องที่สภาพต่ำกว่า 50% เข้าซ่อมเอง วันละไม่เกิน 1 ลำต่อเส้นทาง"):""}
     ${S?tg("aadv",!!S.autoAdv,"🤖 จัดการอัตโนมัติทุกวัน","ปรับราคา ย้ายเครื่องจากเส้นที่ว่างไปเส้นที่ล้น และใส่เครื่องจอดว่างให้เอง"):""}
     ${S?row("ความเก่งของคู่แข่ง","",seg("diff",DIFFS.map(([k,n])=>[k,n]),S.diff||"auto")):""}</div>
+  <div class="setsec"><div class="eyebrow">⚡ ความลื่นและกันเกมค้าง</div>
+    ${row("ความลื่นของแผนที่","อัตโนมัติ: วาดช้าลงเองเมื่อแผนที่มีเครื่องบินเยอะ · ประหยัดช่วยให้เครื่องไม่ร้อนและแบตอยู่นาน",seg("mapfps",[["auto","อัตโนมัติ"],["30","ลื่น"],["15","ประหยัด"],["8","ประหยัดมาก"]],PREF.mapfps))}
+    ${tg("lagGuard",PREF.lagGuard,"ลดความเร็วเองเมื่อเกมคำนวณไม่ทัน","ช่วงท้ายเกมที่มีเครื่องบินหลายร้อยลำ ความเร็ว 30× อาจทำให้จอค้าง เกมจะลดเป็น 10× หรือ 3× ให้เอง")}
+    <div class="small muted">เกมสำรองเซฟอัตโนมัติทุก 10 นาทีที่เล่น (เก็บ 3 ชุดล่าสุด) กู้คืนได้ที่ 💾 สำรอง / ย้ายเซฟ</div></div>
   <div class="setsec"><div class="eyebrow">🔊 เสียงและการสั่น</div>
     ${tg("sound",PREF.sound,"เสียงประกอบ","เสียงตอนซื้อ ได้รางวัล ได้เงิน และมีประกาศ")}
     ${row("ความดัง","",`<input type="range" id="pvol" min="0" max="1" step=".05" value="${PREF.vol}" style="max-width:180px">`)}
@@ -4104,7 +4079,7 @@ function resetSheet(){const L=S.last||{};return head("เริ่มเกม�
    <div><div class="k">เครื่องบิน / เรือ</div><div class="v">${S.fleet.length} / ${S.ships.length}</div></div><div><div class="k">ภารกิจสำเร็จ</div><div class="v">${S.mdone||0}</div></div></div>
   <label class="tg"><input type="checkbox" id="keepname" checked> ใช้ชื่อ ${esc(S.name)} และรหัส ${esc(S.code)} เหมือนเดิม</label>
   <div class="row"><button class="btn" style="flex:1" data-x>ยกเลิก</button><button class="btn danger" style="flex:1.3" id="yes">ลบและเริ่มใหม่</button></div>`}
-resetSheet.bind=()=>{$("#yes").onclick=()=>{const keep=$("#keepname")&&$("#keepname").checked,nm=S.name,cd=S.code;
+resetSheet.bind=()=>{$("#yes").onclick=async()=>{if(S&&!S.over)await backupNow("reset");const keep=$("#keepname")&&$("#keepname").checked,nm=S.name,cd=S.code;
   S=null;save();sheetFn=null;pendingDec=null;selCity=null;view=null;baseCv=null;baseKey="";tab="home";document.body.classList.remove("onmap");
   rollFate();if(keep){fate.name=nm;fate.code=cd}window.scrollTo(0,0);renderApp()}};
 function showOver(){const fn=()=>`<h2>${esc(S.name)} ล้มละลาย</h2><p class="muted" style="margin:0">เงินสดติดลบต่อเนื่อง 30 วัน ธนาคารเข้ายึดกิจการในวันที่ ${S.day+1}</p>
@@ -4400,7 +4375,7 @@ function drawMap(){
   // aircraft: each slot = flight time + 1.2 h on the ground, following the real schedule clock
   const onPath=(pts,t)=>{const f=clamp(t,0,1)*(pts.length-1),i=Math.min(pts.length-2,Math.floor(f)),u=f-i;return [pts[i][0]+(pts[i+1][0]-pts[i][0])*u,pts[i][1]+(pts[i+1][1]-pts[i][1])*u]};
   const parked=new Map();airborne=0;
-  for(const {r} of (vmode()==='sea'?[]:routes)){if(grounded(r.dest)||grounded(r.from))continue;const d=rd(r),ar=arcs.get(r.id),plan=calc(r).plan;
+  for(const {r} of (vmode()==='sea'?[]:routes)){if(grounded(r.dest)||grounded(r.from))continue;const d=rd(r),ar=arcs.get(r.id),plan=calcH(r).plan;
     r.planes.forEach(id=>{const pl=plane(id);if(!pl||pl.down>S.day)return;const m=model(pl.m),L=plan.get(pl.id)||legsFor(m,d);
       const fly=flyFrac(m,d,L),kind=aircraftKind(m),t0=legPhase(pl,L,fly,animDay),leg=Math.floor(t0),f=t0-leg,back=leg%2===1;
       if(f>fly){const at=back?r.from:r.dest;parked.set(at,(parked.get(at)||[]).concat([[kind,m]]));return}
@@ -4459,10 +4434,17 @@ function drawChart(){
 }
 
 /* ---------- loop ---------- */
-function frame(now){
+/* lag guard: at high speed a big airline can need more time per game day than the speed allows (the screen freezes).
+   When three days in a row use over 70% of their real-time slot, drop one speed step and say so. */
+const LAG={hot:0};
+const MAPT={ema:8};
+const mapGap=()=>PREF.mapfps==="auto"?Math.max(31,Math.min(200,MAPT.ema*2.5)):1000/(+PREF.mapfps||30);
+function lagCheck(ms){if(!PREF.lagGuard||speed<=1)return;const slot=DAY_MS/speed;LAG.hot=ms>slot*.7?LAG.hot+1:0;
+  if(LAG.hot>=3){LAG.hot=0;const i=SPEEDS.indexOf(speed);if(i>0){speed=SPEEDS[i-1];acc=Math.min(acc,DAY_MS*.5);updateTop();toast(`🐢 เกมใหญ่จนเครื่องคำนวณไม่ทัน ลดความเร็วเป็น ${speed}× อัตโนมัติ (ปิดได้ใน ⚙️ ตั้งค่า)`)}}}
+function frame0(now){
   const dt=Math.min(250,now-lastTick);lastTick=now;
   if(S&&!S.over&&!paused){acc+=dt*speed;
-    while(acc>=DAY_MS){settleFlights(S.day+1-1e-7);settleShips(S.day+1-1e-7);ferryTick(S.day+1-1e-7);acc-=DAY_MS;simDay();
+    while(acc>=DAY_MS){const tq=performance.now();settleFlights(S.day+1-1e-7);settleShips(S.day+1-1e-7);ferryTick(S.day+1-1e-7);acc-=DAY_MS;simDay();lagCheck(performance.now()-tq);
       // no full redraw while the player is typing in a search box (it would lose the cursor)
       if(!sheetFn){if(tab==="home")refreshHome();else if(tab==="map")refreshMapTab();else if(!(document.activeElement&&document.activeElement.matches("input[type=search],input[type=text]")))renderView()}
       updateTop();if(S.over){showOver();break}}}
@@ -4473,11 +4455,25 @@ function frame(now){
   if(S&&now-(frame.sn||0)>10000){frame.sn=now;S.seen=Date.now();save()}
   if(S&&pendingDec&&!sheetFn&&!S.over){const d=pendingDec;pendingDec=null;openDecision(d)}
   if(S&&tab==="money"&&!sheetFn&&now-(frame.lt||0)>400){frame.lt=now;const tp=$("#todayp");if(tp)tp.innerHTML=todayHTML()}
-  if(S){animDay=S.day+acc/DAY_MS;if(!afk&&tab==="home"&&now-(frame.lb||0)>=110){frame.lb=now;liveBoard()}if(!afk&&(tab==="home"||tab==="map")&&$("#map")&&now-(frame.dm||0)>=31){frame.dm=now;drawMap()}
+  if(S){animDay=S.day+acc/DAY_MS;if(!afk&&tab==="home"&&now-(frame.lb||0)>=110){frame.lb=now;liveBoard()}if(!afk&&(tab==="home"||tab==="map")&&$("#map")&&now-(frame.dm||0)>=mapGap()){frame.dm=now;const t0=performance.now();drawMap();MAPT.ema=MAPT.ema*.9+(performance.now()-t0)*.1}
     if(tab==="map"&&now-(frame.hl||0)>500){frame.hl=now;const hd=$("#maphud");if(hd)hd.innerHTML=mapHudHTML()}
     const dt2=$("#dt");if(dt2){const mins=Math.floor((acc/DAY_MS)*1440/5)*5,tx=`${dateOf(S.day)} · ${String(mins/60|0).padStart(2,"0")}:${String(mins%60).padStart(2,"0")} น.`;if(dt2.textContent!==tx)dt2.textContent=tx}
     const cs=$("#cs");if(cs){dispCash+=(S.cash-dispCash)*Math.min(1,dt/180);if(Math.abs(S.cash-dispCash)<1)dispCash=S.cash;cs.textContent=money(dispCash);cs.className="v "+(S.cash<0?"bad":"")}}
-  requestAnimationFrame(frame)}
+  if(S&&!S.over&&now-(frame.bk||0)>6e5){frame.bk=now;if(frame.bk0)backupNow("auto");frame.bk0=1}}
+function frame(now){try{frame0(now)}catch(e){gameError(e)}requestAnimationFrame(frame)}
+/* error guard: one bad frame must not freeze the game. Errors are counted; three within 15 seconds pause the game and
+   open a recovery sheet (keep playing, export the save, or restore a backup) instead of a frozen screen. */
+const ERR={n:0,t0:0,last:"",shown:false};
+function gameError(e){const now=Date.now();if(now-ERR.t0>15000){ERR.t0=now;ERR.n=0}ERR.n++;ERR.last=String(e&&e.message||e).slice(0,160);try{console.error(e)}catch(x){}
+  if(ERR.n>=3&&!ERR.shown&&S){ERR.shown=true;paused=true;backupNow("error");
+    const fn=()=>head("⚠️ เกมเจอข้อผิดพลาด","หยุดเวลาไว้ก่อนเพื่อไม่ให้เกมค้าง เซฟล่าสุดยังอยู่ และสำรองไว้อีกชุดแล้ว")+
+      `<div class="panel small muted" style="word-break:break-word">${esc(ERR.last)}</div>
+      <div class="stack" style="gap:8px"><button class="btn primary" id="errgo">เล่นต่อ</button><button class="btn" id="errsave">💾 ส่งออกเซฟ / กู้คืนเซฟสำรอง</button><button class="btn" id="errslow">ลดความเร็วเป็น 1× แล้วเล่นต่อ</button></div>
+      <div class="small muted">ถ้าเจอซ้ำบ่อย ส่งภาพหน้าจอนี้ให้ผู้พัฒนาได้</div>`;
+    fn.bind=()=>{$("#errgo").onclick=()=>{ERR.shown=false;ERR.n=0;paused=false;closeSheet()};$("#errslow").onclick=()=>{ERR.shown=false;ERR.n=0;speed=1;paused=false;closeSheet();updateTop()};$("#errsave").onclick=()=>{ERR.shown=false;openSheet(saveSheet())}};
+    try{openSheet(fn)}catch(x){}}}
+addEventListener("error",e=>{if(e&&e.error)gameError(e.error)});
+addEventListener("unhandledrejection",e=>{gameError(e&&e.reason||"promise")});
 addEventListener("resize",()=>{if(S&&tab==="money")drawChart();if(S&&tab==="map")sizeFullMap()});
 matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if(S&&themePref()==="auto")renderView()});
 /* ---------- light / dark mode: auto follows the device, or pin light or dark ---------- */
@@ -4522,7 +4518,6 @@ speed=PREF.speed0||1;
 renderApp();requestAnimationFrame(frame);
 afterUpdate();setTimeout(()=>checkUpdate(),4000);setInterval(()=>checkUpdate(),3*60e3);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkUpdate()});
-spHandleRedirect();
 if(S)setTimeout(()=>awayCheck(S.seen),400);
 let hiddenAt=0;
 document.addEventListener("visibilitychange",()=>{if(!S)return;

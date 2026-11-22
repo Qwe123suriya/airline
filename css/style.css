@@ -159,17 +159,6 @@ canvas#map:active{cursor:grabbing}
 .afksc{font-size:14px;color:#4A5D7A}
 .afkdate{font-size:13px;color:#4F6382;letter-spacing:1px;margin-top:4px}
 #spru,#spcid{height:42px;border:1px solid var(--line);border-radius:10px;padding:0 10px;background:var(--sky);color:var(--ink);font-size:13px;width:100%}
-.afkmusic{pointer-events:auto;margin-top:14px;display:flex;align-items:center;gap:12px;width:min(420px,calc(100vw - 32px));padding:10px 12px;border-radius:16px;background:rgba(20,30,50,.45);border:1px solid rgba(120,150,200,.18);color:#8FA3C0;text-align:left}
-.afkmusic[hidden]{display:none}
-.afkmusic img,.afkmusic .amart{width:56px;height:56px;border-radius:8px;flex:none;object-fit:cover;opacity:.75;background:#1A2638;display:flex;align-items:center;justify-content:center;font-size:24px}
-.afkmusic .amt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-.afkmusic .amt b{color:#B7C6DC;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.afkmusic .amt span{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.afkmusic .ambar{height:3px;border-radius:3px;background:rgba(140,165,200,.18);margin-top:4px;overflow:hidden}.afkmusic .ambar i{display:block;height:100%;background:#1DB954;opacity:.7}
-.afkmusic .amtime{display:flex;justify-content:space-between;font-size:10.5px;opacity:.7}
-.afkmusic .amctl{display:flex;gap:2px}.afkmusic .amctl button{width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:#9FB2CC;font-size:16px}
-.afkmusic .amctl button:active{background:rgba(255,255,255,.08)}
-.afkmusic .amx{font-size:13px;padding:4px 2px}
 .afkevt{font-size:13px;color:#8C7AA8;min-height:18px;text-align:center;padding:0 16px}.afksz{font-size:12px;color:#33445E;margin-top:10px}
 @media (prefers-reduced-motion:reduce){.afk,.afkin,.afksleep,.afkscene{transition:none}.afkscene .tw,.afkscene .tw2,.afkaur,.afkcity circle,.afkcolon,.afkplus.go{animation:none}.afkmet{display:none}}
 @media (max-width:400px){.clock button,.qbtn{min-width:31px;padding:0 4px}.clock{gap:3px}}
