@@ -505,7 +505,7 @@ function sailLeg(l,sh,m,lc,n){const bkk=shipK(sh,m),sf=lc.sK?lc.sK[bkk]:1;
   if(l.bk&&l.bk[bkk]>0&&teu<capT){const tk=Math.min(capT-teu,l.bk[bkk]);l.bk[bkk]-=tk;teu+=tk}
   const o={srev:teu*TEU_RATE(lc.km)*SEA_RATE[bkk]*specX(m)*pk("cargo")*(1-((bkk==="r"&&!shipSpec(m)?SPOIL:0)+LATE)*(1-sf)),sfuel:lc.km*m.cpk*fuelNow()*pk("fuel"),sport:portFee(arr,m),teu,voy:1};
   const net=o.srev-o.sfuel-o.sport;S.cash+=net;sh.tn=(sh.tn||0)+net;addT(S.today,o);l.today=l.today||{};addT(l.today,o);S.totTeu=(S.totTeu||0)+teu;
-  if((tab==="home"||tab==="map")&&floaters.length<14)floaters.push({p:arr.c,v:net,t0:performance.now()})}
+  if(PREF.floats&&(tab==="home"||tab==="map")&&floaters.length<14)floaters.push({p:arr.c,v:net,t0:performance.now()})}
 function shipResale(sh){return shipM(sh.m).price*.6*Math.max(.5,1-sh.age/7300)}
 function shipFixed(){return S.ships.reduce((a,sh)=>a+shipM(sh.m).price*(sh.lane?.0004:.0002)*upkeepK(shipM(sh.m)),0)}
 function buyShip(id){const m=shipM(id);if(S.cash<m.price)return null;S.cash-=m.price;
@@ -529,8 +529,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.49";
+const GAME_VERSION="1.50";
 const CHANGELOG=[
+ ["1.50","22 พ.ย. 2569",["⚙️ หน้าตั้งค่าใหม่ (เมนู ··· และหน้าเริ่มเกม): การแสดงผล · การแจ้งเตือนและประกาศ · การเล่น · เสียงและการสั่น · ข้อมูลและเวอร์ชัน","การแสดงผล: โหมดแสง ขนาดตัวอักษร (เล็กถึงใหญ่มาก) ลดแอนิเมชัน เปิด/ปิดเอฟเฟกต์ฉลอง ตัวเลขเงินลอย ป้ายจำนวนคนบนแผนที่ และแบบรายการฝูงบิน","การแจ้งเตือน: ข้อความเด้ง (ทั้งหมด / เฉพาะที่กด / ปิด) ป๊อปอัปปลดล็อก รางวัลรายวันและสรุปรายได้ตอนกลับมา (แสดงหน้าต่างหรือรับอัตโนมัติ) และเลือกประเภทข่าวที่แสดง","การเล่น: ความเร็วตอนเปิดเกม ซ่อมอัตโนมัติ จัดการอัตโนมัติ ความเก่งของคู่แข่ง","🔊 เสียงประกอบใหม่ (ซื้อ ได้รางวัล ได้เงิน มีประกาศ) ปรับความดังได้ · การสั่นย้ายมาอยู่ในตั้งค่า","จัดหน้าให้เป็นระเบียบ: แท็บเล็ตใช้ความกว้างจอมากขึ้น การ์ดสาขาเต็มแถว หัวข้อที่มีปุ่มไม่เบียดกัน ปุ่มสูงเท่ากัน มือถือปุ่มโหมดคน/สินค้าไม่ถูกตัด"]],
  ["1.49","22 พ.ย. 2569",["แก้: ตอนคลองสุเอซปิด เรือเส้นเอเชีย–ยุโรปที่พิสัยไม่ถึงเส้นทางอ้อมแหลมกู๊ดโฮป ถูกตีว่า “ไปไม่ถึง” ทั้งที่ยังแล่นและได้เงินปกติ ตอนนี้การตรวจพิสัยใช้ระยะทางปกติ เรืออ้อมไปเติมน้ำมันระหว่างทางได้ (ยังใช้เวลาเดินทางนานขึ้นตามจริง)"]],
  ["1.48","22 พ.ย. 2569",["💡 คำแนะนำเส้นทางมีตั้งแต่วันแรกทุกสนามบิน: ถ้าเมืองที่คนอยากไปมากที่สุดอยู่ไกลเกินเครื่องที่ซื้อได้ด้วยเงินตอนนี้ (เช่น เริ่มที่โอ๊คแลนด์ ไนโรบี ซานฮวน) เกมจะแนะนำเส้นที่บินได้จริงและคาดว่ากำไรแทน มีป้าย “✈ บินได้ด้วยทุนตอนนี้”"]],
  ["1.47","22 พ.ย. 2569",["หน้าเริ่มเกมใหม่: ไม่สุ่มแล้ว ถามทีละขั้น 6 ขั้น · ชื่อสายการบิน → ภูมิภาค → สนามบินฐาน → ทุนและน้ำมัน → คู่แข่ง → สรุปตั๋ว (กดแก้ย้อนแต่ละขั้นได้)","สนามบินฐานมีคะแนนความเหมาะสม 0–100 เรียงจากเหมาะสุด พร้อมเหตุผล: คนเดินทางจากเมืองใกล้ ๆ จำนวนเมืองในระยะบินง่าย ราคาเครื่องลำแรก ค่าสนามบิน และท่าเรือใกล้เคียง · 3 อันดับแรกมีป้าย ⭐ แนะนำ","ยังสุ่มได้: ทุกขั้นมีตัวเลือก 🎲 และมีปุ่ม “สุ่มทั้งหมดแล้วเริ่มเลย” แบบเดิม","ความยากรวม (ดาว) นับความเหมาะสมของสนามบิน ทุน น้ำมัน และความเก่งของคู่แข่ง"]],
@@ -589,7 +590,22 @@ const city=c=>CITIES.find(x=>x.c===c);
 const model=id=>MODELS.find(m=>m.id===id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
-const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+/* ⚙️ Device preferences (this browser only, not part of the save): display, notifications, sound, game start.
+   Settings that belong to one airline (auto maintenance, rivals, haptics, pop-ups of unlocks) live in S. */
+const PREF_DEF={font:"m",motion:"auto",toast:"all",fx:true,floats:true,sound:true,vol:.5,speed0:1,daily:"popup",away:"popup",news:{}};
+let PREF=(()=>{try{return Object.assign({},PREF_DEF,JSON.parse(localStorage.getItem("airline-prefs")||"{}"))}catch(e){return {...PREF_DEF}}})();
+const savePref=()=>{try{localStorage.setItem("airline-prefs",JSON.stringify(PREF))}catch(e){}};
+let reduce=false;
+function applyPrefs(){reduce=PREF.motion==="less"||(PREF.motion==="auto"&&matchMedia("(prefers-reduced-motion: reduce)").matches);
+  document.documentElement.classList.toggle("lessmotion",reduce);
+  const z={s:.9,m:1,l:1.1,xl:1.22}[PREF.font]||1;for(const id of ["app","toast"]){const el=document.getElementById(id);if(el)el.style.zoom=z===1?"":String(z)}}
+applyPrefs();
+/* sounds: small synthesised blips (no files to load), only after the player has touched the page */
+let AC=null;
+function sfx(k){if(!PREF.sound||!(PREF.vol>0))return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume();
+  const N={tap:[[660,.05]],note:[[880,.07],[1320,.1]],buy:[[523,.06],[784,.06],[1047,.12]],win:[[523,.09],[659,.09],[784,.09],[1047,.25]],cash:[[1568,.05],[2093,.09]],bad:[[247,.14],[196,.22]]}[k]||[[660,.05]];
+  let t=AC.currentTime+.01;for(const [f,d] of N){const o=AC.createOscillator(),g=AC.createGain();o.type="triangle";o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.16*PREF.vol,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d+.03);t+=d*.8}}catch(e){}}
+let lastInput=0;addEventListener("pointerdown",()=>{lastInput=performance.now()},true);addEventListener("keydown",()=>{lastInput=performance.now()},true);
 function dist(a,b){const R=6371,r=Math.PI/180,dl=(b.lat-a.lat)*r,dn=(b.lon-a.lon)*r;
   const h=Math.sin(dl/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dn/2)**2;return Math.round(2*R*Math.asin(Math.sqrt(h)))}
 const rd=r=>dist(city(r.from),city(r.dest));
@@ -789,7 +805,7 @@ function renderStart(){startDefaults();const st=fate.step,h=city(fate.hub);
    <div class="row" style="gap:8px"><button class="btn" id="wback" style="flex:1">← ย้อนกลับ</button><button class="btn primary" id="go" style="flex:1.6">✈️ เริ่มกิจการ</button></div>
    <button class="btn" id="re">🎲 สุ่มใหม่ทั้งหมด</button>`}
   $("#app").innerHTML=`<div class="start"><div class="wrap">${bar}${body}
-   <div class="row between"><button class="btn sm" id="hlp">อ่านคู่มือระบบในเกม</button><button class="btn sm" id="simp">💾 นำเข้าเซฟ</button><button class="btn sm" id="sver">ℹ️ v${GAME_VERSION} · มีอะไรใหม่</button></div>
+   <div class="row between"><button class="btn sm" id="hlp">อ่านคู่มือระบบในเกม</button><button class="btn sm" id="simp">💾 นำเข้าเซฟ</button><button class="btn sm" id="sset">⚙️ ตั้งค่า</button><button class="btn sm" id="sver">ℹ️ v${GAME_VERSION} · มีอะไรใหม่</button></div>
   </div></div><div id="sheet"></div>`;
   if(st===6){flap($("#fh"),h.c,justRolled?900:1);justRolled=false}
   const keep=()=>{const nm=$("#nm"),cd=$("#cd");if(nm)fate.name=nm.value.trim()||fate.name;if(cd)fate.code=(cd.value.replace(/[^a-z]/gi,"").toUpperCase()+"XX").slice(0,2)};
@@ -808,6 +824,7 @@ function renderStart(){startDefaults();const st=fate.step,h=city(fate.hub);
   {const re=$("#re");if(re)re.onclick=()=>{keep();const d=fate.diff;rollFate(true);fate.diff=d||"normal";fate.reg=regionOf(fate.hub).id;fate.capK="rnd";fate.fuelK="rnd";fate.step=6;renderStart();window.scrollTo(0,0)}}
   {const g=$("#go");if(g)g.onclick=()=>{keep();newGame()}}
   {const si=$("#simp");if(si)si.onclick=()=>{keep();openSheet(saveSheet())}}
+  {const ss=$("#sset");if(ss)ss.onclick=()=>{keep();openSheet(settingsSheet())}}
   $("#hlp").onclick=()=>openSheet(guideSheet);
   $("#sver").onclick=()=>openSheet(changelogSheet(null));
 }
@@ -1101,6 +1118,10 @@ const lvlOf=sc=>Math.floor(Math.sqrt(Math.max(0,sc)/180))+1,lvlXP=l=>180*(l-1)*(
 function lvlCheck(){const sc=xpScore(),l=lvlOf(sc);if(S.lvl==null){S.lvl=l;return}
   if(l>S.lvl){const gained=l-S.lvl;S.lvl=l;const rw=Math.round((S.startCap*.015*l+Math.max(0,avgDailyProfit()))*gained/1e5)*1e5;S.cash+=rw;save();
     celebrate("!🎉 เลเวลอัป!",`สายการบิน Lv ${l} · โบนัส ${money(rw,true)}`);addNews(`🎉 ${S.name} ขึ้นเป็น Lv ${l} รับโบนัส ${money(rw)}`)}}
+const NEWS_CATS=[["fleet","✈️ เครื่องบิน เรือ และการซ่อม",/^(🔧|⚠️|🛬|✈️|🛫|🚢|⚓)/],["rival","⚔️ คู่แข่ง",/^(⚔️|😤|📉|📈|🏳|🔀|🙂|🏢)/],["deal","🤝 ดีลและคู่ค้า",/^(📨|🤝|⌛|🙅)/],
+  ["reward","🎯 ภารกิจ รางวัล และเลเวล",/^(🎯|🎉|🎖|⭐|🏆|🎁|💰|✨)/],["world","🌍 เหตุการณ์โลก น้ำมัน และพายุ",/^(🌀|⛽|📦|📣|🗓|🎊)/],["rsv","🛟 ตัวสำรอง",/^(🛟|↩️)/],["auto","🤖 จัดการอัตโนมัติ",/^🤖/]];
+const newsCat=t=>{const c=NEWS_CATS.find(x=>x[2].test(t));return c?c[0]:"other"};
+const newsShown=n=>PREF.news[newsCat(n.t)]!==false;
 function addNews(t){S.news.unshift({d:S.day,t,id:(S.nid++)});S.news=S.news.slice(0,30)}
 function mxCost(p){const m=model(p.m);return m.price*.02*(100-p.cond)/100+m.price*.002}
 function startMx(p,auto){const c=mxCost(p);S.cash-=c;p.cond=100;p.down=S.day+2;addNews(`🔧 ${p.reg} เข้าซ่อมบำรุง${auto?"ตามรอบ":""} 2 วัน ค่าใช้จ่าย ${money(c)}`)}
@@ -1158,7 +1179,7 @@ function flyLeg(r,p,m,c,d,a,b,n){
   S.cash+=net;p.tn=(p.tn||0)+net;addT(S.today,o);r.today=r.today||blankT();addT(r.today,o);
   {const arr=(n%2===1?a:b).c,dep=(n%2===1?b:a).c;S.apT=S.apT||{};const A=S.apT[arr]=S.apT[arr]||{up:0,dn:0,cu:0,cd:0},D=S.apT[dep]=S.apT[dep]||{up:0,dn:0,cu:0,cd:0};D.up+=pax;A.dn+=pax;D.cu+=cargo;A.cd+=cargo}
   p.cond=clamp(p.cond-.035*(m.super?SUPER_WEAR:1),0,100);S.totPax+=pax;S.totCargo+=cargo;
-  if((tab==="home"||tab==="map")&&floaters.length<14)floaters.push({c:(n%2===1?a:b).c,v:net,t0:performance.now()})}
+  if(PREF.floats&&(tab==="home"||tab==="map")&&floaters.length<14)floaters.push({c:(n%2===1?a:b).c,v:net,t0:performance.now()})}
 function rangeMigrate(){if(S.rngMig)return;S.rngMig=1;const off=[];
   for(const l of S.lanes)for(const id of l.ships.slice()){const sh=shipById(id);if(!sh)continue;const m=shipM(sh.m);if(m.rng<laneKm(l)){l.ships=l.ships.filter(x=>x!==id);sh.lane=null;off.push(sh.reg)}}
   if(off.length)addNews(`🧭 กฎพิสัยเรือใหม่: ${off.join(", ")} แล่นไม่ถึงปลายทาง ถูกเรียกกลับมาจอดว่าง ย้ายไปเส้นทางที่ใกล้กว่าได้`)}
@@ -1533,9 +1554,10 @@ function randomEvent(){
 }
 
 /* ---------- effects ---------- */
-const buzz=ms=>{try{if(S&&S.haptic!==false&&navigator.vibrate)navigator.vibrate(ms)}catch(e){}};
-function toast(t){const el=$("#toast");el.hidden=true;void el.offsetWidth;el.textContent=t;el.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>el.hidden=true,3200)}
-function floatCash(n){const host=$(".cash");if(!host||reduce)return;const now=performance.now();if(now-lastFloat<500)return;lastFloat=now;
+const buzz=ms=>{sfx(Array.isArray(ms)?"win":"buy");try{if(S&&S.haptic!==false&&navigator.vibrate)navigator.vibrate(ms)}catch(e){}};
+function toast(t){const mine=performance.now()-lastInput<2500;   // a reply to what the player just did, or news the game announces by itself
+  if(PREF.toast==="off"||(PREF.toast==="mine"&&!mine))return;if(!mine)sfx("note");const el=$("#toast");el.hidden=true;void el.offsetWidth;el.textContent=t;el.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>el.hidden=true,3200)}
+function floatCash(n){const host=$(".cash");if(!host||reduce||!PREF.floats)return;const now=performance.now();if(now-lastFloat<500)return;lastFloat=now;
   const f=document.createElement("span");f.className="float "+(n>=0?"good":"bad");f.textContent=(n>=0?"+":"")+money(n,true);host.appendChild(f);setTimeout(()=>f.remove(),1150)}
 const cel=[];
 let celBusy=false,celWait=0;
@@ -1551,9 +1573,9 @@ function nextCel(){if(!cel.length){celBusy=false;return}celBusy=true;buzz([25,50
   document.body.appendChild(d);confetti(innerWidth/2,innerHeight*.16);
   d.insertAdjacentHTML("beforeend",`<button class="celoff" type="button">ไม่ต้องแสดงป๊อปอัปแบบนี้อีก</button>`);
   const done=()=>{if(!d.isConnected)return;d.remove();nextCel()};d.onclick=done;
-  d.querySelector(".celoff").onclick=e=>{e.stopPropagation();S.celOff=true;cel.length=0;save();d.remove();celBusy=false;toast("ปิดป๊อปอัปปลดล็อกแล้ว · เปิดใหม่ได้ที่เมนู ⋯");updCelBtn()};
+  d.querySelector(".celoff").onclick=e=>{e.stopPropagation();S.celOff=true;cel.length=0;save();d.remove();celBusy=false;toast("ปิดป๊อปอัปปลดล็อกแล้ว · เปิดใหม่ได้ที่ ⋯ → ⚙️ ตั้งค่า");updCelBtn()};
   setTimeout(done,reduce?1800:batch.length>1?3600:2600)}
-function flyover(){if(reduce)return;const d=document.createElement("div");d.className="flyover";if(S)d.style.color=S.livery.tail;
+function flyover(){if(reduce||!PREF.fx)return;const d=document.createElement("div");d.className="flyover";if(S)d.style.color=S.livery.tail;
   d.innerHTML=`<svg viewBox="0 0 84 40"><defs><linearGradient id="tr" x1="0" x2="1"><stop offset="0" stop-color="currentColor" stop-opacity="0"/><stop offset="1" stop-color="currentColor" stop-opacity=".5"/></linearGradient></defs><rect x="0" y="19" width="44" height="2" rx="1" fill="url(#tr)"/><path fill="currentColor" d="M44 20l10-3 4-12h4l-2 11 14-3c3-.5 6 0 8 1.5v1c-2 1.5-5 2-8 1.5l-14-3 2 11h-4l-4-12-10-3z" transform="translate(0,4) scale(1,.8)"/></svg>`;
   document.body.appendChild(d);setTimeout(()=>d.remove(),2000)}
 
@@ -1584,9 +1606,8 @@ function renderApp(){
       <div class="moreb"><button class="qbtn" id="morebtn" aria-label="เมนูเพิ่มเติม" aria-expanded="false" aria-haspopup="true">⋯</button>
        <div class="moremenu" id="moremenu" hidden role="menu">
         <div class="muted small" id="hubl"></div>
+        <button role="menuitem" id="setbtn"><span class="mi">⚙️</span>ตั้งค่า</button>
         <button role="menuitem" id="themebtn"><span class="mi">${themeIcon()}</span><span id="themelbl">โหมดแสง</span></button>
-        <button role="menuitem" id="celtg"><span class="mi">🎉</span><span id="cellbl"></span></button>
-        <button role="menuitem" id="haptg"><span class="mi">📳</span><span id="haplbl">${S.haptic===false?"สั่นเมื่อซื้อ/ได้รางวัล: ปิดอยู่":"สั่นเมื่อซื้อ/ได้รางวัล: เปิดอยู่"}</span></button>
         <button role="menuitem" id="verbtn"><span class="mi">ℹ️</span>เวอร์ชัน v${GAME_VERSION} · มีอะไรใหม่${updAvail?` <b class="warn">มีอัปเดต</b>`:""}</button>
         <button role="menuitem" id="help"><span class="mi">?</span>คู่มือระบบ</button>
         <button role="menuitem" id="fsbtn"><span class="mi">⛶</span><span id="fslbl">เต็มจอ (ซ่อนแถบเบราว์เซอร์)</span></button>
@@ -1615,8 +1636,7 @@ function renderApp(){
   if(!window._fsl){window._fsl=1;const up=()=>{const l=$("#fslbl");if(l)l.textContent=fsEl()?"ออกจากเต็มจอ":"เต็มจอ (ซ่อนแถบเบราว์เซอร์)";updFsq();setTimeout(()=>{if($("#mapfull"))sizeFullMap()},250)};document.addEventListener("fullscreenchange",up);document.addEventListener("webkitfullscreenchange",up)}
   $("#afkbtn").onclick=()=>startAfk();
   $("#themebtn").onclick=cycleTheme;
-  $("#celtg").onclick=()=>{S.celOff=!S.celOff;save();updCelBtn();toast(S.celOff?"ปิดป๊อปอัปปลดล็อกแล้ว (ยังดูได้ในข่าว)":"เปิดป๊อปอัปปลดล็อกแล้ว")};updCelBtn();
-  $("#haptg").onclick=()=>{S.haptic=S.haptic===false;save();$("#haplbl").textContent=S.haptic===false?"สั่นเมื่อซื้อ/ได้รางวัล: ปิดอยู่":"สั่นเมื่อซื้อ/ได้รางวัล: เปิดอยู่";if(S.haptic!==false)buzz(20)};
+  $("#setbtn").onclick=()=>{closeMore();openSheet(settingsSheet())};
   $("#badge").onclick=()=>openSheet(liverySheet({}));
   $$("[data-sp]").forEach(b=>b.onclick=()=>{speed=+b.dataset.sp;paused=false;updateTop()});
   $$("[data-tab]").forEach(b=>b.onclick=()=>{if(b.dataset.tab!==tab){fSelMode=false;fSel.clear();rSelMode=false;rSel.clear()}tab=b.dataset.tab;renderView(true);window.scrollTo(0,0)});
@@ -1743,7 +1763,7 @@ const bm=()=>S&&S.bmode==="cargo"&&has("cargo")?"cargo":"pax";
 const visRoutes=()=>S.routes.filter(r=>rkind(r)===bm());
 const vmode=()=>bm()==="pax"||!has("sea")?"air":(S.vm||"all");
 const VMODES=[["air","✈ อากาศ"],["sea","🚢 เรือ"],["all","ทั้งหมด"]];
-function bmHTML(){if(!has("cargo"))return "";return `<div class="bmode" role="group" aria-label="โหมดธุรกิจ"><button data-bm="pax" class="${bm()==="pax"?"on":""}" aria-pressed="${bm()==="pax"}">👥 โหมดคน</button><button data-bm="cargo" class="${bm()==="cargo"?"on cg":""}" aria-pressed="${bm()==="cargo"}">📦 โหมดสินค้า</button></div>`}
+function bmHTML(){if(!has("cargo"))return "";return `<div class="bmode" role="group" aria-label="โหมดธุรกิจ"><button data-bm="pax" class="${bm()==="pax"?"on":""}" aria-pressed="${bm()==="pax"}">👥 <span class="bmw">โหมด</span>คน</button><button data-bm="cargo" class="${bm()==="cargo"?"on cg":""}" aria-pressed="${bm()==="cargo"}">📦 <span class="bmw">โหมด</span>สินค้า</button></div>`}
 function setBM(k){if(!S||bm()===k)return;S.bmode=k;S.ui_fk=k;rseg=k;if(k==="cargo"&&!S.vm)S.vm="all";save();closePop&&closePop();selCity=null;renderApp();
   toast(k==="cargo"?"📦 โหมดสินค้า · แสดงเฉพาะเครื่องบินขนสินค้า เส้นทางสินค้า และเรือ":"👥 โหมดคน · แสดงเฉพาะเครื่องบินโดยสารและเส้นทางผู้โดยสาร")}
 function modeHTML(){if(bm()==="pax"||!has("sea"))return "";return `<div class="mapmode" role="group" aria-label="โหมดแผนที่">${VMODES.map(([k,n])=>`<button data-vm="${k}" class="${vmode()===k?"on":""}" aria-pressed="${vmode()===k}">${n}</button>`).join("")}</div>`}
@@ -2039,7 +2059,7 @@ function homeRestHTML(){
   ${boardHTML(F)}
   ${missionsHTML()}
   <div class="panel stack" id="aplist">${airportListHTML()}</div>
-  ${secHead("📰","ข่าวล่าสุด")}<div class="panel"><ul class="news">${S.news.slice(0,6).map(n=>`<li class="${isFresh(n)?"fresh":""}"><span class="when">${dateOf(n.d)}</span><span>${esc(n.t)}</span></li>`).join("")}</ul></div>
+  ${secHead("📰","ข่าวล่าสุด")}<div class="panel"><ul class="news">${S.news.filter(newsShown).slice(0,6).map(n=>`<li class="${isFresh(n)?"fresh":""}"><span class="when">${dateOf(n.d)}</span><span>${esc(n.t)}</span></li>`).join("")}</ul></div>
   <button class="panel row between cogo" data-go="company"><span>${S.rating&&has("rank")?`${starsHTML(S.rating.overall,14)} <b class="num">${S.rating.overall.toFixed(1)}</b> · `:""}ดูเรตติ้ง ความคิดเห็นลูกค้า อันดับ และเป้าหมายของบริษัท</span><span class="muted">บริษัท ›</span></button>`;
   seenNews=fresh;return out;
 }
@@ -2204,6 +2224,7 @@ const DAILY_X=[1,1.5,2,2.5,3,4,8];
 const ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 function dailyCheck(){if(dailyShown||!S||S.over||afk||sheetFn||pendingDec||!S.fleet.some(p=>p.route)||celBusy||cel.length)return;const today=ymd(new Date());S.daily=S.daily||{};if(S.daily.last===today){dailyShown=true;return}
   dailyShown=true;const y=new Date();y.setDate(y.getDate()-1);const streak=S.daily.last===ymd(y)?(S.daily.streak||0)%7+1:1,base=Math.max(1e6,S.startCap*.012,avgDailyProfit()*.25),rw=Math.round(base*DAILY_X[streak-1]/1e5)*1e5;
+  if(PREF.daily==="silent"){S.daily={last:today,streak};S.cash+=rw;save();addNews(`🎁 รางวัลรายวัน วันที่ ${streak}: ${money(rw)} (รับให้อัตโนมัติ)`);toast(`🎁 รับรางวัลรายวัน ${money(rw,true)} แล้ว`);updateTop();return}
   const fn=()=>`<div class="dec"><div class="dece">🎁</div><div class="eyebrow">รางวัลเข้าเกมรายวัน</div><h2>วันที่ ${streak} ติดต่อกัน</h2><p class="muted" style="margin:0">เข้าเกมทุกวันรางวัลยิ่งเพิ่ม วันที่ 7 ได้ก้อนใหญ่ ถ้าขาดไปหนึ่งวันจะเริ่มนับใหม่</p></div>
     <div class="dgrid">${DAILY_X.map((m,i)=>`<div class="dday ${i+1<streak?"done":i+1===streak?"now":""}"><span class="small">วัน ${i+1}</span><b>${i===6?"💰":"🪙"}</b><span class="num small">${money(Math.round(base*m/1e5)*1e5,true)}</span></div>`).join("")}</div>
     <button class="btn primary" id="dclaim">รับ ${money(rw,true)}</button>`;
@@ -2415,7 +2436,7 @@ function bindMap(){
     const lon=view.cx+(ax-W/2)/(k*sc),lat=view.cy-(ay-H/2)/sc;view.w=clampW(view.w*f,view.cy);const sc2=W/view.w;
     view.cx=lon-(ax-W/2)/(k*sc2);view.cy=clamp(lat+(ay-H/2)/sc2,-55,70);setCam("manual")};
   const pan=(dx,dy)=>{if(!view)return;if(pop)closePop();const sc=cv.clientWidth/view.w;view.cx-=dx/(kOf(view.cy)*sc);view.cy=clamp(view.cy+dy/sc,-55,70);setCam("manual")};
-  const rel=(x,y)=>{const b=cv.getBoundingClientRect();return [x-b.left,y-b.top]};
+  const rel=(x,y)=>{const b=cv.getBoundingClientRect(),k=cv.clientWidth/(b.width||1);return [(x-b.left)*k,(y-b.top)*k]};   // k undoes the font-size zoom of the page
   // touch: one finger drags, two fingers pinch-zoom around their midpoint, a short tap selects
   let T=null;
   const tstate=ts=>ts.length>=2?{n:2,d:Math.hypot(ts[0].clientX-ts[1].clientX,ts[0].clientY-ts[1].clientY)||1,mx:(ts[0].clientX+ts[1].clientX)/2,my:(ts[0].clientY+ts[1].clientY)/2}:{n:1,x:ts[0].clientX,y:ts[0].clientY};
@@ -2437,7 +2458,7 @@ function bindMap(){
     if(tap){const [ax,ay]=rel(e.clientX,e.clientY);mapTap(ax,ay)}};
   cv.onpointerup=up;cv.onpointercancel=up;
   cv.ondblclick=e=>{const [ax,ay]=rel(e.clientX,e.clientY);zoom(.5,ax,ay)};
-  cv.onwheel=e=>{e.preventDefault();const b=cv.getBoundingClientRect();zoom(e.deltaY>0?1.2:1/1.2,e.clientX-b.left,e.clientY-b.top)};
+  cv.onwheel=e=>{e.preventDefault();const [ax,ay]=rel(e.clientX,e.clientY);zoom(e.deltaY>0?1.2:1/1.2,ax,ay)};
   $$("[data-cam]").forEach(b=>b.onclick=()=>{const k=b.dataset.cam;
     if(k==="full"){tab="map";renderView(true);window.scrollTo(0,0);return}
     if(k==="in"||k==="out"){const W=cv.clientWidth,H=cv.clientHeight;zoom(k==="in"?.6:1.6,W/2,H/2)}else setCam(k)});
@@ -2737,11 +2758,11 @@ function missionsBox(){const ready=S.missions.filter(m=>m.done).length;
    ${S.missions.map(m=>{const pr=clamp(mProg(m)/m.target,0,1),left=m.until>1e8?"":` · เหลือ ${Math.max(0,m.until-S.day)} วัน`;
      return `<div class="mission ${m.done?"done":""}"><div class="row between" style="align-items:center;gap:10px"><div style="min-width:0"><b>${mTitle(m)}</b><div class="small muted">${m.done?"สำเร็จแล้ว!":mUnit(m)}${m.done?"":left}</div></div>
        ${m.done?`<button class="btn primary sm glow" data-claim="${m.id}">รับ ${money(m.reward,true)}</button>`:`<span class="chip" title="รางวัล">🎁 ${money(m.reward,true)}</span>`}</div><div class="bar"><i style="width:${(m.done?1:pr)*100}%"></i></div></div>`}).join("")}</div>`}
-function confetti(cx,cy,n=30){if(reduce)return;const C=["#F2B33D","#E4572E","#2A9D8F","#3D7DD8","#B565D9","#F27DA6"];
+function confetti(cx,cy,n=30){if(reduce||!PREF.fx)return;const C=["#F2B33D","#E4572E","#2A9D8F","#3D7DD8","#B565D9","#F27DA6"];
   for(let i=0;i<n;i++){const d=document.createElement("span");d.className="cft";const a=-Math.PI/2+(Math.random()-.5)*2.6,r=70+Math.random()*140;
     d.style.cssText=`left:${cx}px;top:${cy}px;background:${C[i%C.length]};--dx:${Math.round(Math.cos(a)*r)}px;--dy:${Math.round(Math.sin(a)*r)}px;--rot:${(Math.random()*720-360)|0}deg;animation-delay:${i*7}ms;${i%3?"":"border-radius:50%;height:8px"}`;
     document.body.appendChild(d);setTimeout(()=>d.remove(),1800)}}
-function coinBurst(cx,cy){if(reduce)return;for(let i=0;i<14;i++){const d=document.createElement("span");d.className="coin";const a=Math.random()*Math.PI*2,r=40+Math.random()*60;
+function coinBurst(cx,cy){sfx("cash");if(reduce||!PREF.fx)return;for(let i=0;i<14;i++){const d=document.createElement("span");d.className="coin";const a=Math.random()*Math.PI*2,r=40+Math.random()*60;
   d.style.left=cx+"px";d.style.top=cy+"px";d.style.setProperty("--dx",Math.cos(a)*r+"px");d.style.setProperty("--dy",(Math.sin(a)*r-50)+"px");d.style.animationDelay=(i*18)+"ms";document.body.appendChild(d);setTimeout(()=>d.remove(),1200)}}
 /* ---------- decisions: a choice pops up every week or two ---------- */
 const priceFor=m=>Math.round((S.deal&&S.deal.m===m.id&&S.deal.until>=S.day?m.price*(1-S.deal.off):m.price)*(S.deals&&dealOn("fleetdeal")?1-.12*dealPw("fleetdeal"):1));
@@ -2937,6 +2958,7 @@ function awayCheck(since){if(!S||S.over||!since)return;const ms=Date.now()-since
   S.seen=Date.now();const wasOn=S.afkOn;S.afkOn=!!afk;if(earn<=0){save();return}
   if(afk){S.cash+=earn;afk.c0-=0;afk.log.unshift(`💤 รายได้ตอนพับจอ ${money(earn,true)}`);addNews(`💤 รายได้ระหว่างไม่อยู่ ${money(earn)}`);save();afkTick();return}
   const away=ms>=3.6e6?`${Math.floor(ms/3.6e6)} ชม. ${Math.floor(ms/6e4)%60} นาที`:`${Math.floor(ms/6e4)} นาที`;
+  if(PREF.away==="silent"){S.cash+=earn;addNews(`💤 รายได้ระหว่างไม่อยู่ ${away}: ${money(earn)}`);save();toast(`💤 รายได้ระหว่างไม่อยู่ ${money(earn,true)}`);updateTop();return}
   const fn=()=>`<div class="dec"><div class="dece">💤</div><div class="eyebrow">ระหว่างที่คุณไม่อยู่</div><h2>ได้รายได้ ${money(earn,true)}</h2>
      <p class="muted" style="margin:0">ไม่อยู่ ${away}${ms/3.6e6>R.cap?` (คิดสูงสุด ${R.cap} ชม.)`:""} · ฝูงบินและกองเรือทำงานต่อเท่ากับ ${Math.round(days)} วันของกำไรเฉลี่ย ${money(avg,true)}/วัน${wasOn?" · เปิดโหมด AFK ไว้ได้เรตคูณ 2":""}</p></div>
      <button class="btn primary" id="awayok">รับ ${money(earn,true)}</button>
@@ -4025,6 +4047,58 @@ function regionSheet(st){
     S.cash-=cost;S.unlocked.push(R.id);unlockAnim={id:R.id,t0:performance.now()};addNews(`🗺️ ปลดล็อกแผนที่ภูมิภาค${R.n} เปิดเส้นทางไป ${R.c.length} เมืองได้แล้ว`);
     celebrate("ภูมิภาคใหม่",R.n);save();sheetFn=null;$("#sheet").innerHTML="";tab="home";selCity=null;renderView(true);setCam("focus",R.c)});
   return fn}
+/* ⚙️ Settings: everything the player can switch, in one place */
+function settingsSheet(){
+  const seg=(key,opts,val)=>`<div class="seg setseg">${opts.map(([v,n])=>`<button type="button" data-pset="${key}" data-v="${v}" class="${String(val)===String(v)?"on":""}">${n}</button>`).join("")}</div>`;
+  const tg=(id,on,label,sub)=>`<label class="tg setrow"><input type="checkbox" data-ptg="${id}" ${on?"checked":""}><span><b>${label}</b>${sub?`<br><span class="small muted">${sub}</span>`:""}</span></label>`;
+  const row=(label,sub,ctl)=>`<div class="setrow"><div><b>${label}</b>${sub?`<div class="small muted">${sub}</div>`:""}</div>${ctl}</div>`;
+  const fn=()=>head("⚙️ ตั้งค่า","ค่าการแสดงผล เสียง และการแจ้งเตือนเก็บไว้ในเครื่องนี้ · ค่าการเล่นเก็บไว้กับเซฟสายการบินนี้")+
+  `<div class="setsec"><div class="eyebrow">🖥️ การแสดงผล</div>
+    ${row("โหมดแสง","",seg("theme",THEMES.map(t=>[t[0],t[1]+" "+t[2]]),themePref()))}
+    ${row("ขนาดตัวอักษร","ขยายทั้งหน้าจอ",seg("font",[["s","เล็ก"],["m","ปกติ"],["l","ใหญ่"],["xl","ใหญ่มาก"]],PREF.font))}
+    ${row("แอนิเมชัน","ลดการเคลื่อนไหวช่วยให้ลื่นขึ้นบนเครื่องรุ่นเก่า",seg("motion",[["auto","ตามเครื่อง"],["full","เต็ม"],["less","ลด"]],PREF.motion))}
+    ${tg("fx",PREF.fx,"เอฟเฟกต์ฉลอง","พลุกระดาษ เหรียญกระจาย และเครื่องบินบินผ่านตอนได้รางวัล")}
+    ${tg("floats",PREF.floats,"ตัวเลขเงินลอยขึ้น","บนแผนที่ตอนเครื่องลงจอด และข้างยอดเงิน")}
+    ${S?tg("traf",S.ui_traf!==false,"ป้ายจำนวนคนบนแผนที่","ตัวเลขคนขึ้น-ลงที่แต่ละสนามบิน"):""}
+    ${S?row("รายการฝูงบิน","",seg("fview",[["","อัตโนมัติ"],["row","แถว"],["card","การ์ด"]],S.ui_fview||"")):""}</div>
+  <div class="setsec"><div class="eyebrow">🔔 การแจ้งเตือนและประกาศ</div>
+    ${row("ข้อความเด้งด้านล่าง","ประกาศจากเกม เช่น คู่ค้าขอความร่วมมือ รางวัล และผลจากปุ่มที่กด",seg("toast",[["all","ทั้งหมด"],["mine","เฉพาะที่กด"],["off","ปิด"]],PREF.toast))}
+    ${S?tg("cel",!S.celOff,"ป๊อปอัปปลดล็อกและความสำเร็จ","การ์ดกลางจอตอนปลดล็อกระบบใหม่หรือได้ความสำเร็จ (ปิดแล้วยังดูได้ในข่าว)"):""}
+    ${row("รางวัลเข้าเกมรายวัน","",seg("daily",[["popup","แสดงหน้าต่าง"],["silent","รับให้อัตโนมัติ"]],PREF.daily))}
+    ${row("สรุปรายได้ตอนกลับมาเล่น","รายได้ระหว่างปิดเกมได้เท่าเดิมทั้งสองแบบ",seg("away",[["popup","แสดงหน้าต่าง"],["silent","แค่ใส่ในข่าว"]],PREF.away))}
+    <div class="setrow col"><div><b>ข่าวที่แสดงในหน้าภาพรวม</b><div class="small muted">ข่าวที่ปิดไว้ยังเกิดขึ้นตามปกติ แค่ไม่แสดงในรายการ</div></div>
+     <div class="setchips">${NEWS_CATS.map(([k,n])=>`<label class="tg"><input type="checkbox" data-pnews="${k}" ${PREF.news[k]!==false?"checked":""}> ${n}</label>`).join("")}</div></div></div>
+  <div class="setsec"><div class="eyebrow">🎮 การเล่น</div>
+    ${row("ความเร็วตอนเปิดเกม","",seg("speed0",SPEEDS.map(v=>[v,v+"×"]),PREF.speed0))}
+    ${S?tg("amx",S.autoMx,"ส่งซ่อมบำรุงอัตโนมัติ","ส่งเครื่องที่สภาพต่ำกว่า 50% เข้าซ่อมเอง วันละไม่เกิน 1 ลำต่อเส้นทาง"):""}
+    ${S?tg("aadv",!!S.autoAdv,"🤖 จัดการอัตโนมัติทุกวัน","ปรับราคา ย้ายเครื่องจากเส้นที่ว่างไปเส้นที่ล้น และใส่เครื่องจอดว่างให้เอง"):""}
+    ${S?row("ความเก่งของคู่แข่ง","",seg("diff",DIFFS.map(([k,n])=>[k,n]),S.diff||"auto")):""}</div>
+  <div class="setsec"><div class="eyebrow">🔊 เสียงและการสั่น</div>
+    ${tg("sound",PREF.sound,"เสียงประกอบ","เสียงตอนซื้อ ได้รางวัล ได้เงิน และมีประกาศ")}
+    ${row("ความดัง","",`<input type="range" id="pvol" min="0" max="1" step=".05" value="${PREF.vol}" style="max-width:180px">`)}
+    ${S?tg("hap",S.haptic!==false,"สั่นเมื่อซื้อหรือได้รางวัล","ใช้ได้บนมือถือที่รองรับ"):""}</div>
+  <div class="setsec"><div class="eyebrow">💾 ข้อมูลและเวอร์ชัน</div>
+    <div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn sm" id="pset-save">💾 สำรอง / ย้ายเซฟ</button><button class="btn sm" id="pset-ver">ℹ️ v${GAME_VERSION} · มีอะไรใหม่</button><button class="btn sm" id="pset-help">❓ คู่มือระบบ</button>${S?`<button class="btn sm danger" id="pset-reset">เริ่มเกมใหม่</button>`:""}<button class="btn sm" id="pset-def">คืนค่าเริ่มต้นการตั้งค่า</button></div></div>`;
+  fn.bind=()=>{
+    $$("[data-pset]").forEach(b=>b.onclick=()=>{const k=b.dataset.pset,v=b.dataset.v;
+      if(k==="theme"){try{localStorage.setItem("airline-theme",v)}catch(e){}applyTheme(v);baseKey="";fogKey=""}
+      else if(k==="fview"){if(S){S.ui_fview=v||undefined;save()}}
+      else if(k==="diff"){if(S){S.diff=v;save()}}
+      else{PREF[k]=k==="speed0"?+v:v;savePref();applyPrefs()}
+      sfx("tap");drawSheet();if(S&&k!=="speed0")renderView()});
+    $$("[data-ptg]").forEach(c=>c.onchange=()=>{const k=c.dataset.ptg,on=c.checked;
+      if(k==="cel"){S.celOff=!on;save()}else if(k==="amx"){S.autoMx=on;save()}else if(k==="aadv"){S.autoAdv=on;if(on){S.autoMx=true;autoAdvTick()}save()}
+      else if(k==="hap"){S.haptic=on;save();if(on)buzz(20)}else if(k==="traf"){S.ui_traf=on;save()}
+      else{PREF[k]=on;savePref();applyPrefs();if(k==="sound"&&on)sfx("note")}
+      drawSheet();if(S)renderView()});
+    $$("[data-pnews]").forEach(c=>c.onchange=()=>{PREF.news={...PREF.news,[c.dataset.pnews]:c.checked};savePref();if(S)renderView()});
+    {const v=$("#pvol");if(v){v.oninput=()=>{PREF.vol=+v.value;savePref()};v.onchange=()=>sfx("buy")}}
+    $("#pset-save").onclick=()=>openSheet(saveSheet());
+    $("#pset-ver").onclick=()=>openSheet(changelogSheet(null));
+    $("#pset-help").onclick=()=>openSheet(guideSheet);
+    {const r=$("#pset-reset");if(r)r.onclick=()=>openSheet(resetSheet)}
+    $("#pset-def").onclick=()=>{PREF={...PREF_DEF,news:{}};savePref();applyPrefs();toast("คืนค่าการตั้งค่าในเครื่องนี้แล้ว");drawSheet();if(S)renderView()}};
+  return fn}
 function resetSheet(){const L=S.last||{};return head("เริ่มเกมใหม่?","ความคืบหน้าทั้งหมดของ "+esc(S.name)+" จะถูกลบ และย้อนกลับไม่ได้")+`
   <div class="kv"><div><div class="k">เล่นมาแล้ว</div><div class="v">${S.day} วัน</div></div><div><div class="k">มูลค่ากิจการ</div><div class="v">${money(valuation(),true)}</div></div>
    <div><div class="k">เครื่องบิน / เรือ</div><div class="v">${S.fleet.length} / ${S.ships.length}</div></div><div><div class="k">ภารกิจสำเร็จ</div><div class="v">${S.mdone||0}</div></div></div>
@@ -4444,6 +4518,7 @@ const keepUI=(()=>{const openK=new Set(),closedK=new Set(),scr=new Map();
   return {openK,closedK,scr}})();
 
 S=load();if(!S)rollFate();else{dispCash=S.cash;seenNews=S.news.length?S.news[0].id:0}
+speed=PREF.speed0||1;
 renderApp();requestAnimationFrame(frame);
 afterUpdate();setTimeout(()=>checkUpdate(),4000);setInterval(()=>checkUpdate(),3*60e3);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkUpdate()});
