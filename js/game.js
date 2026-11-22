@@ -382,19 +382,29 @@ function seaPath(A,B){const shut=suezShut(),key=A+B+(shut?"x":"");if(seaCache.ha
 let SEA_X=2.3;
 const SHIPS=[
  {id:"cst",name:"เรือชายฝั่ง 600 TEU",tag:"ราคาถูกที่สุด เหมาะเริ่มต้นและเส้นทางสั้นมาก",teu:600,speed:30,price:160e6,cpk:200,len:120},
+ {id:"rfs",name:"เรือห้องเย็นเล็ก 400 TEU",tag:"ห้องเย็นราคาถูก เหมาะเส้นสั้น ค่าระวาง 1.8 เท่า",teu:400,speed:34,price:200e6,cpk:190,len:110,reefer:1},
+ {id:"csx",name:"ชายฝั่งด่วน 900 TEU",tag:"เรือเล็กความเร็วสูง วิ่งถี่ในเส้นสั้น",teu:900,speed:44,price:330e6,cpk:380,len:135},
+ {id:"fd1",name:"ฟีดเดอร์ 1,000 TEU",tag:"ก้าวต่อจากเรือชายฝั่ง ต้นทุนต่อตู้ต่ำลง",teu:1000,speed:33,price:270e6,cpk:300,len:150},
  {id:"rfr",name:"เรือห้องเย็น 800 TEU",tag:"ขนผลไม้ อาหารทะเล ค่าระวาง 1.8 เท่า",teu:800,speed:38,price:380e6,cpk:330,len:150,reefer:1},
  {id:"fdr",name:"เรือฟีดเดอร์ 1,700 TEU",tag:"เรือเล็ก วิ่งระยะใกล้ในภูมิภาค",teu:1700,speed:35,price:450e6,cpk:450,len:170},
  {id:"rfl",name:"เรือห้องเย็นใหญ่ 2,200 TEU",tag:"ห้องเย็นรุ่นใหญ่ ค่าระวาง 1.8 เท่า ส่งได้ทีละมาก",teu:2200,speed:39,price:1.05e9,cpk:760,len:210,reefer:1},
  {id:"fdx",name:"ฟีดเดอร์ด่วน 2,500 TEU",tag:"เร็วที่สุดในกองเรือ ไปกลับได้หลายรอบ",teu:2500,speed:46,price:780e6,cpk:760,len:200},
+ {id:"fmx",name:"ฟีดเดอร์แม็กซ์ 2,800 TEU",tag:"ฟีดเดอร์ลำใหญ่สุด ประหยัดกว่ารุ่นด่วน วิ่งได้ไกลขึ้น",teu:2800,speed:38,price:820e6,cpk:640,len:210},
  {id:"sub",name:"ซับพานาแมกซ์ 3,500 TEU",tag:"ขนาดกำลังดี วิ่งได้ทั้งใกล้และไกล",teu:3500,speed:40,price:1.2e9,cpk:900,len:240},
  {id:"rfx",name:"ห้องเย็นด่วน 1,200 TEU",tag:"ห้องเย็นความเร็วสูง ผลไม้ถึงไว ค่าระวาง 1.8 เท่า",teu:1200,speed:46,price:720e6,cpk:620,len:170,reefer:1},
  {id:"ro1",name:"เรือขนรถ Ro-Ro 2,000 คัน",tag:"ขนรถยนต์ ค่าระวาง 1.5 เท่า สินค้ามีน้อยกว่าตู้",teu:1000,speed:38,price:900e6,cpk:640,len:180,roro:1},
+ {id:"ro3",name:"เรือขนรถ 4,500 คัน",tag:"ขนรถขนาดกลาง ค่าระวาง 1.5 เท่า",teu:2200,speed:37,price:1.55e9,cpk:1000,len:190,roro:1},
  {id:"ro2",name:"เรือขนรถ PCTC 7,000 คัน",tag:"เรือขนรถลำใหญ่ ขนรถทีละหลายพันคัน",teu:3500,speed:37,price:2.3e9,cpk:1400,len:200,roro:1},
  {id:"pmx",name:"พานาแมกซ์ 5,000 TEU",tag:"ขนาดกลาง ใช้ได้เกือบทุกท่าเรือ",teu:5000,speed:40,price:1.6e9,cpk:1100,len:294},
+ {id:"pmf",name:"พานาแมกซ์ด่วน 4,500 TEU",tag:"เร็วแบบฟีดเดอร์ด่วนแต่ลำใหญ่ ไปกลับได้หลายรอบ",teu:4500,speed:45,price:1.75e9,cpk:1300,len:290},
+ {id:"ec6",name:"อีโคกลาง 6,800 TEU",tag:"ใช้ก๊าซ LNG ขนาดกลาง ประหยัดน้ำมัน แต่แล่นช้า",teu:6800,speed:36,price:2.0e9,cpk:950,len:300,eco:1},
  {id:"ppx",name:"โพสต์พานาแมกซ์ 8,500 TEU",tag:"ใหญ่กว่าพานาแมกซ์ ยังเข้าท่าทั่วไปได้",teu:8500,speed:41,price:2.4e9,cpk:1500,len:330},
+ {id:"p10",name:"โพสต์พานาแมกซ์ 10,000 TEU",tag:"รุ่นใหญ่ของโพสต์พานาแมกซ์ ยังเข้าท่าทั่วไปได้",teu:10000,speed:41,price:2.8e9,cpk:1700,len:340},
  {id:"eco",name:"อีโค LNG 11,000 TEU",tag:"ใช้ก๊าซ LNG กินน้ำมันน้อยมาก แต่แล่นช้ากว่า",teu:11000,speed:37,price:3.4e9,cpk:1300,len:345,eco:1},
  {id:"npx",name:"นีโอพานาแมกซ์ 13,000 TEU",tag:"ใหญ่ ต้นทุนต่อตู้ถูกลง",teu:13000,speed:41,price:3.6e9,cpk:2000,len:366},
+ {id:"npe",name:"นีโอพานาแมกซ์อีโค 15,000 TEU",tag:"นีโอพานาแมกซ์ใช้ LNG ต้นทุนต่อตู้ถูกมาก แต่ช้ากว่า",teu:15000,speed:38,price:4.3e9,cpk:1750,len:366,eco:1},
  {id:"vlc",name:"VLCS 18,000 TEU",tag:"ยักษ์ใหญ่ เทียบได้เฉพาะท่าเรือน้ำลึก",teu:18000,speed:40,price:4.9e9,cpk:2300,len:395,deep:1},
+ {id:"v20",name:"VLCS 20,000 TEU",tag:"ยักษ์รุ่นใหม่ เทียบได้เฉพาะท่าเรือน้ำลึก",teu:20000,speed:40,price:5.4e9,cpk:2400,len:400,deep:1},
  {id:"ulc",name:"ULCV 24,000 TEU",tag:"ใหญ่ที่สุด เทียบได้เฉพาะท่าเรือน้ำลึก",teu:24000,speed:39,price:6.2e9,cpk:2600,len:400,deep:1},
  {id:"ult",name:"ULCV อีโค 24,300 TEU",tag:"เรือธงรุ่นใหม่ ใหญ่ที่สุดและประหยัดน้ำมันที่สุด",teu:24300,speed:40,price:7.8e9,cpk:2000,len:400,deep:1,eco:1},
  {id:"fs_hydro",future:1,name:"✨ ไฮโดรฟอยล์ 3,000 TEU",tag:"✨ แห่งอนาคต · ความเร็ว 90 กม./ชม. เร็วกว่าเรือทั่วไปสองเท่า",teu:3000,speed:90,price:2.6e9,cpk:1500,len:220},
@@ -406,7 +416,7 @@ const SHIPS=[
 ];
 /* How far each ship can sail between two ports without refuelling (km of sea route). Small coastal / feeder ships
    stay in their region; long lanes (Asia–Europe ~18,000 km, round the Cape ~25,000 km) need ocean-going ships. */
-const SHIP_RNG={cst:5000,rfr:9000,fdr:8000,rfl:15000,fdx:10000,sub:18000,rfx:13000,ro1:14000,ro2:24000,pmx:24000,ppx:28000,eco:30000,npx:30000,vlc:30000,ulc:30000,ult:30000};
+const SHIP_RNG={rfs:6000,csx:5500,fd1:6500,fmx:14000,ro3:20000,pmf:22000,ec6:26000,p10:28000,npe:30000,v20:30000,cst:5000,rfr:9000,fdr:8000,rfl:15000,fdx:10000,sub:18000,rfx:13000,ro1:14000,ro2:24000,pmx:24000,ppx:28000,eco:30000,npx:30000,vlc:30000,ulc:30000,ult:30000};
 SHIPS.forEach(m=>m.rng=SHIP_RNG[m.id]||30000);
 const SHIP_MAX=Math.max(...SHIPS.map(m=>m.rng));
 const shipM=id=>SHIPS.find(m=>m.id===id);
@@ -508,8 +518,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.43";
+const GAME_VERSION="1.44";
 const CHANGELOG=[
+ ["1.44","22 พ.ย. 2569",["เพิ่มเรือสินค้า 10 รุ่น: ห้องเย็นเล็ก 400 TEU, ชายฝั่งด่วน 900 TEU, ฟีดเดอร์ 1,000 TEU, ฟีดเดอร์แม็กซ์ 2,800 TEU, เรือขนรถ 4,500 คัน, พานาแมกซ์ด่วน 4,500 TEU, อีโคกลาง 6,800 TEU, โพสต์พานาแมกซ์ 10,000 TEU, นีโอพานาแมกซ์อีโค 15,000 TEU และ VLCS 20,000 TEU","รวมเรือปกติเป็น 26 รุ่น (ไม่นับเรือแห่งอนาคตและฝูงพิเศษ)"]],
  ["1.43","22 พ.ย. 2569",["เครื่องจอดว่างในหน้าเส้นทางบอกความจุแล้ว: ขนได้กี่ตัน (หรือกี่ที่นั่ง) ต่อเที่ยว บินได้กี่เที่ยวต่อวัน และรวมต่อวันเท่าไร พร้อมชนิดสินค้าที่ตั้งไว้"]],
  ["1.42","22 พ.ย. 2569",["หน้าเส้นทาง (เครื่องบินและเรือ) บอกแล้วว่าเครื่อง/เรือที่จอดว่างแต่ละลำคุ้มไหม: ขึ้นกำไรต่อวันที่จะเพิ่มขึ้นถ้าใส่ลำนั้น เรียงจากคุ้มสุด ลำที่ดีที่สุดมีป้าย ⭐ คุ้มสุด ลำที่ไม่ช่วยขึ้นสีแดงว่าไม่คุ้ม","รายการเครื่อง/เรือจอดว่างในหน้าเส้นทางไม่รวมตัวสำรองแล้ว (ตัวสำรองระบบส่งไปช่วยเอง)"]],
  ["1.41","22 พ.ย. 2569",["ดูง่ายขึ้นว่าเครื่องบิน/เรือสำรองทำงานอยู่ไหม: แท็บฝูงบินแยกกลุ่ม “🛟 สำรอง · กำลังช่วยงาน” กับ “🛟 สำรอง · จอดรอที่สาขา/ท่า”","แต่ละลำมีป้าย “🛟 กำลังช่วย” ตามด้วยเส้นที่บินอยู่ หรือ “🛟 จอดรอที่ …” (เรือเคยขึ้นว่าจอดว่าง)"]],
