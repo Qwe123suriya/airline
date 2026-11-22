@@ -527,8 +527,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.45";
+const GAME_VERSION="1.46";
 const CHANGELOG=[
+ ["1.46","22 พ.ย. 2569",["💾 สำรอง / ย้ายเซฟ (เมนู ···): ดาวน์โหลดไฟล์เซฟ หรือคัดลอกรหัสเซฟ แล้วนำเข้าในเครื่องใหม่ได้ · หน้าเริ่มเกมมีปุ่ม “💾 นำเข้าเซฟ” ด้วย","เกมตรวจไฟล์/รหัสก่อนนำเข้าเสมอ และบอกชื่อสายการบิน ปี เส้นทาง และเงินให้ดูก่อนกดยืนยัน","เตรียมหน้าเว็บให้ Google ค้นเจอ: คำอธิบายเกม robots.txt และ sitemap"]],
  ["1.45","22 พ.ย. 2569",["แก้บัคใหญ่ระบบสินค้าทางอากาศ: เครื่องขนสินค้าไม่เคยขนของค้าง (📥 สะสม) เลย ของค้างจึงพอกพูนไม่ลด ตอนนี้ขนของค้างเมื่อมีที่ว่างแล้ว","เรือที่ ⏳ รอสินค้า แสดงจอดอยู่ในท่าบนแผนที่ ไม่แล่นไปมาเหมือนเรือทำงาน","ระบบสำรองใหม่: ยกเลิกสำรองรายสาขา ใช้ 🛟 ฐานเครื่องบินสำรองและอู่เรือสำรองทวีปละแห่ง (ที่จอดอย่างเดียว ไม่มีเส้นทางของตัวเอง)","เมื่อเส้นไหนล้น ระบบส่งตัวสำรองจากฐานที่ใกล้ที่สุดไปช่วย ไปได้ทุกที่ในโลก แต่เส้นที่ช่วยต้องอยู่ในพิสัยเครื่อง/เรือ บนแผนที่เห็นเครื่องหรือเรือเดินทางไป (ไม่มีเส้น) ค่าน้ำมันเที่ยวไป-กลับคิดตามระยะ","พอเส้นนั้นมีที่ว่างพอ 3 วันติด ตัวสำรองจะเดินทางกลับฐาน และเส้นนั้นจะเรียกตัวสำรองใหม่ได้อีกใน 7 วัน (กันการส่งไปกลับไปมา)","ตัวสำรองเดิมของแต่ละสาขาย้ายไปอยู่ฐานของทวีปนั้นให้อัตโนมัติ · ดูภาพรวมฐานได้ที่แท็บสาขา"]],
  ["1.44","22 พ.ย. 2569",["เพิ่มเรือสินค้า 10 รุ่น: ห้องเย็นเล็ก 400 TEU, ชายฝั่งด่วน 900 TEU, ฟีดเดอร์ 1,000 TEU, ฟีดเดอร์แม็กซ์ 2,800 TEU, เรือขนรถ 4,500 คัน, พานาแมกซ์ด่วน 4,500 TEU, อีโคกลาง 6,800 TEU, โพสต์พานาแมกซ์ 10,000 TEU, นีโอพานาแมกซ์อีโค 15,000 TEU และ VLCS 20,000 TEU","รวมเรือปกติเป็น 26 รุ่น (ไม่นับเรือแห่งอนาคตและฝูงพิเศษ)"]],
  ["1.43","22 พ.ย. 2569",["เครื่องจอดว่างในหน้าเส้นทางบอกความจุแล้ว: ขนได้กี่ตัน (หรือกี่ที่นั่ง) ต่อเที่ยว บินได้กี่เที่ยวต่อวัน และรวมต่อวันเท่าไร พร้อมชนิดสินค้าที่ตั้งไว้"]],
@@ -616,6 +617,39 @@ let S=null, tab="home", paused=false, speed=1, sheetFn=null, lastTick=performanc
 
 function load(){try{const t=localStorage.getItem(KEY);if(t)return migrate(JSON.parse(t))}catch(e){}return null}
 function save(){try{if(S)localStorage.setItem(KEY,JSON.stringify(S));else localStorage.removeItem(KEY)}catch(e){}}
+/* 💾 Save export / import: the save lives only in this browser, so players can move it to another device or keep a
+   backup. The code is the save JSON, gzip-compressed when the browser can, in base64: "AIRSAVE1G:..." (or "AIRSAVE1:..."
+   uncompressed). A file holds the same text. Import checks the save, then replaces the current game. */
+// download file names are ASCII only: Chrome renames files with Thai names to "download"
+const b64e=u8=>{let s="";for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s)};
+const b64d=t=>{const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u};
+async function gzipBytes(u8,how){const cs=how==="gz"?new CompressionStream("gzip"):new DecompressionStream("gzip");return new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(cs)).arrayBuffer())}
+async function exportCode(){const json=JSON.stringify(S),u8=new TextEncoder().encode(json);
+  if(typeof CompressionStream!=="undefined"){try{return "AIRSAVE1G:"+b64e(await gzipBytes(u8,"gz"))}catch(e){}}return "AIRSAVE1:"+b64e(u8)}
+async function decodeSave(txt){txt=(txt||"").trim().replace(/\s+/g,"");let json;
+  if(txt.startsWith("{"))json=txt;
+  else if(txt.startsWith("AIRSAVE1G:")){if(typeof DecompressionStream==="undefined")throw new Error("เบราว์เซอร์นี้เปิดรหัสแบบบีบอัดไม่ได้");json=new TextDecoder().decode(await gzipBytes(b64d(txt.slice(10)),"gunzip"))}
+  else if(txt.startsWith("AIRSAVE1:"))json=new TextDecoder().decode(b64d(txt.slice(9)));
+  else throw new Error("ไม่ใช่รหัสเซฟของเกมนี้");
+  const o=JSON.parse(json);if(!o||typeof o!=="object"||!o.hub||!Array.isArray(o.fleet)||!Array.isArray(o.routes)||typeof o.cash!=="number")throw new Error("ข้อมูลเซฟไม่ครบหรือเสียหาย");return o}
+function saveSheet(st){st=st||{};const fn=()=>head("💾 สำรอง / ย้ายเซฟ","เซฟเก็บอยู่ในเบราว์เซอร์เครื่องนี้เท่านั้น ถ้าล้างข้อมูลเบราว์เซอร์หรือเปลี่ยนเครื่อง เซฟจะหาย ส่งออกเก็บไว้ แล้วนำเข้าในเครื่องใหม่ได้")+
+  (S?`<div class="kbox"><b>ส่งออกเซฟ</b><div class="small muted">${esc(S.name)} · ปีที่ ${Math.floor(S.day/365)} · ${S.routes.length} เส้นทาง · ${S.fleet.length} เครื่อง · ${(S.ships||[]).length} เรือ</div>
+    <div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn primary" id="svdl">⬇️ ดาวน์โหลดไฟล์เซฟ</button><button class="btn" id="svcp">📋 คัดลอกรหัสเซฟ</button></div>
+    ${st.code?`<textarea id="svcode" readonly rows="3" style="width:100%;font-family:var(--f-mono,monospace);font-size:11px">${st.code}</textarea><div class="small muted">รหัสยาว ${st.code.length.toLocaleString()} ตัวอักษร · ${st.copied?"คัดลอกแล้ว วางเก็บไว้ในโน้ตหรือส่งให้ตัวเองได้":"ถ้าคัดลอกอัตโนมัติไม่ได้ ให้กดค้างที่ช่องแล้วเลือกทั้งหมด"}</div>`:""}</div>`:"")+
+  `<div class="kbox"><b>นำเข้าเซฟ</b><div class="small muted">เลือกไฟล์เซฟ หรือวางรหัสเซฟ${S?" · <b class=\"warn\">เกมที่เล่นอยู่ตอนนี้จะถูกแทนที่</b> (ส่งออกเก็บไว้ก่อนถ้ายังอยากเก็บ)":""}</div>
+    <label class="btn" style="text-align:center">📂 เลือกไฟล์เซฟ<input type="file" id="svfile" accept=".txt,.json,.airsave,text/plain,application/json" hidden></label>
+    <textarea id="svin" rows="3" placeholder="หรือวางรหัสเซฟที่นี่ (ขึ้นต้นด้วย AIRSAVE1)" style="width:100%;font-size:12px">${esc(st.paste||"")}</textarea>
+    ${st.err?`<div class="small bad">⚠️ ${esc(st.err)}</div>`:""}
+    ${st.pending?`<div class="small">พบเซฟ <b>${esc(st.pending.name||"")}</b> · ปีที่ ${Math.floor((st.pending.day||0)/365)} · ${st.pending.routes.length} เส้นทาง · ${st.pending.fleet.length} เครื่อง · เงิน ${money(st.pending.cash,true)}</div><button class="btn primary" id="svok">✅ ยืนยันนำเข้าและเล่นต่อ</button>`:`<button class="btn" id="svchk">ตรวจรหัสที่วาง</button>`}</div>`;
+  fn.bind=()=>{
+    const dl=$("#svdl");if(dl)dl.onclick=async()=>{save();const code=await exportCode(),b=new Blob([code],{type:"text/plain"}),a=document.createElement("a");
+      a.href=URL.createObjectURL(b);a.download=`airline-save-${(S.code||"XX").replace(/[^A-Za-z0-9]/g,"")}-y${Math.floor(S.day/365)}d${S.day%365}.txt`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);toast("ดาวน์โหลดไฟล์เซฟแล้ว")};
+    const cp=$("#svcp");if(cp)cp.onclick=async()=>{save();st.code=await exportCode();st.copied=false;try{await navigator.clipboard.writeText(st.code);st.copied=true;toast("คัดลอกรหัสเซฟแล้ว")}catch(e){}drawSheet();const ta=$("#svcode");if(ta&&!st.copied){ta.focus();ta.select()}};
+    const check=async txt=>{st.err=null;st.pending=null;try{st.pending=await decodeSave(txt)}catch(e){st.err=e.message||"อ่านเซฟไม่ได้"}drawSheet()};
+    const f=$("#svfile");if(f)f.onchange=async()=>{const file=f.files&&f.files[0];if(!file)return;st.paste="";await check(await file.text())};
+    const ck=$("#svchk");if(ck)ck.onclick=()=>{st.paste=$("#svin").value;check(st.paste)};
+    const ok=$("#svok");if(ok)ok.onclick=()=>{const o=st.pending;if(!o)return;try{S=migrate(o);dispCash=S.cash;seenNews=S.news&&S.news.length?S.news[0].id:0;save();sheetFn=null;$("#sheet").innerHTML="";tab="home";renderApp();toast(`นำเข้าเซฟ ${S.name} แล้ว`)}catch(e){st.err="นำเข้าไม่สำเร็จ: "+(e.message||e);st.pending=null;drawSheet()}}};
+  return fn}
 function migrate(s){
   s.bases??=[s.hub];s.mkt??=null;s.hedge??=null;s.ach??=[];s.autoMx??=true;s.totCargo??=0;
   s.apT??={};s.apY??={};
@@ -683,7 +717,7 @@ function renderStart(){
      </div>
    </div>
    <div class="row"><button class="btn" id="re" style="flex:1">สุ่มชะตาใหม่</button><button class="btn primary" id="go" style="flex:1.4">เริ่มกิจการ</button></div>
-   <div class="row between"><button class="btn sm" id="hlp">อ่านคู่มือระบบในเกม</button><button class="btn sm" id="sver">ℹ️ v${GAME_VERSION} · มีอะไรใหม่</button></div>
+   <div class="row between"><button class="btn sm" id="hlp">อ่านคู่มือระบบในเกม</button><button class="btn sm" id="simp">💾 นำเข้าเซฟ</button><button class="btn sm" id="sver">ℹ️ v${GAME_VERSION} · มีอะไรใหม่</button></div>
   </div></div><div id="sheet"></div>`;
   flap($("#fh"),h.c,justRolled?900:1);justRolled=false;
   const keep=()=>{fate.name=$("#nm").value.trim()||fate.name;fate.code=($("#cd").value.replace(/[^a-z]/gi,"").toUpperCase()+"XX").slice(0,2)};
@@ -691,6 +725,7 @@ function renderStart(){
   $("#hb").onchange=e=>{keep();fate.hub=e.target.value;fate.cap0??=fate.cap;fate.cap=fairCap(fate.hub,fate.cap0);justRolled=true;renderStart()};
   $$("[data-sdiff]").forEach(b=>b.onclick=()=>{keep();fate.diff=b.dataset.sdiff;renderStart()});
   $("#go").onclick=()=>{keep();newGame()};
+  {const si=$("#simp");if(si)si.onclick=()=>{keep();openSheet(saveSheet())}}
   $("#hlp").onclick=()=>openSheet(guideSheet);
   $("#sver").onclick=()=>openSheet(changelogSheet(null));
 }
@@ -1474,6 +1509,7 @@ function renderApp(){
         <button role="menuitem" id="help"><span class="mi">?</span>คู่มือระบบ</button>
         <button role="menuitem" id="fsbtn"><span class="mi">⛶</span><span id="fslbl">เต็มจอ (ซ่อนแถบเบราว์เซอร์)</span></button>
         <button role="menuitem" id="spotbtn"><span class="mi">🎵</span>เชื่อม Spotify</button>
+        <button role="menuitem" id="savebtn"><span class="mi">💾</span>สำรอง / ย้ายเซฟ (ส่งออก · นำเข้า)</button>
         <button role="menuitem" id="restart"><span class="mi"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 3.5v5h5"/></svg></span>เริ่มเกมใหม่</button>
        </div></div></div>
    </div></header>
@@ -1490,6 +1526,7 @@ function renderApp(){
   $$("[data-bm]").forEach(b=>b.onclick=()=>setBM(b.dataset.bm));
   $("#barmin").onclick=()=>{S.ui_barmin=!S.ui_barmin;save();applyBarMin()};applyBarMin();
   $("#restart").onclick=()=>{closeMore();openSheet(resetSheet)};
+  $("#savebtn").onclick=()=>{closeMore();openSheet(saveSheet())};
   $("#spotbtn").onclick=()=>{closeMore();openSheet(spotifySheet())};
   const fsToggle=()=>{if(fsEl())fsExit();else if(!fsEnter())toast("เบราว์เซอร์นี้เปิดเต็มจอไม่ได้ · ลองกด “เพิ่มไปยังหน้าจอหลัก” ในเมนูเบราว์เซอร์ แล้วเปิดเกมจากไอคอนนั้น")};
   $("#fsbtn").onclick=()=>{closeMore();fsToggle()};$("#fsq").onclick=fsToggle;updFsq();
