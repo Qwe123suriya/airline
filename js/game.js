@@ -527,8 +527,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.46";
+const GAME_VERSION="1.47";
 const CHANGELOG=[
+ ["1.47","22 พ.ย. 2569",["หน้าเริ่มเกมใหม่: ไม่สุ่มแล้ว ถามทีละขั้น 6 ขั้น · ชื่อสายการบิน → ภูมิภาค → สนามบินฐาน → ทุนและน้ำมัน → คู่แข่ง → สรุปตั๋ว (กดแก้ย้อนแต่ละขั้นได้)","สนามบินฐานมีคะแนนความเหมาะสม 0–100 เรียงจากเหมาะสุด พร้อมเหตุผล: คนเดินทางจากเมืองใกล้ ๆ จำนวนเมืองในระยะบินง่าย ราคาเครื่องลำแรก ค่าสนามบิน และท่าเรือใกล้เคียง · 3 อันดับแรกมีป้าย ⭐ แนะนำ","ยังสุ่มได้: ทุกขั้นมีตัวเลือก 🎲 และมีปุ่ม “สุ่มทั้งหมดแล้วเริ่มเลย” แบบเดิม","ความยากรวม (ดาว) นับความเหมาะสมของสนามบิน ทุน น้ำมัน และความเก่งของคู่แข่ง"]],
  ["1.46","22 พ.ย. 2569",["💾 สำรอง / ย้ายเซฟ (เมนู ···): ดาวน์โหลดไฟล์เซฟ หรือคัดลอกรหัสเซฟ แล้วนำเข้าในเครื่องใหม่ได้ · หน้าเริ่มเกมมีปุ่ม “💾 นำเข้าเซฟ” ด้วย","เกมตรวจไฟล์/รหัสก่อนนำเข้าเสมอ และบอกชื่อสายการบิน ปี เส้นทาง และเงินให้ดูก่อนกดยืนยัน","เตรียมหน้าเว็บให้ Google ค้นเจอ: คำอธิบายเกม robots.txt และ sitemap"]],
  ["1.45","22 พ.ย. 2569",["แก้บัคใหญ่ระบบสินค้าทางอากาศ: เครื่องขนสินค้าไม่เคยขนของค้าง (📥 สะสม) เลย ของค้างจึงพอกพูนไม่ลด ตอนนี้ขนของค้างเมื่อมีที่ว่างแล้ว","เรือที่ ⏳ รอสินค้า แสดงจอดอยู่ในท่าบนแผนที่ ไม่แล่นไปมาเหมือนเรือทำงาน","ระบบสำรองใหม่: ยกเลิกสำรองรายสาขา ใช้ 🛟 ฐานเครื่องบินสำรองและอู่เรือสำรองทวีปละแห่ง (ที่จอดอย่างเดียว ไม่มีเส้นทางของตัวเอง)","เมื่อเส้นไหนล้น ระบบส่งตัวสำรองจากฐานที่ใกล้ที่สุดไปช่วย ไปได้ทุกที่ในโลก แต่เส้นที่ช่วยต้องอยู่ในพิสัยเครื่อง/เรือ บนแผนที่เห็นเครื่องหรือเรือเดินทางไป (ไม่มีเส้น) ค่าน้ำมันเที่ยวไป-กลับคิดตามระยะ","พอเส้นนั้นมีที่ว่างพอ 3 วันติด ตัวสำรองจะเดินทางกลับฐาน และเส้นนั้นจะเรียกตัวสำรองใหม่ได้อีกใน 7 วัน (กันการส่งไปกลับไปมา)","ตัวสำรองเดิมของแต่ละสาขาย้ายไปอยู่ฐานของทวีปนั้นให้อัตโนมัติ · ดูภาพรวมฐานได้ที่แท็บสาขา"]],
  ["1.44","22 พ.ย. 2569",["เพิ่มเรือสินค้า 10 รุ่น: ห้องเย็นเล็ก 400 TEU, ชายฝั่งด่วน 900 TEU, ฟีดเดอร์ 1,000 TEU, ฟีดเดอร์แม็กซ์ 2,800 TEU, เรือขนรถ 4,500 คัน, พานาแมกซ์ด่วน 4,500 TEU, อีโคกลาง 6,800 TEU, โพสต์พานาแมกซ์ 10,000 TEU, นีโอพานาแมกซ์อีโค 15,000 TEU และ VLCS 20,000 TEU","รวมเรือปกติเป็น 26 รุ่น (ไม่นับเรือแห่งอนาคตและฝูงพิเศษ)"]],
@@ -684,7 +685,8 @@ function rollFate(keepName){
   fate={hub:hub.c,cap,cap0,fuel,name:keepName&&fate?fate.name:rnd(NAMES),code:keepName&&fate?fate.code:String.fromCharCode(65+Math.random()*26|0,65+Math.random()*26|0),diff:fate&&fate.diff};
   justRolled=true;
 }
-function difficulty(f){let s=0;const h=city(f.hub);s+=h.w>=16?0:h.w>=12?1:h.w>=8?2:3;s+=f.cap>=130e6?0:f.cap>=75e6?1:2;s+=f.fuel>1.1?1:0;return clamp(s,0,4)+1}
+// overall difficulty (1-5 stars): how good the home airport is, starting money, fuel price and how strong the rivals are
+function difficulty(f){let s=0;const sc=hubScore(f.hub);s+=sc>=70?0:sc>=45?1:2;s+=f.cap>=130e6?0:f.cap>=75e6?1:2;s+=f.fuel>1.1?1:f.fuel<.9?-1:0;s+=f.diff==="hard"?1:f.diff==="easy"?-1:0;return clamp(s,0,4)+1}
 function fuelText(f){return f>=1.15?"ยุคน้ำมันแพง":f<=.92?"ยุคน้ำมันถูก":"ราคาน้ำมันปกติ"}
 function flap(el,final,ms){
   const chars="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -694,37 +696,113 @@ function flap(el,final,ms){
   (function step(t){let done=true;sp.forEach((s,i)=>{const end=ms*(.55+.45*i/sp.length);
     if(t-t0<end){done=false;s.textContent=final[i]===" "?" ":chars[Math.random()*chars.length|0]}else s.textContent=final[i]});
     if(!done)requestAnimationFrame(step)})(t0)}
-function renderStart(){
-  const h=city(fate.hub),d=difficulty(fate);
-  $("#app").innerHTML=`<div class="start"><div class="wrap">
-   <div class="skyhero" aria-hidden="true"><i class="cl c1"></i><i class="cl c2"></i><i class="cl c3"></i><div class="sp">${planeArt(model("b789"),{tail:"#D47A22",stripe:"#2A5B9C",body:"white",logo:"bird",pat:"swoosh"},true)}</div></div>
-   <div class="eyebrow">เกมบริหารสายการบิน · เล่นบนเว็บ</div>
-   <h1>ชะตาสุ่มให้คุณเกิดเป็น<em>เจ้าของสายการบิน</em>ที่ไหนสักแห่งในโลก</h1>
-   <p class="muted" style="margin:0">เมืองฐาน ทุนตั้งต้น และราคาน้ำมันถูกสุ่มมาให้ อ้างอิงสนามบินและระยะทางจริง ซื้อเครื่องบิน เปิดเส้นทาง ตั้งราคาตั๋ว ขนสินค้า แข่งกับสายการบินคู่แข่ง แล้วพาสายการบินของคุณให้รอดและโตให้ได้</p>
+/* ---------- start: step by step ----------
+   The start screen asks one thing at a time: name → region → home airport (ranked by how good a start it gives) →
+   starting money and fuel → rivals → summary. Every step has a 🎲 pick, and "🎲 random start" fills everything in
+   one go (the old fate roll). Hub suitability only uses map data (no game state yet): passengers the nearby cities
+   would bring, how many are in easy reach, how much the first aircraft costs, airport fees and a port nearby. */
+const START_STEPS=["ชื่อ","ภูมิภาค","สนามบินฐาน","ทุนและน้ำมัน","คู่แข่ง","สรุป"];
+const CAP_OPTS=[["rich","💰 ทุนหนา",180e6,"เริ่มสบาย ซื้อเครื่องได้หลายลำ เหมาะกับมือใหม่"],["mid","💼 ทุนกลาง",100e6,"พอซื้อเครื่องได้ 1–2 ลำ ต้องเลือกเส้นทางดี ๆ"],["lean","🪙 ทุนน้อย",55e6,"ท้าทาย พลาดนิดเดียวเงินหมด"],["rnd","🎲 สุ่ม",0,"สุ่มจาก ฿40–180 ล้าน"]];
+const FUEL_OPTS=[["cheap","⛽ น้ำมันถูก",.85,"ต้นทุนบินต่ำ กำไรง่าย"],["norm","🛢️ ปกติ",1,"สมดุล"],["high","🔥 น้ำมันแพง",1.2,"ต้นทุนสูง ต้องประหยัด"],["rnd","🎲 สุ่ม",0,"สุ่มระหว่างถูกถึงแพง"]];
+let hubCache=null;
+function hubInfo(code){if(!hubCache)hubCache=new Map();if(hubCache.has(code))return hubCache.get(code);
+  const h=city(code),R=regionOf(code),ds=R.c.filter(c=>c!==code&&aptTakes(c,"pax")).map(c=>{const b=city(c),d=dist(h,b);return {c,d,dem:60*Math.sqrt(h.w*b.w)*distF(d)}}).filter(o=>o.d>150);
+  // cities of other regions within 3,000 km count at 35%: they open later, when that region is bought
+  const out=CITIES.filter(c=>!R.c.includes(c.c)&&aptTakes(c.c,"pax")).map(b=>{const d=dist(h,b);return {c:b.c,d,dem:60*Math.sqrt(h.w*b.w)*distF(d)*.35}}).filter(o=>o.d>150&&o.d<=3000);
+  const top=ds.slice().sort((a,b)=>b.dem-a.dem),pot=[...ds,...out].sort((a,b)=>b.dem-a.dem).slice(0,8).reduce((a,o)=>a+o.dem,0),near=ds.filter(o=>o.d<=2500).length,need=starterNeed(code);
+  const cg=R.c.filter(c=>c!==code&&aptKind(c)==="cargo").length,pts=PORTS.filter(q=>q.reg===R.id),port=pts.length?Math.min(...pts.map(q=>dist(h,q))):Infinity;
+  const fees=R.c.map(city).filter(c=>c.w>=h.w*.5).map(c=>c.fee).sort((a,b)=>a-b),feeMed=fees[fees.length>>1]||h.fee;
+  const o={code,h,R,pot,near,need,best:top[0]||null,cg,port,fee:h.fee,feeMed,hard:HARD_HUBS.has(code)};hubCache.set(code,o);return o}
+const startHubs=()=>CITIES.filter(c=>aptKind(c.c)!=="cargo");
+function hubScore(code){const o=hubInfo(code);
+  let sc=8+62*clamp(Math.log(Math.max(1,o.pot)/500)/Math.log(7000/500),0,1)+Math.min(15,o.near*1.5)-(o.need>90e6?15:o.need>55e6?8:0)-(o.fee>o.feeMed*1.25?6:0)+(o.port<120?5:0);
+  if(o.hard)sc=Math.min(sc,8);return Math.round(clamp(sc,1,99))}
+const hubTag=sc=>sc>=70?["👍 เหมาะมือใหม่","good"]:sc>=45?["⚖️ กลางๆ","warn"]:["🔥 ท้าทาย","bad"];
+function hubWhy(code){const o=hubInfo(code),out=[],P=(t,g)=>out.push([t,g]);
+  P(o.h.w>=12?`เมืองใหญ่ คนเดินทางเยอะ`:o.h.w>=6?`เมืองขนาดกลาง`:`เมืองเล็ก คนเดินทางน้อย`,o.h.w>=12?1:o.h.w>=6?0:-1);
+  P(`เมืองน่าบินในระยะ 2,500 กม. ${o.near} แห่ง`,o.near>=8?1:o.near>=3?0:-1);
+  if(o.best)P(`เส้นดีสุด ${o.best.c} (${city(o.best.c).n}) ราว ${Math.round(o.best.dem).toLocaleString()} คน/วัน`,o.best.dem>=400?1:0);
+  P(o.need>55e6?`ไกลจากเมืองอื่น เครื่องลำแรกต้องบินไกล (ราว ${money(o.need,true)})`:`เครื่องลำแรกราคาไม่แพง (ราว ${money(Math.max(o.need,25e6),true)})`,o.need>55e6?-1:1);
+  if(o.fee>o.feeMed*1.25)P("ค่าธรรมเนียมสนามบินแพงกว่าเมืองอื่นในภูมิภาค",-1);
+  if(o.port<120)P("มีท่าเรือใกล้ ๆ เปิดสาขาท่าเรือได้สะดวก",1);
+  if(o.cg)P(`ภูมิภาคนี้มีสนามบินสินค้า ${o.cg} แห่ง`,0);
+  if(o.hard)P("ทดสอบแล้วแทบไม่มีเส้นไหนได้กำไรตอนเริ่ม",-1);
+  return out}
+function regionInfo(R){const hs=R.c.filter(c=>aptKind(c)!=="cargo").map(c=>({c,sc:hubScore(c)})).sort((a,b)=>b.sc-a.sc);
+  return {n:hs.length,top:hs.slice(0,3),avg:Math.round(hs.reduce((a,x)=>a+x.sc,0)/Math.max(1,hs.length)),good:hs.filter(x=>x.sc>=70).length,ports:PORTS.filter(q=>q.reg===R.id).length}}
+function startDefaults(){fate.step??=1;fate.reg??=regionOf(fate.hub).id;fate.capK??="rnd";fate.fuelK??="rnd";fate.diff??="normal"}
+function setCap(k){fate.capK=k;const o=CAP_OPTS.find(x=>x[0]===k);fate.cap0=k==="rnd"?rnd(START_CAPS):o[2];fate.cap=fairCap(fate.hub,fate.cap0)}
+function setFuel(k){fate.fuelK=k;const o=FUEL_OPTS.find(x=>x[0]===k);fate.fuel=k==="rnd"?+(0.8+Math.random()*0.5).toFixed(2):o[2]}
+function setHub(c){fate.hub=c;fate.reg=regionOf(c).id;fate.cap0??=fate.cap;fate.cap=fairCap(c,fate.cap0)}
+function renderStart(){startDefaults();const st=fate.step,h=city(fate.hub);
+  const bar=`<div class="wizbar">${START_STEPS.map((n,k)=>`<button type="button" class="${k+1===st?"on":k+1<st?"done":""}" data-wstep="${k+1}" ${k+1>st?"disabled":""}><b>${k+1}</b><span>${n}</span></button>`).join("")}</div>`;
+  const nav=(next,label)=>`<div class="row wiznav" style="gap:8px">${st>1?`<button class="btn" id="wback" style="flex:1">← ย้อนกลับ</button>`:""}<button class="btn primary" id="${next}" style="flex:1.6">${label}</button></div>`;
+  let body="";
+  if(st===1)body=`<div class="skyhero" aria-hidden="true"><i class="cl c1"></i><i class="cl c2"></i><i class="cl c3"></i><div class="sp">${planeArt(model("b789"),{tail:"#D47A22",stripe:"#2A5B9C",body:"white",logo:"bird",pat:"swoosh"},true)}</div></div>
+   <div class="eyebrow">เกมบริหารสายการบินและเรือขนส่ง · เล่นบนเว็บ</div>
+   <h1>สร้าง<em>สายการบิน</em>ของคุณเอง</h1>
+   <p class="muted" style="margin:0">ตอบคำถามทีละข้อ แล้วเริ่มกิจการ เลือกเมืองฐานจากสนามบินจริงทั่วโลก ซื้อเครื่องบิน เปิดเส้นทาง ขนคนและสินค้า แล้วแข่งกับสายการบินคู่แข่ง</p>
+   <div class="panel stack wizq"><div class="eyebrow">ขั้นที่ 1 · สายการบินของคุณชื่ออะไร</div>
+     <label class="f">ชื่อสายการบิน<input id="nm" type="text" maxlength="24" value="${esc(fate.name)}"></label>
+     <div class="row" style="gap:8px;align-items:flex-end"><label class="f" style="flex:1">รหัส 2 ตัวอักษร (ใช้ในเลขเที่ยวบินและทะเบียนเครื่อง)<input id="cd" type="text" maxlength="2" value="${esc(fate.code)}" style="text-transform:uppercase"></label><button class="btn" id="wrname" type="button">🎲 สุ่มชื่อ</button></div></div>
+   ${nav("wnext","ถัดไป →")}
+   <button class="btn" id="re">🎲 สุ่มทั้งหมดแล้วเริ่มเลย (แบบเดิม)</button>`;
+  if(st===2)body=`<h2 style="margin:0">ขั้นที่ 2 · อยากเริ่มที่ภูมิภาคไหน</h2><p class="muted small" style="margin:0">ตอนเริ่มเปิดแผนที่ให้แค่ภูมิภาคที่เลือก ภูมิภาคอื่นซื้อปลดล็อกได้ทีหลัง คะแนนคือค่าเฉลี่ยความเหมาะสมของสนามบินในภูมิภาคนั้น</p>
+   <div class="wizgrid">${REGIONS.map(R=>{const I=regionInfo(R),t=hubTag(I.top[0]?I.top[0].sc:0);return `<button type="button" class="wizcard ${fate.reg===R.id?"on":""}" data-wreg="${R.id}"><div class="row between"><b>${R.n}</b><span class="num small">${I.n} สนามบิน</span></div>
+     <div class="small muted">แนะนำ: ${I.top.map(x=>x.c).join(" · ")}</div><div class="small">เหมาะมือใหม่ ${I.good} แห่ง · ท่าเรือ ${I.ports} แห่ง</div></button>`}).join("")}</div>
+   ${nav("wnext","เลือกสนามบินฐาน →")}`;
+  if(st===3){const R=REGIONS.find(x=>x.id===fate.reg)||regionOf(fate.hub);const L=R.c.filter(c=>aptKind(c)!=="cargo").map(c=>({c,sc:hubScore(c)})).sort((a,b)=>b.sc-a.sc);
+   if(!R.c.includes(fate.hub))setHub(L[0].c);
+   body=`<h2 style="margin:0">ขั้นที่ 3 · เลือกสนามบินฐานใน${R.n}</h2><p class="muted small" style="margin:0">เรียงจากเหมาะที่สุด คะแนนดูจากจำนวนคนที่เมืองใกล้ ๆ จะบินกับเรา จำนวนเมืองในระยะบินง่าย ราคาเครื่องลำแรก ค่าสนามบิน และท่าเรือใกล้เคียง (สนามบินสินค้าอย่างเดียวเป็นฐานไม่ได้)</p>
+   <div class="stack" style="gap:8px">${(fate.allHubs?L:L.filter((x,k)=>k<8||x.c===fate.hub)).map(({c,sc},k)=>{const o=city(c),t=hubTag(sc),on=fate.hub===c;return `<button type="button" class="wizhub ${on?"on":""}" data-whub="${c}"><div class="row between" style="gap:8px"><span><b class="num">${c}</b> ${o.n}${k<3&&sc>=45?` <span class="chip got">⭐ แนะนำ</span>`:""}</span><span class="wscore ${t[1]}">${sc}</span></div>
+     <div class="wsbar"><i class="${t[1]}" style="width:${sc}%"></i></div><div class="small ${t[1]}">${t[0]}</div>
+     ${on?`<ul class="wwhy">${hubWhy(c).map(([x,g])=>`<li class="${g>0?"good":g<0?"bad":""}">${g>0?"✔":g<0?"✖":"•"} ${x}</li>`).join("")}</ul>`:""}</button>`}).join("")}</div>
+   ${L.length>8?`<button class="btn" id="wall">${fate.allHubs?"แสดงแค่ 8 อันดับแรก":`ดูสนามบินทั้งหมด (${L.length} แห่ง)`}</button>`:""}
+   ${nav("wnext","ถัดไป →")}`}
+  if(st===4){const capL=CAP_OPTS.map(([k,n,v,d])=>{const c=k==="rnd"?0:fairCap(fate.hub,v);return `<button type="button" class="wizcard ${fate.capK===k?"on":""}" data-wcap="${k}"><b>${n}</b>${k!=="rnd"?`<div class="num">${money(c)}</div>`:""}<div class="small muted">${d}${k!=="rnd"&&c>v?` · 🧭 ฐานห่างไกล ได้เพิ่มจาก ${money(v,true)}`:""}</div></button>`}).join("");
+   body=`<h2 style="margin:0">ขั้นที่ 4 · ทุนตั้งต้นและราคาน้ำมัน</h2>
+   <div class="eyebrow">ทุนตั้งต้น</div><div class="wizgrid">${capL}</div>
+   ${fate.capK==="rnd"?`<div class="small muted">สุ่มได้ ${money(fate.cap)} (สุ่มใหม่ได้โดยกด 🎲 อีกครั้ง)</div>`:""}
+   <div class="eyebrow">ราคาน้ำมันช่วงเริ่ม (เปลี่ยนขึ้นลงเองระหว่างเล่น)</div><div class="wizgrid">${FUEL_OPTS.map(([k,n,v,d])=>`<button type="button" class="wizcard ${fate.fuelK===k?"on":""}" data-wfuel="${k}"><b>${n}</b><div class="small muted">${d}</div></button>`).join("")}</div>
+   ${fate.fuelK==="rnd"?`<div class="small muted">สุ่มได้ ${fuelText(fate.fuel)}</div>`:""}
+   ${nav("wnext","ถัดไป →")}`}
+  if(st===5)body=`<h2 style="margin:0">ขั้นที่ 5 · คู่แข่งเก่งแค่ไหน</h2><p class="muted small" style="margin:0">เปลี่ยนได้ตลอดในแท็บบริษัท</p>
+   <div class="stack" style="gap:8px">${DIFFS.map(([k,n,d])=>`<button type="button" class="wizcard ${fate.diff===k?"on":""}" data-sdiff="${k}"><b>${n}</b><div class="small muted">${d}</div></button>`).join("")}</div>
+   ${nav("wnext","ดูสรุป →")}`;
+  if(st===6){const d=difficulty(fate),sc=hubScore(fate.hub),t=hubTag(sc);
+   body=`<h2 style="margin:0">ขั้นที่ 6 · ตรวจตั๋วก่อนออกเดินทาง</h2>
    <div class="ticket ${justRolled?"print":""}">
-     <div class="tt"><span>BOARDING PASS · ชะตาของคุณ</span><span class="num">${esc(fate.code)} 001</span></div>
+     <div class="tt"><span>BOARDING PASS · ${esc(fate.name)}</span><span class="num">${esc(fate.code)} 001</span></div>
      <div class="tb">
-       <div class="full"><div class="k">เมืองฐานการบิน</div><div class="row" style="gap:12px;margin-top:4px"><span class="flap" id="fh"></span><span class="v">${h.n}</span></div></div>
-       <div><div class="k">ทุนตั้งต้น</div><div class="v num" style="font-size:18px">${money(fate.cap)}</div>${fate.cap0&&fate.cap>fate.cap0?`<div class="small muted" style="line-height:1.35">🧭 ฐานห่างไกล ได้ทุนเพิ่มจาก ${money(fate.cap0)} ให้พอซื้อเครื่องที่บินถึงเมืองใกล้เคียง</div>`:""}</div>
+       <div class="full"><div class="k">เมืองฐานการบิน <button class="lnk" data-wstep="3">แก้</button></div><div class="row" style="gap:12px;margin-top:4px"><span class="flap" id="fh"></span><span class="v">${h.n}</span></div><div class="small ${t[1]}">${t[0]} · ความเหมาะสม ${sc}/100 · ${regionOf(fate.hub).n}</div></div>
+       <div><div class="k">ทุนตั้งต้น <button class="lnk" data-wstep="4">แก้</button></div><div class="v num" style="font-size:18px">${money(fate.cap)}</div></div>
        <div><div class="k">ราคาน้ำมัน</div><div class="v" style="font-size:16px">${fuelText(fate.fuel)}</div></div>
-       <div class="full"><div class="k">ความยาก</div><div class="stars">${"★".repeat(d)}${"☆".repeat(5-d)}</div></div>
+       <div><div class="k">คู่แข่ง <button class="lnk" data-wstep="5">แก้</button></div><div class="v" style="font-size:16px">${(DIFFS.find(x=>x[0]===fate.diff)||DIFFS[1])[1]}</div></div>
+       <div><div class="k">ความยากรวม</div><div class="stars">${"★".repeat(d)}${"☆".repeat(5-d)}</div></div>
      </div>
-     <div class="tb perf">
-       <label class="f full">ชื่อสายการบิน<input id="nm" type="text" maxlength="24" value="${esc(fate.name)}"></label>
-       <label class="f">รหัส 2 ตัวอักษร<input id="cd" type="text" maxlength="2" value="${esc(fate.code)}" style="text-transform:uppercase"></label>
-       <div class="full"><div class="k">ความเก่งของคู่แข่ง (เปลี่ยนได้ตลอดในแท็บบริษัท)</div><div class="seg" style="margin-top:4px">${DIFFS.map(([k,n])=>`<button type="button" data-sdiff="${k}" class="${(fate.diff||"normal")===k?"on":""}">${n}</button>`).join("")}</div><div class="small muted" style="margin-top:3px">${DIFFS.find(x=>x[0]===(fate.diff||"normal"))[2]}</div></div>
-       <label class="f">หรือเลือกฐานเอง<select id="hb">${CITIES.filter(c=>aptKind(c.c)!=="cargo").map(c=>`<option value="${c.c}" ${c.c===fate.hub?"selected":""}>${c.c} · ${c.n}</option>`).join("")}</select></label>
-     </div>
+     <div class="tb perf"><label class="f full">เปลี่ยนฐานด่วน<select id="hb">${startHubs().map(c=>`<option value="${c.c}" ${c.c===fate.hub?"selected":""}>${c.c} · ${c.n}</option>`).join("")}</select></label></div>
    </div>
-   <div class="row"><button class="btn" id="re" style="flex:1">สุ่มชะตาใหม่</button><button class="btn primary" id="go" style="flex:1.4">เริ่มกิจการ</button></div>
+   <div class="row" style="gap:8px"><button class="btn" id="wback" style="flex:1">← ย้อนกลับ</button><button class="btn primary" id="go" style="flex:1.6">✈️ เริ่มกิจการ</button></div>
+   <button class="btn" id="re">🎲 สุ่มใหม่ทั้งหมด</button>`}
+  $("#app").innerHTML=`<div class="start"><div class="wrap">${bar}${body}
    <div class="row between"><button class="btn sm" id="hlp">อ่านคู่มือระบบในเกม</button><button class="btn sm" id="simp">💾 นำเข้าเซฟ</button><button class="btn sm" id="sver">ℹ️ v${GAME_VERSION} · มีอะไรใหม่</button></div>
   </div></div><div id="sheet"></div>`;
-  flap($("#fh"),h.c,justRolled?900:1);justRolled=false;
-  const keep=()=>{fate.name=$("#nm").value.trim()||fate.name;fate.code=($("#cd").value.replace(/[^a-z]/gi,"").toUpperCase()+"XX").slice(0,2)};
-  $("#re").onclick=()=>{keep();rollFate(true);renderStart()};
-  $("#hb").onchange=e=>{keep();fate.hub=e.target.value;fate.cap0??=fate.cap;fate.cap=fairCap(fate.hub,fate.cap0);justRolled=true;renderStart()};
-  $$("[data-sdiff]").forEach(b=>b.onclick=()=>{keep();fate.diff=b.dataset.sdiff;renderStart()});
-  $("#go").onclick=()=>{keep();newGame()};
+  if(st===6){flap($("#fh"),h.c,justRolled?900:1);justRolled=false}
+  const keep=()=>{const nm=$("#nm"),cd=$("#cd");if(nm)fate.name=nm.value.trim()||fate.name;if(cd)fate.code=(cd.value.replace(/[^a-z]/gi,"").toUpperCase()+"XX").slice(0,2)};
+  const go=k=>{keep();fate.step=clamp(k,1,6);if(fate.step===6)justRolled=true;renderStart();window.scrollTo(0,0)};
+  $$("[data-wstep]").forEach(b=>b.onclick=e=>{e.preventDefault();go(+b.dataset.wstep)});
+  {const n=$("#wnext");if(n)n.onclick=()=>{if(st===2&&!(REGIONS.find(x=>x.id===fate.reg)||{c:[]}).c.includes(fate.hub)){const R=REGIONS.find(x=>x.id===fate.reg);const b=R.c.filter(c=>aptKind(c)!=="cargo").sort((a,b)=>hubScore(b)-hubScore(a))[0];if(b)setHub(b)}if(st===3&&fate.capK==="rnd")setCap("rnd");go(st+1)}}
+  {const b=$("#wback");if(b)b.onclick=()=>go(st-1)}
+  {const r=$("#wrname");if(r)r.onclick=()=>{fate.name=rnd(NAMES);fate.code=String.fromCharCode(65+Math.random()*26|0,65+Math.random()*26|0);renderStart()}}
+  $$("[data-wreg]").forEach(b=>b.onclick=()=>{fate.reg=b.dataset.wreg;const R=REGIONS.find(x=>x.id===fate.reg);if(!R.c.includes(fate.hub)){const best=R.c.filter(c=>aptKind(c)!=="cargo").sort((a,b)=>hubScore(b)-hubScore(a))[0];if(best)setHub(best)}renderStart()});
+  $$("[data-whub]").forEach(b=>b.onclick=()=>{setHub(b.dataset.whub);renderStart()});
+  {const a=$("#wall");if(a)a.onclick=()=>{fate.allHubs=!fate.allHubs;renderStart()}}
+  $$("[data-wcap]").forEach(b=>b.onclick=()=>{setCap(b.dataset.wcap);renderStart()});
+  $$("[data-wfuel]").forEach(b=>b.onclick=()=>{setFuel(b.dataset.wfuel);renderStart()});
+  $$("[data-sdiff]").forEach(b=>b.onclick=()=>{fate.diff=b.dataset.sdiff;renderStart()});
+  {const hb=$("#hb");if(hb)hb.onchange=e=>{setHub(e.target.value);justRolled=true;renderStart()}}
+  {const re=$("#re");if(re)re.onclick=()=>{keep();const d=fate.diff;rollFate(true);fate.diff=d||"normal";fate.reg=regionOf(fate.hub).id;fate.capK="rnd";fate.fuelK="rnd";fate.step=6;renderStart();window.scrollTo(0,0)}}
+  {const g=$("#go");if(g)g.onclick=()=>{keep();newGame()}}
   {const si=$("#simp");if(si)si.onclick=()=>{keep();openSheet(saveSheet())}}
   $("#hlp").onclick=()=>openSheet(guideSheet);
   $("#sver").onclick=()=>openSheet(changelogSheet(null));
@@ -3946,7 +4024,7 @@ resetSheet.bind=()=>{$("#yes").onclick=()=>{const keep=$("#keepname")&&$("#keepn
 function showOver(){const fn=()=>`<h2>${esc(S.name)} ล้มละลาย</h2><p class="muted" style="margin:0">เงินสดติดลบต่อเนื่อง 30 วัน ธนาคารเข้ายึดกิจการในวันที่ ${S.day+1}</p>
   <div class="kv"><div><div class="k">อยู่รอดได้</div><div class="v">${S.day} วัน</div></div><div><div class="k">ผู้โดยสารรวม</div><div class="v">${S.totPax.toLocaleString()}</div></div>
   <div><div class="k">ระดับสูงสุด</div><div class="v" style="font-family:var(--f-body)">${S.goal?GOALS[S.goal-1][1]:"สายการบินท้องถิ่น"}</div></div><div><div class="k">ความสำเร็จ</div><div class="v">${S.ach.length}/${ACH.length}</div></div></div>
-  <button class="btn primary block" id="yes">สุ่มชะตาใหม่</button>`;fn.bind=resetSheet.bind;openSheet(fn)}
+  <button class="btn primary block" id="yes">เริ่มสายการบินใหม่</button>`;fn.bind=resetSheet.bind;openSheet(fn)}
 
 function guideSheet(){return head("คู่มือระบบ","ทุกระบบในเกมทำงานอย่างไร")+`<div>
 <details class="g" open><summary>เป้าหมายของเกม</summary><div><p>ทำให้มูลค่ากิจการโตจนขึ้นถึงระดับ "ตำนานแห่งท้องฟ้า" และแซงคู่แข่งอีก 5 สายการบินในตารางอันดับ · อันดับแต่ละด้านมีผลกับความร่วมมือ: ด้านไหนเราอันดับสูง พันธมิตรด้านนั้นตกลงง่าย คิดราคาถูก และดีลได้ผลแรงกว่า · นอกจากอันดับรวมยังมีการแข่งแยกหมวด: มูลค่า ผู้โดยสาร สินค้าทางอากาศ เดินเรือ และบริการ คู่แข่งแต่ละเจ้าเก่งคนละด้าน (เช่น เมฆาเวย์เด่นเดินเรือ โกลเด้นวิงเด่นสินค้า อันดามันแอร์เด่นบริการ) · คู่แข่งแต่ละเจ้ามีแผนของตัวเอง (ขยายเชิงรุก / โตต่อเนื่อง / ระมัดระวัง) และเปลี่ยนแผนได้ทุกไม่กี่สัปดาห์ เจ้าที่ตามหลังเป้าจะเร่งขยาย เจ้าที่นำเกินเป้าจะชะลอ</p><p>มูลค่ากิจการ = เงินสด + มูลค่าขายต่อของฝูงบิน − เงินกู้</p><ul>${GOALS.map(g=>`<li>${g[1]}: ${money(g[0])}</li>`).join("")}</ul></div></details>
