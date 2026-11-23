@@ -1,0 +1,9 @@
+# the update check and the page itself are always fetched fresh
+/version.json
+  Cache-Control: no-store
+/
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+/sw.js
+  Cache-Control: no-cache

@@ -1,0 +1,6 @@
+{
+  // Cloudflare Workers: the game is a static site, every file below is served as-is (see .assetsignore)
+  "name": "airline",
+  "compatibility_date": "2025-11-01",
+  "assets": { "directory": "./" }
+}

@@ -1,0 +1,9 @@
+.git
+.git/
+.git/**
+.wrangler
+.wrangler/**
+wrangler.jsonc
+.assetsignore
+CNAME
+node_modules
