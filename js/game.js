@@ -536,8 +536,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.57";
+const GAME_VERSION="1.58";
 const CHANGELOG=[
+ ["1.58","23 พ.ย. 2569",["หน้าแผนที่กับหน้าสาขาบอกเรื่องของค้างตรงกันแล้ว: หลังช่วงสินค้าเยอะ (เช่น ช้อปปิ้ง 11.11) เส้นทางอาจระวางพอกับของใหม่ แต่ยังมีของค้างเหลือ เกมจะบอกว่าของค้างกี่ตัน และต้องใช้กี่วันกว่าจะหมด (เดิมแผนที่บอกว่า “พอดี” แต่สาขาบอกว่า “ล้น”)","ของค้างเล็กน้อยจากเมื่อวาน (ไม่ถึง 30% ของสินค้าต่อวัน) ไม่นับว่าล้นแล้ว"]],
  ["1.57","23 พ.ย. 2569",["แก้: ตัวเลขเงินที่เด้งบนแผนที่ขึ้นเฉพาะของโหมดที่ดูอยู่ (โหมดสินค้าไม่เห็นเงินจากเที่ยวบินขนคนที่แผนที่ซ่อนไว้ และโหมดคนไม่เห็นเงินจากเรือ)"]],
  ["1.56","23 พ.ย. 2569",["💬 ส่งความเห็นถึงผู้พัฒนาได้แล้ว (เมนู ··· หรือ ⚙️ ตั้งค่า): เลือกประเภท บัค / ไอเดีย / ความสมดุล / อื่น ๆ แล้วพิมพ์ได้ไม่เกิน 1,000 ตัวอักษร","ไม่เก็บชื่อ อีเมล หรือเซฟ แนบแค่เวอร์ชันเกม วันในเกม และชนิดอุปกรณ์ · คำหยาบถูกปิดด้วย * · ส่งได้ไม่เกิน 5 ครั้งต่อชั่วโมง"]],
  ["1.55","23 พ.ย. 2569",["ขัดเกลาข้อความ: คู่มือระบบอธิบายตรงกับเกมปัจจุบัน (เรือและปฏิทินสินค้าอยู่ในแท็บเส้นทางโหมดสินค้า ไม่มีแท็บสินค้าแยกแล้ว) และเพิ่มหัวข้อ 🛟 เครื่องบินและเรือสำรอง กับ ⚙️ ตั้งค่า เซฟสำรอง และกันเกมค้าง","เขียนไม้ยมก (ๆ) แบบเว้นวรรคหน้าหลังให้เหมือนกันทั้งเกม"]],
@@ -2285,8 +2286,14 @@ function planBoxHTML(P,attr){if(!P)return "";const u=P.sea?"TEU":P.cgo?"ตั�
     <button class="btn sm primary" ${attr}="${P.groups.map(g=>`${g.o.m.id}:${g.o.ck||""}:${g.n}`).join("|")}" data-cost="${P.cost}" ${can?"":"disabled"}>${can?`ซื้อทั้งหมด ${P.n} ลำใส่เส้นนี้ · ${money(P.cost,true)}`:`เงินยังไม่พอ (ต้องใช้ ${money(P.cost,true)})`}</button></div>`}
 function buyPlanShips(l,v){let k=0;for(const part of v.split("|")){const [mid,ck,n]=part.split(":");for(let i=0;i<+n;i++){const sh=buyShip(mid);if(!sh)break;applyCk(sh,ck||"auto",shipSpec(shipM(sh.m)));l.ships.push(sh.id);sh.lane=l.id;k++}}save();toast(`ซื้อเรือ ${k} ลำ เข้าประจำ ${laneNo(l)} แล้ว`)}
 function buyPlanPlanes(r,v){let k=0;for(const part of v.split("|")){const [mid,ck,n]=part.split(":");for(let i=0;i<+n;i++){const np=buy(mid);if(!np)break;applyCk(np,ck||"auto",isSpecAir(model(np.m)));r.planes.push(np.id);np.route=r.id;k++}}r.last=null;save();toast(`ซื้อเครื่อง ${k} ลำ เข้าประจำ ${fno(r)} แล้ว`)}
+/* waiting stock (backlog) of a route and how many days the spare room (capacity − new demand per day) needs to clear it.
+   After a busy season (e.g. 11.11) a route can carry all NEW freight yet still have thousands of tonnes waiting. */
+function bkInfo(r,c){c=c||calc(r);const cg=rkind(r)==="cargo",bk=cg?bkCargo(r):bkPax(r),D=cg?c.cdem:c.demand,CAP=cg?c.ccap:c.cap,room=Math.max(0,CAP-D);
+  return {bk,room,days:bk<1?0:room>=1?Math.ceil(bk/room):Infinity,u:cg?"ตัน":"คน"}}
 function popRouteHTML(r){const c=calc(r),dc=city(r.dest),cgo=rkind(r)==="cargo",D=cgo?Math.round(c.cdem):c.demand,CAP=cgo?Math.round(c.ccap):c.cap,DONE=cgo?Math.round(Math.min(c.cdem,c.ccap)):c.pax,fill=CAP?Math.min(1,DONE/CAP):0;
-  const st=!r.planes.length?["bad","ยังไม่มีเครื่องบิน"]:D>CAP*1.05?["warn",cgo?`ระวางไม่พอ สินค้ารออีก ${(D-CAP).toLocaleString()} ตัน/วัน`:`ที่นั่งไม่พอ คนรอบินอีก ${(D-CAP).toLocaleString()} คน/วัน`]:fill<.55?["muted",cgo?"ระวางว่างเยอะ":"ที่นั่งว่างเยอะ"]:["good",cgo?"ระวางพอดีกับสินค้า":"ที่นั่งพอดีกับคน"];
+  let st=!r.planes.length?["bad","ยังไม่มีเครื่องบิน"]:D>CAP*1.05?["warn",cgo?`ระวางไม่พอ สินค้ารออีก ${(D-CAP).toLocaleString()} ตัน/วัน`:`ที่นั่งไม่พอ คนรอบินอีก ${(D-CAP).toLocaleString()} คน/วัน`]:fill<.55?["muted",cgo?"ระวางว่างเยอะ":"ที่นั่งว่างเยอะ"]:["good",cgo?"ระวางพอดีกับสินค้า":"ที่นั่งพอดีกับคน"];
+  {const B=bkInfo(r,c);if(r.planes.length&&st[0]!=="warn"&&B.bk>=Math.max(20,D*.3))st=B.days<=7?["good",`${cgo?"ระวาง":"ที่นั่ง"}พอ · ของค้าง ${Math.round(B.bk).toLocaleString()} ${B.u} จะหมดในราว ${B.days} วัน`]
+    :["warn",B.days===Infinity?`${cgo?"ระวาง":"ที่นั่ง"}พอแค่ของใหม่ ไม่เหลือที่เคลียร์ของค้าง ${Math.round(B.bk).toLocaleString()} ${B.u} · เพิ่มเครื่องช่วย`:`${cgo?"ระวาง":"ที่นั่ง"}พอกับของใหม่ แต่ของค้าง ${Math.round(B.bk).toLocaleString()} ${B.u} ต้องใช้ราว ${B.days} วันกว่าจะหมด · เพิ่มเครื่องให้หมดเร็วขึ้น`]}
   let h=`<div class="pophead"><div style="min-width:0"><b>${cgo?"📦 ":""}${fno(r)} · ${r.from} → ${r.dest}</b><div class="small muted">${dc.n} · ${c.d.toLocaleString()} กม. · ${cgo?crateText(c):"ตั๋ว "+money(c.price,true)}</div></div><button class="x" data-popx aria-label="ปิด">✕</button></div>
    <div class="popdem"><div class="row between small"><span>${cgo?"📦 สินค้ารอส่ง":"👥 คนอยากบิน"} <b class="num">${D.toLocaleString()}</b>${cgo?" ตัน":""}/วัน</span><span>${cgo?"🛫 ระวาง":"💺 ที่นั่ง"} <b class="num">${CAP.toLocaleString()}</b></span></div>
     <div class="dbar"><i style="width:${Math.min(100,CAP?D/Math.max(D,CAP)*100:100)}%;${cgo?"background:var(--cargo)":""}"></i><b style="left:${CAP?Math.min(100,CAP/Math.max(D,CAP)*100):0}%"></b></div>
@@ -3096,7 +3103,7 @@ function bindWishes(){
    (tonnes left behind a day, backlog waiting), and the biggest freight flows nobody carries yet. */
 function cargoAt(code){const out=[];
   for(const r of S.routes.filter(r=>rkind(r)==="cargo"&&(r.from===code||r.dest===code))){const c=r.last||calc(r),dem=c.cdem||0,carry=c.cargo||0,bk=bkCargo(r),left=Math.max(0,Math.round(dem-carry));
-    out.push({r,other:r.from===code?r.dest:r.from,dem,carry,cap:c.ccap||0,bk,left,K:airLeftK(r,c),st:!r.planes.length?"idle":(left>Math.max(5,dem*.1)||bk>=1)?"over":"ok"})}
+    out.push({r,other:r.from===code?r.dest:r.from,dem,carry,cap:c.ccap||0,bk,left,K:airLeftK(r,c),st:!r.planes.length?"idle":(left>Math.max(5,dem*.1)||bk>=Math.max(20,dem*.3))?"over":"ok"})}   // a few tonnes left over from yesterday is not an overflow
   return out.sort((a,b)=>(b.st==="over")-(a.st==="over")||b.left+b.bk-(a.left+a.bk))}
 function cargoOverAll(){return S.bases.map(code=>{const L=cargoAt(code).filter(x=>x.st==="over"&&x.r.from===code);return {code,n:L.length,t:L.reduce((a,x)=>a+x.left+x.bk,0)}}).filter(x=>x.n).sort((a,b)=>b.t-a.t)}
 function cargoBranchHTML(code){const L=cargoAt(code),over=L.filter(x=>x.st==="over"),want=has("cargo")&&aptTakes(code,"cargo")?cargoWants(code,false).slice().sort((a,b)=>b.k.all-a.k.all).slice(0,3):[],c=city(code);
@@ -3104,7 +3111,7 @@ function cargoBranchHTML(code){const L=cargoAt(code),over=L.filter(x=>x.st==="ov
   const say=over.length?`📦 สินค้าที่${c.n}<b class="warn">ล้น ${over.length} เส้นทาง</b> ค้างรวม ~${Math.round(over.reduce((a,x)=>a+x.left+x.bk,0)).toLocaleString()} ตัน`:want.length&&want[0].k.all>=10?`📦 ผู้ส่งสินค้าที่${c.n}อยากส่งไป<b>${want[0].n}</b>มากที่สุด แต่เรายังไม่มีเที่ยวบิน`:L.length?`📦 สินค้าที่${c.n}ขนได้ครบ ไม่มีค้าง 😊`:`📦 ยังไม่มีเส้นทางสินค้าจาก${c.n}`;
   const mx=Math.max(1,...L.map(x=>x.dem),...want.map(w=>w.k.all));
   const row=x=>`<div class="wish-row"><span class="wish-code">${x.other}</span><span class="wish-mid"><b>${city(x.other).n}</b> <span class="muted small">${fno(x.r)}</span><span class="wish-bar"><i style="width:${Math.max(6,x.dem/mx*100).toFixed(0)}%;background:var(--cargo)"></i></span>
-     <span class="small ${x.st==="over"?"warn":x.st==="idle"?"warn":"good"}">${x.st==="over"?`📦 ล้น · ค้าง ${kindsTxt(x.K)||"~"+(x.left+x.bk).toLocaleString()} ตัน`:x.st==="idle"?"😐 ยังไม่มีเครื่อง":`😊 ขนได้ครบ · ระวางเต็ม ${Math.round(x.cap?x.carry/x.cap*100:0)}%`}</span></span>
+     <span class="small ${x.st==="over"?"warn":x.st==="idle"?"warn":"good"}">${x.st==="over"?(()=>{const B=bkInfo(x.r);return x.left<=Math.max(5,x.dem*.1)&&B.days<=60?`📥 ของค้างจากช่วงที่สินค้าเยอะ ${Math.round(B.bk).toLocaleString()} ตัน · ระวางพอกับของใหม่ ของค้างหมดในราว ${B.days} วัน`:`📦 ล้น · ค้าง ${kindsTxt(x.K)||"~"+(x.left+x.bk).toLocaleString()} ตัน${B.days===Infinity?" · ระวางไม่พอเคลียร์":B.days>60?` · ต้องใช้ ${B.days} วันกว่าจะหมด`:""}`})():x.st==="idle"?"😐 ยังไม่มีเครื่อง":`😊 ขนได้ครบ · ระวางเต็ม ${Math.round(x.cap?x.carry/x.cap*100:0)}%`}</span></span>
      <span class="wish-end"><b class="num">${Math.round(x.dem).toLocaleString()}</b><small>ตัน/วัน</small>${x.st!=="ok"?`<button class="btn sm" data-route="${x.r.id}">เพิ่มเครื่อง</button>`:""}</span></div>`;
   const wrow=w=>`<div class="wish-row"><span class="wish-code">${w.to}</span><span class="wish-mid"><b>${w.n}</b> <span class="muted small">${Math.round(w.d).toLocaleString()} กม.</span><span class="wish-bar"><i style="width:${Math.max(6,w.k.all/mx*100).toFixed(0)}%;background:var(--cargo)"></i></span><span class="small muted">🙋 ยังไม่มีเที่ยวบินสินค้า</span></span>
      <span class="wish-end"><b class="num">${Math.round(w.k.all).toLocaleString()}</b><small>ตัน/วัน</small><button class="btn sm primary" data-cwish="${code}>${w.to}">เปิดเส้นทาง</button></span></div>`;
