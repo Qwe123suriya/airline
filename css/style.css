@@ -966,3 +966,9 @@ main .wrap>.row.between>h2{flex:1 1 auto}
 .btn.sm{white-space:nowrap}
 /* branch cards fill the row when there are only one or two */
 .brgrid{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+/* start screen on phones: never wider than the screen */
+.start .wrap>*{min-width:0;max-width:100%}
+.startfoot{flex-wrap:wrap;gap:6px;justify-content:center}
+.wizbar button{min-width:0}
+@media (max-width:400px){.wizbar button span{display:none}.wizbar button{padding:8px 0}}
+.brgrid{grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr))}
