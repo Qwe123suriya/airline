@@ -536,8 +536,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.55";
+const GAME_VERSION="1.56";
 const CHANGELOG=[
+ ["1.56","23 พ.ย. 2569",["💬 ส่งความเห็นถึงผู้พัฒนาได้แล้ว (เมนู ··· หรือ ⚙️ ตั้งค่า): เลือกประเภท บัค / ไอเดีย / ความสมดุล / อื่น ๆ แล้วพิมพ์ได้ไม่เกิน 1,000 ตัวอักษร","ไม่เก็บชื่อ อีเมล หรือเซฟ แนบแค่เวอร์ชันเกม วันในเกม และชนิดอุปกรณ์ · คำหยาบถูกปิดด้วย * · ส่งได้ไม่เกิน 5 ครั้งต่อชั่วโมง"]],
  ["1.55","23 พ.ย. 2569",["ขัดเกลาข้อความ: คู่มือระบบอธิบายตรงกับเกมปัจจุบัน (เรือและปฏิทินสินค้าอยู่ในแท็บเส้นทางโหมดสินค้า ไม่มีแท็บสินค้าแยกแล้ว) และเพิ่มหัวข้อ 🛟 เครื่องบินและเรือสำรอง กับ ⚙️ ตั้งค่า เซฟสำรอง และกันเกมค้าง","เขียนไม้ยมก (ๆ) แบบเว้นวรรคหน้าหลังให้เหมือนกันทั้งเกม"]],
  ["1.54","23 พ.ย. 2569",["แก้: เปิดหน้าซื้อเครื่องบิน/เรือค้างไว้ แล้วเงินเพิ่มจนพอซื้อ แต่ปุ่มยังเป็นสีเทาว่าเงินยังไม่พอ ตอนนี้ปุ่มซื้อและแผนซื้ออัปเดตเองเมื่อเงินพอหรือไม่พอ"]],
  ["1.53","23 พ.ย. 2569",["แก้หน้าเริ่มเกมบนมือถือกว้างเกินจอจนเนื้อหาเลื่อนหลุดไปทางซ้าย: ปุ่มด้านล่างขึ้นบรรทัดใหม่ได้ แถบขั้นตอนแสดงแค่ตัวเลขบนจอแคบ","แท็บสาขาบนมือถือจอเล็ก (เช่น iPhone SE) ไม่กว้างเกินจอแล้ว"]],
@@ -1641,6 +1642,7 @@ function renderApp(){
        <div class="moremenu" id="moremenu" hidden role="menu">
         <div class="muted small" id="hubl"></div>
         <button role="menuitem" id="setbtn"><span class="mi">⚙️</span>ตั้งค่า</button>
+        <button role="menuitem" id="fbbtn"><span class="mi">💬</span>ส่งความเห็นถึงผู้พัฒนา</button>
         <button role="menuitem" id="themebtn"><span class="mi">${themeIcon()}</span><span id="themelbl">โหมดแสง</span></button>
         <button role="menuitem" id="verbtn"><span class="mi">ℹ️</span>เวอร์ชัน v${GAME_VERSION} · มีอะไรใหม่${updAvail?` <b class="warn">มีอัปเดต</b>`:""}</button>
         <button role="menuitem" id="help"><span class="mi">?</span>คู่มือระบบ</button>
@@ -1669,6 +1671,7 @@ function renderApp(){
   $("#afkbtn").onclick=()=>startAfk();
   $("#themebtn").onclick=cycleTheme;
   $("#setbtn").onclick=()=>{closeMore();openSheet(settingsSheet())};
+  $("#fbbtn").onclick=()=>{closeMore();openSheet(feedbackSheet())};
   $("#badge").onclick=()=>openSheet(liverySheet({}));
   $$("[data-sp]").forEach(b=>b.onclick=()=>{speed=+b.dataset.sp;paused=false;updateTop()});
   $$("[data-tab]").forEach(b=>b.onclick=()=>{if(b.dataset.tab!==tab){fSelMode=false;fSel.clear();rSelMode=false;rSel.clear()}tab=b.dataset.tab;renderView(true);window.scrollTo(0,0)});
@@ -4026,6 +4029,32 @@ function regionSheet(st){
     S.cash-=cost;S.unlocked.push(R.id);unlockAnim={id:R.id,t0:performance.now()};addNews(`🗺️ ปลดล็อกแผนที่ภูมิภาค${R.n} เปิดเส้นทางไป ${R.c.length} เมืองได้แล้ว`);
     celebrate("ภูมิภาคใหม่",R.n);save();sheetFn=null;$("#sheet").innerHTML="";tab="home";selCity=null;renderView(true);setCam("focus",R.c)});
   return fn}
+/* 💬 Feedback to the developer: sent to /api/feedback (Cloudflare Worker + D1). Only the message, its kind, the game
+   version, the game day and a short device type are sent; no name, e-mail or save. The server masks rude words,
+   limits how often one connection can send and drops exact repeats. */
+const FB_CATS=[["bug","🐞 แจ้งบัค"],["idea","💡 ไอเดีย / ขอฟีเจอร์"],["balance","⚖️ ความสมดุลของเกม"],["other","💬 อื่น ๆ"]];
+const devKind=()=>{const u=navigator.userAgent;return (/iPad|Tablet/i.test(u)||(/Macintosh/.test(u)&&navigator.maxTouchPoints>1)?"แท็บเล็ต":/Mobi|Android|iPhone/i.test(u)?"มือถือ":"คอม")+" "+innerWidth+"px"};
+function feedbackSheet(st){st=st||{cat:"idea",msg:""};const fn=()=>head("💬 ส่งความเห็นถึงผู้พัฒนา","เจอบัค อยากได้อะไรเพิ่ม หรือคิดว่าตรงไหนง่าย/ยากเกินไป บอกได้เลย ผู้พัฒนาอ่านทุกข้อความ")+
+  (st.sent?`<div class="panel stack" style="text-align:center"><div style="font-size:40px">🙏</div><b>ส่งแล้ว ขอบคุณมากครับ</b><div class="small muted">ความเห็นของคุณช่วยให้เกมดีขึ้น</div><button class="btn" id="fbmore">ส่งอีกเรื่อง</button></div>`:
+  `<div class="seg setseg" style="flex-wrap:wrap">${FB_CATS.map(([k,n])=>`<button type="button" data-fbc="${k}" class="${st.cat===k?"on":""}">${n}</button>`).join("")}</div>
+   <textarea id="fbmsg" rows="6" maxlength="1000" placeholder="${st.cat==="bug"?"เกิดอะไรขึ้น ทำอะไรอยู่ตอนนั้น และคาดว่าควรเป็นแบบไหน":"เขียนได้เต็มที่ ไม่เกิน 1,000 ตัวอักษร"}" style="width:100%;font-size:15px">${esc(st.msg)}</textarea>
+   <input type="text" id="fbhp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px">
+   <div class="row between small muted"><span>แนบให้อัตโนมัติ: v${GAME_VERSION}${S?` · วันที่ ${S.day} ในเกม`:""} · ${esc(devKind())}</span><span id="fbn">${st.msg.length}/1000</span></div>
+   ${st.err?`<div class="small bad">⚠️ ${esc(st.err)}</div>`:""}
+   <button class="btn primary" id="fbsend" ${st.busy?"disabled":""}>${st.busy?"กำลังส่ง…":"ส่งความเห็น"}</button>
+   <div class="small muted">ไม่เก็บชื่อ อีเมล หรือเซฟของคุณ · ข้อความหยาบจะถูกปิดด้วย * ก่อนบันทึก · ส่งได้ไม่เกิน 5 ครั้งต่อชั่วโมง</div>`);
+  fn.bind=()=>{const m=$("#fbmsg");if(m){m.oninput=()=>{st.msg=m.value;const n=$("#fbn");if(n)n.textContent=m.value.length+"/1000"}}
+    $$("[data-fbc]").forEach(b=>b.onclick=()=>{if(m)st.msg=m.value;st.cat=b.dataset.fbc;drawSheet()});
+    {const mo=$("#fbmore");if(mo)mo.onclick=()=>{st.sent=false;st.msg="";drawSheet()}}
+    {const sd=$("#fbsend");if(sd)sd.onclick=async()=>{st.msg=m.value.trim();st.err=null;
+      if(st.msg.length<5){st.err="เขียนอีกนิดนะครับ (อย่างน้อย 5 ตัวอักษร)";drawSheet();return}
+      if(!location.protocol.startsWith("http")){st.err="ส่งได้เฉพาะตอนเล่นบนเว็บ skyseatycoon.com";drawSheet();return}
+      st.busy=true;drawSheet();
+      try{const r=await fetch("/api/feedback",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({cat:st.cat,msg:st.msg,ver:GAME_VERSION,day:S?S.day:null,dev:devKind(),hp:($("#fbhp")||{}).value||""})});
+        const j=await r.json().catch(()=>({ok:false,error:"เซิร์ฟเวอร์ตอบกลับผิดรูปแบบ"}));
+        if(j.ok){st.sent=true;st.msg="";sfx("win")}else st.err=j.error||"ส่งไม่สำเร็จ"}catch(e){st.err="ส่งไม่สำเร็จ ตรวจอินเทอร์เน็ตแล้วลองใหม่"}
+      st.busy=false;drawSheet()}}};
+  return fn}
 /* ⚙️ Settings: everything the player can switch, in one place */
 function settingsSheet(){
   const seg=(key,opts,val)=>`<div class="seg setseg">${opts.map(([v,n])=>`<button type="button" data-pset="${key}" data-v="${v}" class="${String(val)===String(v)?"on":""}">${n}</button>`).join("")}</div>`;
@@ -4061,7 +4090,7 @@ function settingsSheet(){
     ${row("ความดัง","",`<input type="range" id="pvol" min="0" max="1" step=".05" value="${PREF.vol}" style="max-width:180px">`)}
     ${S?tg("hap",S.haptic!==false,"สั่นเมื่อซื้อหรือได้รางวัล","ใช้ได้บนมือถือที่รองรับ"):""}</div>
   <div class="setsec"><div class="eyebrow">💾 ข้อมูลและเวอร์ชัน</div>
-    <div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn sm" id="pset-save">💾 สำรอง / ย้ายเซฟ</button><button class="btn sm" id="pset-ver">ℹ️ v${GAME_VERSION} · มีอะไรใหม่</button><button class="btn sm" id="pset-help">❓ คู่มือระบบ</button>${S?`<button class="btn sm danger" id="pset-reset">เริ่มเกมใหม่</button>`:""}<button class="btn sm" id="pset-def">คืนค่าเริ่มต้นการตั้งค่า</button></div></div>`;
+    <div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn sm" id="pset-save">💾 สำรอง / ย้ายเซฟ</button><button class="btn sm" id="pset-ver">ℹ️ v${GAME_VERSION} · มีอะไรใหม่</button><button class="btn sm" id="pset-help">❓ คู่มือระบบ</button><button class="btn sm" id="pset-fb">💬 ส่งความเห็นถึงผู้พัฒนา</button>${S?`<button class="btn sm danger" id="pset-reset">เริ่มเกมใหม่</button>`:""}<button class="btn sm" id="pset-def">คืนค่าเริ่มต้นการตั้งค่า</button></div></div>`;
   fn.bind=()=>{
     $$("[data-pset]").forEach(b=>b.onclick=()=>{const k=b.dataset.pset,v=b.dataset.v;
       if(k==="theme"){try{localStorage.setItem("airline-theme",v)}catch(e){}applyTheme(v);baseKey="";fogKey=""}
@@ -4079,6 +4108,7 @@ function settingsSheet(){
     $("#pset-save").onclick=()=>openSheet(saveSheet());
     $("#pset-ver").onclick=()=>openSheet(changelogSheet(null));
     $("#pset-help").onclick=()=>openSheet(guideSheet);
+    $("#pset-fb").onclick=()=>openSheet(feedbackSheet());
     {const r=$("#pset-reset");if(r)r.onclick=()=>openSheet(resetSheet)}
     $("#pset-def").onclick=()=>{PREF={...PREF_DEF,news:{}};savePref();applyPrefs();toast("คืนค่าการตั้งค่าในเครื่องนี้แล้ว");drawSheet();if(S)renderView()}};
   return fn}
