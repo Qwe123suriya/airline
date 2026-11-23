@@ -311,7 +311,11 @@ const PORTS=[
  ["AUFRE","ฟรีแมนเทิล (เพิร์ท)",-32.05,115.74,2,900,"oc",0,"FREO"],["NZAKL","โอ๊คแลนด์",-36.84,174.78,2,900,"oc",0,"HAU"],
 ].map(([c,n,lat,lon,w,fee,reg,deep,wp])=>({c,n,lat,lon,w,fee,reg,deep:!!deep,wp:wp.split(" ")}));
 /* fast look-ups by id: an index per list, rebuilt when the list is replaced or its length changes */
-const idx=(key)=>{let arr=null,len=-1,m=null;return (list,id)=>{if(list!==arr||list.length!==len){arr=list;len=list.length;m=new Map();for(const x of list)m.set(x[key],x)}const v=m.get(id);return v&&v[key]===id?v:list.find(x=>x[key]===id)}};
+// the index stores positions and checks the item at that position, so a test aircraft pushed and popped again and
+// again at the same place (profit forecasts) is always the current one, never a stale copy
+const idx=(key)=>{let arr=null,len=-1,m=null;const build=list=>{arr=list;len=list.length;m=new Map();list.forEach((x,i)=>m.set(x[key],i))};
+  return (list,id)=>{if(list!==arr||list.length!==len)build(list);let i=m.get(id),v=i==null?undefined:list[i];if(v&&v[key]===id)return v;
+    build(list);i=m.get(id);v=i==null?undefined:list[i];return v&&v[key]===id?v:undefined}};
 const _port=idx("c"),_shipM=idx("id"),_ship=idx("id"),_city=idx("c"),_model=idx("id"),_plane=idx("id");
 const port=c=>_port(PORTS,c);
 // Open-water lane points [lat, lon]
@@ -532,8 +536,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.51";
+const GAME_VERSION="1.52";
 const CHANGELOG=[
+ ["1.52","23 พ.ย. 2569",["แก้บัคจาก v1.51: หน้าซื้อเครื่องบิน/เรือและตัวเลขความคุ้มของเครื่องจอดว่าง ขึ้นกำไรเท่ากันทุกรุ่น (ทุกรุ่นถูกคิดเป็นรุ่นแรก) ตอนนี้แต่ละรุ่นคิดกำไรและคืนทุนตามจริงแล้ว"]],
  ["1.51","22 พ.ย. 2569",["เอาระบบเชื่อม Spotify (เพลงบนหน้าพักสายตา) ออก","เกมช่วงกลางถึงท้ายเร็วขึ้นมาก: เปิดหน้าเส้นทางเร็วขึ้นราว 15 เท่า แท็บการเงินราว 16 เท่า คำนวณแต่ละวันเร็วขึ้นเกินครึ่ง และแผนที่วาดลื่นขึ้น","⚡ ตั้งค่าใหม่ “ความลื่นและกันเกมค้าง”: ความลื่นของแผนที่ (อัตโนมัติ / ลื่น / ประหยัด / ประหยัดมาก) และลดความเร็วเองเมื่อเกมคำนวณไม่ทัน","กันเกมค้าง: ถ้าเกิดข้อผิดพลาด เกมยังเดินต่อ ถ้าเกิดซ้ำจะหยุดเวลาแล้วให้เลือกเล่นต่อ ลดความเร็ว หรือกู้คืนเซฟ","🗂️ เซฟสำรองอัตโนมัติทุก 10 นาทีที่เล่น และก่อนนำเข้าเซฟหรือเริ่มเกมใหม่ (เก็บ 3 ชุดล่าสุด) กู้คืนได้ที่ 💾 สำรอง / ย้ายเซฟ","ถ้าเซฟหลักเสียหาย เกมจะเสนอให้กู้คืนจากเซฟสำรอง · ถ้าพื้นที่เบราว์เซอร์เต็มจนบันทึกไม่ได้ เกมจะเตือน (เดิมเงียบ)"]],
  ["1.50","22 พ.ย. 2569",["⚙️ หน้าตั้งค่าใหม่ (เมนู ··· และหน้าเริ่มเกม): การแสดงผล · การแจ้งเตือนและประกาศ · การเล่น · เสียงและการสั่น · ข้อมูลและเวอร์ชัน","การแสดงผล: โหมดแสง ขนาดตัวอักษร (เล็กถึงใหญ่มาก) ลดแอนิเมชัน เปิด/ปิดเอฟเฟกต์ฉลอง ตัวเลขเงินลอย ป้ายจำนวนคนบนแผนที่ และแบบรายการฝูงบิน","การแจ้งเตือน: ข้อความเด้ง (ทั้งหมด / เฉพาะที่กด / ปิด) ป๊อปอัปปลดล็อก รางวัลรายวันและสรุปรายได้ตอนกลับมา (แสดงหน้าต่างหรือรับอัตโนมัติ) และเลือกประเภทข่าวที่แสดง","การเล่น: ความเร็วตอนเปิดเกม ซ่อมอัตโนมัติ จัดการอัตโนมัติ ความเก่งของคู่แข่ง","🔊 เสียงประกอบใหม่ (ซื้อ ได้รางวัล ได้เงิน มีประกาศ) ปรับความดังได้ · การสั่นย้ายมาอยู่ในตั้งค่า","จัดหน้าให้เป็นระเบียบ: แท็บเล็ตใช้ความกว้างจอมากขึ้น การ์ดสาขาเต็มแถว หัวข้อที่มีปุ่มไม่เบียดกัน ปุ่มสูงเท่ากัน มือถือปุ่มโหมดคน/สินค้าไม่ถูกตัด"]],
  ["1.49","22 พ.ย. 2569",["แก้: ตอนคลองสุเอซปิด เรือเส้นเอเชีย–ยุโรปที่พิสัยไม่ถึงเส้นทางอ้อมแหลมกู๊ดโฮป ถูกตีว่า “ไปไม่ถึง” ทั้งที่ยังแล่นและได้เงินปกติ ตอนนี้การตรวจพิสัยใช้ระยะทางปกติ เรืออ้อมไปเติมน้ำมันระหว่างทางได้ (ยังใช้เวลาเดินทางนานขึ้นตามจริง)"]],
