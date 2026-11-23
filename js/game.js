@@ -536,8 +536,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.58";
+const GAME_VERSION="1.59";
 const CHANGELOG=[
+ ["1.59","23 พ.ย. 2569",["เกมมีชื่อใหม่ตรงกับเว็บ: Sky & Sea Tycoon · เจ้าของสายการบิน (ชื่อแท็บเบราว์เซอร์ ผลค้นหา Google ชื่อแอปบนหน้าจอโฮม และหน้าเริ่มเกม) · เซฟและระบบในเกมไม่เปลี่ยน"]],
  ["1.58","23 พ.ย. 2569",["หน้าแผนที่กับหน้าสาขาบอกเรื่องของค้างตรงกันแล้ว: หลังช่วงสินค้าเยอะ (เช่น ช้อปปิ้ง 11.11) เส้นทางอาจระวางพอกับของใหม่ แต่ยังมีของค้างเหลือ เกมจะบอกว่าของค้างกี่ตัน และต้องใช้กี่วันกว่าจะหมด (เดิมแผนที่บอกว่า “พอดี” แต่สาขาบอกว่า “ล้น”)","ของค้างเล็กน้อยจากเมื่อวาน (ไม่ถึง 30% ของสินค้าต่อวัน) ไม่นับว่าล้นแล้ว"]],
  ["1.57","23 พ.ย. 2569",["แก้: ตัวเลขเงินที่เด้งบนแผนที่ขึ้นเฉพาะของโหมดที่ดูอยู่ (โหมดสินค้าไม่เห็นเงินจากเที่ยวบินขนคนที่แผนที่ซ่อนไว้ และโหมดคนไม่เห็นเงินจากเรือ)"]],
  ["1.56","23 พ.ย. 2569",["💬 ส่งความเห็นถึงผู้พัฒนาได้แล้ว (เมนู ··· หรือ ⚙️ ตั้งค่า): เลือกประเภท บัค / ไอเดีย / ความสมดุล / อื่น ๆ แล้วพิมพ์ได้ไม่เกิน 1,000 ตัวอักษร","ไม่เก็บชื่อ อีเมล หรือเซฟ แนบแค่เวอร์ชันเกม วันในเกม และชนิดอุปกรณ์ · คำหยาบถูกปิดด้วย * · ส่งได้ไม่เกิน 5 ครั้งต่อชั่วโมง"]],
@@ -792,7 +793,7 @@ function renderStart(){startDefaults();const st=fate.step,h=city(fate.hub);
   const nav=(next,label)=>`<div class="row wiznav" style="gap:8px">${st>1?`<button class="btn" id="wback" style="flex:1">← ย้อนกลับ</button>`:""}<button class="btn primary" id="${next}" style="flex:1.6">${label}</button></div>`;
   let body="";
   if(st===1)body=`<div class="skyhero" aria-hidden="true"><i class="cl c1"></i><i class="cl c2"></i><i class="cl c3"></i><div class="sp">${planeArt(model("b789"),{tail:"#D47A22",stripe:"#2A5B9C",body:"white",logo:"bird",pat:"swoosh"},true)}</div></div>
-   <div class="eyebrow">เกมบริหารสายการบินและเรือขนส่ง · เล่นบนเว็บ</div>
+   <div class="eyebrow">Sky &amp; Sea Tycoon · เจ้าของสายการบิน · เล่นบนเว็บ</div>
    <h1>สร้าง<em>สายการบิน</em>ของคุณเอง</h1>
    <p class="muted" style="margin:0">ตอบคำถามทีละข้อ แล้วเริ่มกิจการ เลือกเมืองฐานจากสนามบินจริงทั่วโลก ซื้อเครื่องบิน เปิดเส้นทาง ขนคนและสินค้า แล้วแข่งกับสายการบินคู่แข่ง</p>
    <div class="panel stack wizq"><div class="eyebrow">ขั้นที่ 1 · สายการบินของคุณชื่ออะไร</div>
