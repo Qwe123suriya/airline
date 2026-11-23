@@ -512,7 +512,7 @@ function sailLeg(l,sh,m,lc,n){const bkk=shipK(sh,m),sf=lc.sK?lc.sK[bkk]:1;
   if(l.bk&&l.bk[bkk]>0&&teu<capT){const tk=Math.min(capT-teu,l.bk[bkk]);l.bk[bkk]-=tk;teu+=tk}
   const o={srev:teu*TEU_RATE(lc.km)*SEA_RATE[bkk]*specX(m)*pk("cargo")*(1-((bkk==="r"&&!shipSpec(m)?SPOIL:0)+LATE)*(1-sf)),sfuel:lc.km*m.cpk*fuelNow()*pk("fuel"),sport:portFee(arr,m),teu,voy:1};
   const net=o.srev-o.sfuel-o.sport;S.cash+=net;sh.tn=(sh.tn||0)+net;addT(S.today,o);l.today=l.today||{};addT(l.today,o);S.totTeu=(S.totTeu||0)+teu;
-  if(PREF.floats&&(tab==="home"||tab==="map")&&floaters.length<14)floaters.push({p:arr.c,v:net,t0:performance.now()})}
+  if(PREF.floats&&(tab==="home"||tab==="map")&&vmode()!=="air"&&floaters.length<14)floaters.push({p:arr.c,v:net,t0:performance.now()})}
 function shipResale(sh){return shipM(sh.m).price*.6*Math.max(.5,1-sh.age/7300)}
 function shipFixed(){return S.ships.reduce((a,sh)=>a+shipM(sh.m).price*(sh.lane?.0004:.0002)*upkeepK(shipM(sh.m)),0)}
 function buyShip(id){const m=shipM(id);if(S.cash<m.price)return null;S.cash-=m.price;
@@ -536,8 +536,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.56";
+const GAME_VERSION="1.57";
 const CHANGELOG=[
+ ["1.57","23 พ.ย. 2569",["แก้: ตัวเลขเงินที่เด้งบนแผนที่ขึ้นเฉพาะของโหมดที่ดูอยู่ (โหมดสินค้าไม่เห็นเงินจากเที่ยวบินขนคนที่แผนที่ซ่อนไว้ และโหมดคนไม่เห็นเงินจากเรือ)"]],
  ["1.56","23 พ.ย. 2569",["💬 ส่งความเห็นถึงผู้พัฒนาได้แล้ว (เมนู ··· หรือ ⚙️ ตั้งค่า): เลือกประเภท บัค / ไอเดีย / ความสมดุล / อื่น ๆ แล้วพิมพ์ได้ไม่เกิน 1,000 ตัวอักษร","ไม่เก็บชื่อ อีเมล หรือเซฟ แนบแค่เวอร์ชันเกม วันในเกม และชนิดอุปกรณ์ · คำหยาบถูกปิดด้วย * · ส่งได้ไม่เกิน 5 ครั้งต่อชั่วโมง"]],
  ["1.55","23 พ.ย. 2569",["ขัดเกลาข้อความ: คู่มือระบบอธิบายตรงกับเกมปัจจุบัน (เรือและปฏิทินสินค้าอยู่ในแท็บเส้นทางโหมดสินค้า ไม่มีแท็บสินค้าแยกแล้ว) และเพิ่มหัวข้อ 🛟 เครื่องบินและเรือสำรอง กับ ⚙️ ตั้งค่า เซฟสำรอง และกันเกมค้าง","เขียนไม้ยมก (ๆ) แบบเว้นวรรคหน้าหลังให้เหมือนกันทั้งเกม"]],
  ["1.54","23 พ.ย. 2569",["แก้: เปิดหน้าซื้อเครื่องบิน/เรือค้างไว้ แล้วเงินเพิ่มจนพอซื้อ แต่ปุ่มยังเป็นสีเทาว่าเงินยังไม่พอ ตอนนี้ปุ่มซื้อและแผนซื้ออัปเดตเองเมื่อเงินพอหรือไม่พอ"]],
@@ -1214,7 +1215,7 @@ function flyLeg(r,p,m,c,d,a,b,n){
   S.cash+=net;p.tn=(p.tn||0)+net;addT(S.today,o);r.today=r.today||blankT();addT(r.today,o);
   {const arr=(n%2===1?a:b).c,dep=(n%2===1?b:a).c;S.apT=S.apT||{};const A=S.apT[arr]=S.apT[arr]||{up:0,dn:0,cu:0,cd:0},D=S.apT[dep]=S.apT[dep]||{up:0,dn:0,cu:0,cd:0};D.up+=pax;A.dn+=pax;D.cu+=cargo;A.cd+=cargo}
   p.cond=clamp(p.cond-.035*(m.super?SUPER_WEAR:1),0,100);S.totPax+=pax;S.totCargo+=cargo;
-  if(PREF.floats&&(tab==="home"||tab==="map")&&floaters.length<14)floaters.push({c:(n%2===1?a:b).c,v:net,t0:performance.now()})}
+  if(PREF.floats&&(tab==="home"||tab==="map")&&rkind(r)===bm()&&floaters.length<14)floaters.push({c:(n%2===1?a:b).c,v:net,t0:performance.now()})}
 function rangeMigrate(){if(S.rngMig)return;S.rngMig=1;const off=[];
   for(const l of S.lanes)for(const id of l.ships.slice()){const sh=shipById(id);if(!sh)continue;const m=shipM(sh.m);if(m.rng<laneKm(l)){l.ships=l.ships.filter(x=>x!==id);sh.lane=null;off.push(sh.reg)}}
   if(off.length)addNews(`🧭 กฎพิสัยเรือใหม่: ${off.join(", ")} แล่นไม่ถึงปลายทาง ถูกเรียกกลับมาจอดว่าง ย้ายไปเส้นทางที่ใกล้กว่าได้`)}
