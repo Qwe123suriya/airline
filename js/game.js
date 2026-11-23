@@ -536,8 +536,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.59";
+const GAME_VERSION="1.60";
 const CHANGELOG=[
+ ["1.60","23 พ.ย. 2569",["🛟 กดที่ฐานสำรองบนแผนที่ (หรือในแท็บสาขา) ได้แล้ว: ดูว่าแต่ละลำกำลังช่วยเส้นไหน กำลังเดินทาง (ถึงในอีกกี่ชั่วโมง) จอดรอ หรืออยู่ในโรงซ่อม แตะที่ลำไหนเพื่อเปิดหน้าของลำนั้น"]],
  ["1.59","23 พ.ย. 2569",["เกมมีชื่อใหม่ตรงกับเว็บ: Sky & Sea Tycoon · เจ้าของสายการบิน (ชื่อแท็บเบราว์เซอร์ ผลค้นหา Google ชื่อแอปบนหน้าจอโฮม และหน้าเริ่มเกม) · เซฟและระบบในเกมไม่เปลี่ยน"]],
  ["1.58","23 พ.ย. 2569",["หน้าแผนที่กับหน้าสาขาบอกเรื่องของค้างตรงกันแล้ว: หลังช่วงสินค้าเยอะ (เช่น ช้อปปิ้ง 11.11) เส้นทางอาจระวางพอกับของใหม่ แต่ยังมีของค้างเหลือ เกมจะบอกว่าของค้างกี่ตัน และต้องใช้กี่วันกว่าจะหมด (เดิมแผนที่บอกว่า “พอดี” แต่สาขาบอกว่า “ล้น”)","ของค้างเล็กน้อยจากเมื่อวาน (ไม่ถึง 30% ของสินค้าต่อวัน) ไม่นับว่าล้นแล้ว"]],
  ["1.57","23 พ.ย. 2569",["แก้: ตัวเลขเงินที่เด้งบนแผนที่ขึ้นเฉพาะของโหมดที่ดูอยู่ (โหมดสินค้าไม่เห็นเงินจากเที่ยวบินขนคนที่แผนที่ซ่อนไว้ และโหมดคนไม่เห็นเงินจากเรือ)"]],
@@ -2214,7 +2215,23 @@ function dailyCheck(){if(dailyShown||!S||S.over||afk||sheetFn||pendingDec||!S.fl
   fn.bind=()=>{$("#dclaim").onclick=e=>{S.daily={last:today,streak};S.cash+=rw;save();addNews(`🎁 รางวัลรายวัน วันที่ ${streak}: ${money(rw)}`);const b=e.target.getBoundingClientRect();coinBurst(b.left+b.width/2,b.top);floatCash(rw);sheetFn=null;$("#sheet").innerHTML="";renderView();updateTop()};
     $("#scrim").onclick=ev=>{if(ev.target.id==="scrim")$("#dclaim").click()}};
   openSheet(fn)}
+/* 🛟 a reserve depot: every reserve parked there or sent out from it, and what each one is doing right now */
+function depotSheet(id){const fn=()=>{const d=depot(id);if(!d)return head("ไม่พบฐานสำรอง");const air=d.kind==="air",L=(air?S.fleet:S.ships).filter(o=>o.reserve===id);
+    const where=o=>air?S.routes.find(r=>r.id===o.route):S.lanes.find(l=>l.id===o.lane);
+    const st=o=>{const w=where(o);if(!air&&false)return "";if(o.down>S.day)return ["shop",`<span class="warn">🔧 ซ่อม ${o.down-S.day} วัน</span>`];
+      if(o.fer)return ["go",rsvLbl(o,!air)];if(w)return ["work",`<span class="rsvtag">🛟 กำลังช่วย</span> ${air?`${w.from}→${w.dest}`:`${laneNo(w)} ${port(w.from).n}→${port(w.to).n}`}`];return ["wait",`<span class="muted">จอดรอที่ฐาน</span>`]};
+    const g={work:[],go:[],wait:[],shop:[]};for(const o of L)g[st(o)[0]].push(o);
+    const row=o=>{const m=air?model(o.m):shipM(o.m);return `<button class="prow" data-${air?"dplane":"dship"}="${o.id}"><span class="pst">🛟</span><b class="num">${o.reg}</b><span class="small pm">${m.name}</span><span class="small">${st(o)[1]}</span>${air?`<span class="num small ${o.cond<40?"bad":o.cond<70?"warn":"muted"}">${Math.round(o.cond)}%</span>`:""}</button>`};
+    const sec=(k,t)=>g[k].length?`<div class="eyebrow" style="margin-top:6px">${t} ${g[k].length} ลำ</div><div class="prows">${g[k].map(row).join("")}</div>`:"";
+    return head(`🛟 ${d.n}`,`${air?"ฐานเครื่องบินสำรอง":"อู่เรือสำรอง"} · ${regName(d.reg)} · ที่จอดอย่างเดียว ไม่มีเส้นทางของตัวเอง`)+
+     `<div class="kv" style="grid-template-columns:repeat(3,1fr)"><div><div class="k">กำลังช่วยงาน</div><div class="v">${g.work.length}</div></div><div><div class="k">กำลังเดินทาง</div><div class="v">${g.go.length}</div></div><div><div class="k">จอดรอ</div><div class="v">${g.wait.length+g.shop.length}</div></div></div>`+
+     (L.length?sec("work","✈ กำลังช่วยเส้นที่ล้น")+sec("go","🧭 กำลังเดินทาง")+sec("wait","🅿️ จอดรอที่ฐาน")+sec("shop","🔧 อยู่ในโรงซ่อม")
+       :`<div class="panel small muted">ฐานนี้ยังไม่มีตัวสำรอง · ตั้งได้จากหน้า${air?"เครื่องบิน":"เรือ"}แต่ละลำในแท็บฝูงบิน</div>`)+
+     `<div class="small muted">แตะที่ลำไหนเพื่อดูรายละเอียด เปลี่ยนฐาน หรือเลิกเป็นตัวสำรอง · ตัวสำรองจะออกไปช่วยเส้นที่ล้นเอง และกลับมาเมื่อเส้นนั้นมีที่ว่างพอ ${RSV_BACK} วันติด</div>`};
+  fn.bind=()=>{$$("[data-dplane]").forEach(b=>b.onclick=()=>openSheet(planeSheet(+b.dataset.dplane,{})));$$("[data-dship]").forEach(b=>b.onclick=()=>openSheet(shipSheet(+b.dataset.dship,{})))};
+  return fn}
 function mapTap(mx,my){
+  {let bd=null,bdd=18;for(const h of mapHits){if(!h.dep)continue;const d=Math.hypot(h.px-mx,h.py-my);if(d<bdd){bdd=d;bd=h}}if(bd){openSheet(depotSheet(bd.dep));return}}
   const rg=mapHits.find(h=>h.reg&&Math.abs(h.px-mx)<h.hw&&Math.abs(h.py-my)<14);
   if(rg){openSheet(regionSheet({id:rg.reg}));return}
   let best=null,bd=22;for(const h of mapHits){if(!h.c)continue;const d=Math.hypot(h.px-mx,h.py-my);if(d<bd){bd=d;best=h}}
@@ -3001,7 +3018,7 @@ function depotPanelHTML(k){if(k==="air"?!has("branch"):!has("sea"))return "";con
   return `<details class="more panel depots" ${n?"open":""}><summary>🛟 ${k==="air"?"ฐานเครื่องบินสำรอง":"อู่เรือสำรอง"} ${ds.length} แห่ง · ตัวสำรอง ${n} ลำ</summary>
    <div class="small muted">ที่จอด${k==="air"?"เครื่องบิน":"เรือ"}สำรองอย่างเดียว ไม่มีเส้นทางของตัวเอง เมื่อเส้นไหน${k==="air"?"คนหรือสินค้า":"ตู้"}ล้น ระบบส่งตัวสำรองจากที่ใกล้ที่สุดไปช่วย ไปได้ทุกที่ในโลก แต่เส้นที่ช่วยต้องอยู่ในพิสัย · ตั้งตัวสำรองได้จากหน้า${k==="air"?"เครื่องบิน":"เรือ"}ในแท็บฝูงบิน</div>
    <div class="prows">${ds.map(d=>{const L=all.filter(o=>o.reserve===d.id),wait=L.filter(o=>!on(o)&&!o.fer).length,out=L.filter(o=>on(o)).length,go=L.filter(o=>o.fer).length;
-     return `<div class="prow"><span class="pst">🛟</span><b>${d.n}</b><span class="small pm">${regName(d.reg)}</span><span class="small">${L.length?`จอดรอ ${wait} · ช่วยงาน ${out}${go?` · เดินทาง ${go}`:""}`:'<span class="muted">ว่าง</span>'}</span></div>`}).join("")}</div></details>`}
+     return `<button class="prow" data-depot="${d.id}"><span class="pst">🛟</span><b>${d.n}</b><span class="small pm">${regName(d.reg)}</span><span class="small">${L.length?`จอดรอ ${wait} · ช่วยงาน ${out}${go?` · เดินทาง ${go}`:""}`:'<span class="muted">ว่าง</span>'}</span></button>`}).join("")}</div></details>`}
 /* Containers at one port branch: every sea lane touching it, whether its containers overflow the ships
    (TEU left behind a day + backlog waiting), and the biggest container flows nobody carries yet. */
 const kindsTxt=o=>Object.entries(o).filter(([k,v])=>v>=1).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${CK_E[k]} ${CK_N[k]} ${Math.round(v).toLocaleString()}`).join(" · ");
@@ -3139,7 +3156,7 @@ function airBranchHTML(){const KC=bm()==="cargo";
   ${open?"":`<div class="panel row between"><span class="small">ภูมิภาค${reg.n}ยังล็อกอยู่ ต้องปลดล็อกแผนที่ก่อนจึงเปิดสาขาและบินไปที่นี่ได้</span><button class="btn sm primary" data-brunlock="${reg.id}">ปลดล็อก ${money(regionCost(reg),true)}</button></div>`}
   <div class="pick">${cand.map(c=>{const cost=branchCost(c);return `<button data-bropen="${c.c}" ${!open||S.cash<cost?"disabled":""}><span class="iata">${c.c}</span><span>${c.n}<br><span class="muted" style="font-size:12.5px">ความต้องการ ${"●".repeat(Math.max(1,Math.round(c.w/4)))} · ${dist(city(S.hub),c).toLocaleString()} กม. จาก ${S.hub} · ค่าดูแล ${money(100e3+c.w*15e3,true)}/วัน</span></span><span class="num small" style="font-weight:600;color:${open&&S.cash>=cost?"var(--accent)":"var(--muted)"}">${open?money(cost,true):"🔒"}</span></button>`}).join("")||'<div class="muted small">เปิดสาขาครบทุกสนามบินในภูมิภาคนี้แล้ว</div>'}</div>
   <div class="muted small">สาขาใหม่แพงขึ้นทีละ 30% ต่อสาขาที่มีอยู่ · อัปเกรดสาขาเพิ่มผู้โดยสาร 8% และลดค่าสนามบิน 15% ต่อระดับ ทุกเส้นทางที่บินเข้าหรือออกสนามบินนั้น</div>`}
-function bindBranch(){bindWishes();
+function bindBranch(){$$("[data-depot]").forEach(b=>b.onclick=()=>openSheet(depotSheet(b.dataset.depot)));bindWishes();
   $$("[data-brreg]").forEach(b=>b.onclick=()=>{brReg=b.dataset.brreg;renderView()});
   $$("[data-brseg]").forEach(b=>b.onclick=()=>{brSeg=b.dataset.brseg;renderView()});
   // the routes tab's passenger / cargo switch is the same thing as the mode switch at the top
@@ -4439,7 +4456,7 @@ function drawMap(){
       drawAircraft(x,[px+(i-(n-1)/2)*12*zp,py+12*zp],-Math.PI/2,kind,.5*zp,m.seats?S.livery.tail:cargoCol,paper,0)})}
   // 🛟 reserve depots that hold reserves, and reserves travelling to / from them (no line, only the aircraft or ship moving)
   {const used=new Set([...S.fleet.map(p=>p.reserve),...S.ships.map(sh=>sh.reserve)].filter(Boolean));
-   for(const d of DEPOTS){if(!used.has(d.id)||(d.kind==="air"?vmode()==='sea':vmode()==='air'))continue;const [px,py]=PX(vlon(d.lon),d.lat);
+   for(const d of DEPOTS){if(!used.has(d.id)||(d.kind==="air"?vmode()==='sea':vmode()==='air'))continue;const [px,py]=PX(vlon(d.lon),d.lat);mapHits.push({dep:d.id,px,py});
      x.fillStyle=paper;x.strokeStyle=d.kind==="air"?acc:portCol;x.lineWidth=1.6;x.beginPath();if(x.roundRect)x.roundRect(px-7,py-7,14,14,4);else x.rect(px-7,py-7,14,14);x.fill();x.stroke();
      x.font="10px sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillStyle=ink;x.fillText("🛟",px,py+.5);x.textAlign="start";
      const n=d.kind==="air"?rsvPlanesAt(d.id).filter(p=>!p.route&&!p.fer).length:rsvShipsAt(d.id).filter(sh=>!sh.lane&&!sh.fer).length;
