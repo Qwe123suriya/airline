@@ -536,8 +536,9 @@ const RIVALS=["นภาคราม แอร์ไลน์","โกลเด�
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.60";
+const GAME_VERSION="1.61";
 const CHANGELOG=[
+ ["1.61","23 พ.ย. 2569",["ไม่พลาดคำขอความร่วมมือและอัปเกรดอีกต่อไป: หน้าภาพรวมมีการ์ดแจ้งว่ามีคำขอความร่วมมือกี่รายการ (หมดอายุในกี่วัน) และเมื่อเงินพออัปเกรดศูนย์พัฒนา พร้อมปุ่มพาไปทันที","แท็บบริษัทขึ้นจุดแดงเมื่อมีคำขอรออยู่ หรือมีอัปเกรดที่เพิ่งซื้อได้"]],
  ["1.60","23 พ.ย. 2569",["🛟 กดที่ฐานสำรองบนแผนที่ (หรือในแท็บสาขา) ได้แล้ว: ดูว่าแต่ละลำกำลังช่วยเส้นไหน กำลังเดินทาง (ถึงในอีกกี่ชั่วโมง) จอดรอ หรืออยู่ในโรงซ่อม แตะที่ลำไหนเพื่อเปิดหน้าของลำนั้น"]],
  ["1.59","23 พ.ย. 2569",["เกมมีชื่อใหม่ตรงกับเว็บ: Sky & Sea Tycoon · เจ้าของสายการบิน (ชื่อแท็บเบราว์เซอร์ ผลค้นหา Google ชื่อแอปบนหน้าจอโฮม และหน้าเริ่มเกม) · เซฟและระบบในเกมไม่เปลี่ยน"]],
  ["1.58","23 พ.ย. 2569",["หน้าแผนที่กับหน้าสาขาบอกเรื่องของค้างตรงกันแล้ว: หลังช่วงสินค้าเยอะ (เช่น ช้อปปิ้ง 11.11) เส้นทางอาจระวางพอกับของใหม่ แต่ยังมีของค้างเหลือ เกมจะบอกว่าของค้างกี่ตัน และต้องใช้กี่วันกว่าจะหมด (เดิมแผนที่บอกว่า “พอดี” แต่สาขาบอกว่า “ล้น”)","ของค้างเล็กน้อยจากเมื่อวาน (ไม่ถึง 30% ของสินค้าต่อวัน) ไม่นับว่าล้นแล้ว"]],
@@ -1402,7 +1403,7 @@ function answerReq(id,a){const q=(S.req||[]).find(x=>x.id===id);if(!q)return;con
   else{relAdd(q.p,-3);toast(`ปฏิเสธ ${p.n} แล้ว`)}
   S.req=S.req.filter(x=>x!==q);save();renderView()}
 function dealsHTML(){if(!has("deals"))return "";const reqs=(S.req||[]).filter(q=>q.until>S.day),act=dealsOn();
-  return secHead("🤝","ความร่วมมือ","ขอความร่วมมือกับคนอื่น หรือรับคำขอจากเขา")+
+  return `<div id="co-deals"></div>`+secHead("🤝","ความร่วมมือ","ขอความร่วมมือกับคนอื่น หรือรับคำขอจากเขา")+
    (reqs.length?`<div class="panel stack"><span class="eyebrow">📨 คำขอที่เข้ามา · เขาอยากร่วมมือกับเรา</span>${reqs.map(q=>{const p=partnerOf(q.p),d=DEALS[q.k],full=dealCost(q.k,q.p),ch=Math.round(dealChance(q.k,q.p,.15)*100);return `<div class="dreq"><div class="row" style="gap:8px"><span class="cav">${p.e}</span><div style="min-width:0;flex:1"><b>${esc(p.n)}</b> <span class="muted small">· ${p.sub}</span><div class="small">เสนอ <b>${d.e} ${d.n}</b></div></div></div>
       <div class="dterms small"><span>ได้อะไร</span><b>${dealFx(q.k,dealTier(q.k).pw)}</b><span>นานเท่าไร</span><b>${d.days} วัน</b><span>${q.bonus?"เงิน":"เราจ่าย"}</span><b class="${q.bonus?"good":""}">${q.bonus?`เขาจ่ายให้เรา ${money(q.bonus,true)} (เราไม่ต้องจ่าย)`:`${money(q.cost,true)} <span class="muted">(ถ้าเราไปขอเองต้องจ่าย ${money(full,true)})</span>`}</b><span>ตอบภายใน</span><b>${q.until-S.day} วัน</b><span>ความสัมพันธ์</span><b>${relTxt(q.p)}</b></div>
       <div class="row" style="gap:6px"><button class="btn sm primary" data-req="${q.id}:yes" ${S.cash<q.cost?"disabled":""}>✓ ตกลง</button><button class="btn sm" data-req="${q.id}:counter">↩ ต่อรอง<br><small>${chanceTxt(dealChance(q.k,q.p,.15))}</small></button><button class="btn sm" data-req="${q.id}:no">✕ ปฏิเสธ</button></div>
@@ -1691,7 +1692,8 @@ function updateTop(){if(S&&S.livery){const k=S.livery.tail+S.livery.stripe;if(up
   $$("[data-sp]").forEach(b=>b.classList.toggle("on",!paused&&+b.dataset.sp===speed));
   {const c=$("#spdc");if(c){c.textContent=speed+"×";c.classList.toggle("on",!paused)}const tl=$("#themelbl");if(tl){const t=THEMES.find(x=>x[0]===themePref())||THEMES[0];tl.textContent="โหมดแสง: "+t[2]}}
   $$("[data-tab]").forEach(b=>{b.classList.toggle("on",b.dataset.tab===tab);
-    const need=(b.dataset.tab==="fleet"&&S.fleet.some(p=>p.cond<40&&p.down<=S.day))||(b.dataset.tab==="home"&&S.missions&&S.missions.some(m=>m.done));const dot=b.querySelector(".dot");
+    const need=(b.dataset.tab==="fleet"&&S.fleet.some(p=>p.cond<40&&p.down<=S.day))||(b.dataset.tab==="home"&&S.missions&&S.missions.some(m=>m.done))||(b.dataset.tab==="company"&&tab!=="company"&&(pendingReqs().length>0||perkNew()));
+    if(tab==="company"){S.coSeen=S.day;S.coSeenLv=PERKS.reduce((a,p)=>a+pkLv(p[0]),0)}const dot=b.querySelector(".dot");
     if(need&&!dot)b.insertAdjacentHTML("beforeend",'<span class="dot"></span>');if(!need&&dot)dot.remove()});
 }
 function renderView(anim){
@@ -1785,8 +1787,20 @@ function firstStepsHTML(){const s=firstSteps();if(!s)return "";const cur=s.index
     ["รอเที่ยวบินแรกลงจอด","","fs4","เวลาในเกมเดินอยู่แล้ว กด 3× ด้านบนให้เร็วขึ้น เงินค่าตั๋วเข้าทุกครั้งที่ลงจอด"]];
   return `<div class="fsteps"><div class="row between"><b>🧭 เริ่มต้นกิจการ</b><span class="num muted small">${cur}/4</span></div>
     ${T.map(([t,btn,id,tip],i)=>`<div class="fs ${s[i]?"done":i===cur?"now":""}"><span class="fsn">${s[i]?"✓":i+1}</span><div class="fst"><span>${t}</span>${i===cur?`<small>${tip}</small>`:""}</div>${i===cur&&btn?`<button class="btn primary sm" data-fs="${id}">${btn}</button>`:""}</div>`).join("")}</div>`}
+/* things waiting for the player outside the main screens: deal requests from partners (they expire) and R&D upgrades
+   the money now covers comfortably. Shown as a card on the home tab and a dot on the company tab. */
+const pendingReqs=()=>has("deals")?(S.req||[]).filter(q=>q.until>S.day):[];
+function perkReady(){if(!has("perks"))return null;const L=PERKS.filter(p=>pkLv(p[0])<PERK_MAX).map(p=>({p,c:pkCost(p[0])})).sort((a,b)=>a.c-b.c);
+  const f=L[0];return f&&f.c<=S.cash*.4?f:null}   // affordable and leaves most of the money
+const perkNew=()=>{const f=perkReady();return !!f&&!(S.coSeen>=S.day-30&&S.coSeenLv===PERKS.reduce((a,p)=>a+pkLv(p[0]),0))};
+function noticeHTML(){const R=pendingReqs(),P=perkReady();if(!R.length&&!P)return "";
+  const soon=R.length?Math.min(...R.map(q=>q.until-S.day)):0;
+  return `<div class="panel stack notice">${R.length?`<div class="row between" style="gap:10px"><div><b>📨 มีคำขอความร่วมมือ ${R.length} รายการ</b><div class="small muted">${R.slice(0,2).map(q=>`${partnerOf(q.p).e} ${esc(partnerOf(q.p).n)} · ${DEALS[q.k].n}`).join(" · ")}${R.length>2?" …":""} · หมดอายุใน ${soon} วัน</div></div><button class="btn sm primary" id="ntreq">ดูคำขอ</button></div>`:""}
+   ${P?`<div class="row between" style="gap:10px"><div><b>🔬 อัปเกรดศูนย์พัฒนาได้แล้ว</b><div class="small muted">${P.p[1]} ${P.p[2]} ระดับ ${pkLv(P.p[0])+1} · ${money(P.c,true)} · ${P.p[3]} ${P.p[4]>0?"+":""}${Math.round(P.p[4]*100)}% ถาวร</div></div><button class="btn sm" id="ntperk">ไปอัปเกรด</button></div>`:""}</div>`}
+function bindNotice(){const a=$("#ntreq");if(a)a.onclick=()=>{tab="company";renderApp();setTimeout(()=>{const el=$("#co-deals");if(el)el.scrollIntoView({behavior:reduce?"auto":"smooth",block:"start"})},60)};
+  const b=$("#ntperk");if(b)b.onclick=()=>openSheet(perkSheet())}
 function homeHTML(){
-  return `${firstStepsHTML()}<div class="mapbox"><canvas id="map" aria-label="แผนที่โลก ลากเพื่อเลื่อน บีบหรือกดปุ่มเพื่อซูม"></canvas><canvas id="mapbase" aria-hidden="true"></canvas>
+  return `${firstStepsHTML()}<div id="noticebox">${noticeHTML()}</div><div class="mapbox"><canvas id="map" aria-label="แผนที่โลก ลากเพื่อเลื่อน บีบหรือกดปุ่มเพื่อซูม"></canvas><canvas id="mapbase" aria-hidden="true"></canvas>
    <div class="maplegend" id="legend">${legendHTML()}</div>
    ${mapCtlHTML(true)}
    ${modeHTML()}<button class="mapunlock" id="regbtn">🔓 ปลดล็อกแผนที่ <span class="num">${S.unlocked.length}/${REGIONS.length}</span></button></div>
@@ -1886,7 +1900,7 @@ function rankPanelHTML(){const v=S.ui_mrace||"ov",L=catList(),cur=v==="ov"||L.so
    <details class="more"><summary>คะแนนของคุณมาจากอะไร ▾</summary><div class="rparts">${mine.map(([n,v])=>`<div class="row between small"><span class="muted">${n}</span><span class="num">${Math.round(v).toLocaleString()}</span></div>`).join("")}</div></details>`}
 const niceShort=v=>v>=1e6?(v/1e6).toFixed(1)+"M":v>=1e4?Math.round(v/1e3)+"K":v>=1e3?(v/1e3).toFixed(1)+"K":Math.round(v).toString();
 function legendHTML(){const v=vmode();return `${v!=="sea"?`<span><i style="background:var(--accent)"></i>ฐาน</span>`:""}${v!=="air"?`<span><i style="background:var(--port);border-radius:2px"></i>ท่าเรือ</span>`:""}${v!=="sea"?(bm()==="cargo"?`<span><i style="background:var(--cargo)"></i>ปลายทางสินค้า</span><span><i style="background:var(--cargo);border-radius:1px"></i>ฮับสินค้า</span>`:`<span><i style="background:var(--route)"></i>ปลายทาง</span>`):""}<span><i style="background:var(--fog);outline:1px solid var(--border)"></i>ยังล็อก</span>${S.events.length?`<span><i style="background:var(--bad)"></i>เหตุการณ์</span>`:""}`}
-function refreshHome(){const r=$("#homeRest");if(!r){renderView();return}r.innerHTML=homeRestHTML();$("#legend").innerHTML=legendHTML();
+function refreshHome(){const r=$("#homeRest");if(!r){renderView();return}r.innerHTML=homeRestHTML();{const nb=$("#noticebox");if(nb){const h=noticeHTML();if(nb.innerHTML!==h)nb.innerHTML=h}}$("#legend").innerHTML=legendHTML();
   $("#regbtn").innerHTML=`🔓 ปลดล็อกแผนที่ <span class="num">${S.unlocked.length}/${REGIONS.length}</span>`;bindView(true);if(pop)renderPop()}
 /* Lifetime milestones: a celebration + bonus each time total passengers / air cargo passes a round number */
 const MS={pax:{L:[1e3,5e3,2e4,5e4,1e5,2.5e5,5e5,1e6,2.5e6,5e6,1e7,2.5e7,5e7,1e8,2.5e8,5e8,1e9],v:()=>S.totPax||0,x:30,nm:"ผู้โดยสารสะสม",u:"คน",e:"👥",c:"ผู้โดยสารคนที่"},
@@ -3585,6 +3599,7 @@ function moneyHTML(){
 }
 function bindView(rest){
   if(tab==="home"||tab==="map"){bindAirports();if(!rest)bindMap()}
+  if(tab==="home")bindNotice();
   if(tab==="branch")bindBranch();
   bindCargo();
   $$("[data-claim]").forEach(b=>b.onclick=()=>claimMission(+b.dataset.claim,b));
