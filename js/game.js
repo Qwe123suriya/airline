@@ -539,8 +539,9 @@ const RIVALS=[_T("นภาคราม แอร์ไลน์"),_T("โกล
 /* 🧪 Test server (test.skyseatycoon.com): new versions go here first. It shows a badge and has an admin panel for
    testing (money, skip days, unlock everything). The live site never shows either. Saves are separate (other domain). */
 const IS_TEST=/^test\./.test(location.hostname)||/airline-test/.test(location.hostname)||(!/^https?:$/.test(location.protocol)||location.hostname==="localhost")&&/[?&]stage=test/.test(location.search);
-const GAME_VERSION="1.66";
+const GAME_VERSION="1.67";
 const CHANGELOG=[
+ ["1.67",_T("25 พ.ย. 2569"),[_T("เกมนับจำนวนคนที่เปิดเล่นอยู่แบบไม่ระบุตัวตน (ส่งแค่รหัสสุ่มของเครื่อง เวอร์ชัน ภาษา และชนิดอุปกรณ์ ไม่ส่งชื่อหรือเซฟ) เพื่อให้ผู้พัฒนารู้ว่ามีคนเล่นกี่คน")]],
  ["1.66",_T("25 พ.ย. 2569"),[_T("หน้าแรกใหม่ (แท็บ “หน้าหลัก”): แผนที่สะอาดขึ้น · กล่องตัวเลขวันนี้ (คนหรือตัน ลำที่บินหรือตู้เรือ รายได้ รายจ่าย) คู่กับกำไรวันนี้ · คำขอความร่วมมือ · อัปเกรดแต่ละด้าน · ภารกิจคู่กับข่าวสาร · ควรปรับอะไรบ้าง · ทุกกล่องมุมโค้งมน"),_T("ปุ่ม 💬 ส่งความเห็น และ ⚙️ ตั้งค่า อยู่บนแถบด้านบนแล้ว · โหมด AFK และเต็มจอย้ายไปอยู่ในเมนู ···")]],
  ["1.65",_T("24 พ.ย. 2569"),[_T("ปรับปรุงเบื้องหลัง: เวอร์ชันใหม่จะผ่านเซิร์ฟเวอร์ทดสอบก่อนขึ้นเว็บจริง เพื่อลดบัคที่ผู้เล่นจะเจอ")]],
  ["1.64",_T("24 พ.ย. 2569"),[_T("🌐 เกมมีภาษาอังกฤษแล้ว: เปิดครั้งแรกจะใช้ภาษาตามที่ตั้งไว้ในเครื่อง เปลี่ยนได้ที่ ⚙️ ตั้งค่า → การแสดงผล → ภาษา · เซฟเดิมเล่นต่อได้ทั้งสองภาษา")]],
@@ -4647,6 +4648,12 @@ S=load();if(!S)rollFate();else{dispCash=S.cash;seenNews=S.news.length?S.news[0].
 speed=PREF.speed0||1;
 renderApp();requestAnimationFrame(frame);
 afterUpdate();setTimeout(()=>checkUpdate(),4000);setInterval(()=>checkUpdate(),3*60e3);
+/* "I'm playing" signal for the developer's player count: a random id made on this device, the game version, language
+   and device type. Sent every 90 s only while the game is open and on screen, only on the website. No name, no save. */
+const PID=(()=>{try{let v=localStorage.getItem("airline-pid");if(!/^[a-z0-9]{12,32}$/.test(v||"")){v=Array.from(crypto.getRandomValues(new Uint8Array(12)),b=>(b%36).toString(36)).join("");localStorage.setItem("airline-pid",v)}return v}catch(e){return null}})();
+function ping(){if(!PID||document.hidden||!/^https?:$/.test(location.protocol)||location.hostname==="localhost")return;
+  try{fetch("/api/ping",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:PID,ver:GAME_VERSION,lang:LANG,dev:devKind()}),keepalive:true}).catch(()=>{})}catch(e){}}
+setTimeout(ping,3000);setInterval(ping,90e3);document.addEventListener("visibilitychange",()=>{if(!document.hidden)ping()});
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkUpdate()});
 if(S)setTimeout(()=>awayCheck(S.seen),400);
 let hiddenAt=0;

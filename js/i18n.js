@@ -3,7 +3,7 @@
 const LANG=(()=>{try{const v=localStorage.getItem("airline-lang");if(v==="th"||v==="en")return v}catch(e){}
   const l=String((navigator.languages&&navigator.languages[0])||navigator.language||"th").toLowerCase();return l.startsWith("th")?"th":"en"})();
 document.documentElement.lang=LANG;
-if(LANG==="en")document.write('<script src="js/en.js?v=1.66"><\/script>');
+if(LANG==="en")document.write('<script src="js/en.js?v=1.67"><\/script>');
 // Shared splitter: the same code runs at build time (to list what needs translating) and in the game (to translate).
 // A template is joined with placeholder marks +i, then cut into "runs": text between HTML tags, and quoted
 // attribute values inside tags. A run that holds Thai is looked up with its placeholders renumbered {0},{1},...

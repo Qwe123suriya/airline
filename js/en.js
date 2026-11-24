@@ -3055,5 +3055,6 @@ var EN_DICT={
 "ข่าวสาร":"News",
 "หน้าแรกใหม่ (แท็บ “หน้าหลัก”): แผนที่สะอาดขึ้น · กล่องตัวเลขวันนี้ (คนหรือตัน ลำที่บินหรือตู้เรือ รายได้ รายจ่าย) คู่กับกำไรวันนี้ · คำขอความร่วมมือ · อัปเกรดแต่ละด้าน · ภารกิจคู่กับข่าวสาร · ควรปรับอะไรบ้าง · ทุกกล่องมุมโค้งมน":"New home screen (the “Home” tab): a cleaner map · today’s numbers (people or tonnes, aircraft flying or containers, revenue, costs) next to today’s profit · partnership requests · upgrades in each area · missions next to news · what to adjust · rounded corners everywhere",
 "ปุ่ม 💬 ส่งความเห็น และ ⚙️ ตั้งค่า อยู่บนแถบด้านบนแล้ว · โหมด AFK และเต็มจอย้ายไปอยู่ในเมนู ···":"💬 Feedback and ⚙️ Settings buttons are now on the top bar · AFK mode and full screen moved into the ··· menu",
-"25 พ.ย. 2569":"25 Nov 2026"
+"25 พ.ย. 2569":"25 Nov 2026",
+"เกมนับจำนวนคนที่เปิดเล่นอยู่แบบไม่ระบุตัวตน (ส่งแค่รหัสสุ่มของเครื่อง เวอร์ชัน ภาษา และชนิดอุปกรณ์ ไม่ส่งชื่อหรือเซฟ) เพื่อให้ผู้พัฒนารู้ว่ามีคนเล่นกี่คน":"The game counts how many people are playing, anonymously (only a random device code, version, language and device type are sent, never your name or save), so the developer knows how many people play"
 };
