@@ -1,6 +1,6 @@
 // Offline support. Network first (so a normal reload always gets the newest version), cache as a fallback.
 const CACHE = "airline-v1";
-const CORE = ["./", "index.html", "css/style.css", "js/geo.js", "js/game.js", "manifest.webmanifest", "icon.svg"];
+const CORE = ["./", "index.html", "css/style.css", "js/i18n.js", "js/en.js", "js/geo.js", "js/game.js", "manifest.webmanifest", "icon.svg"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener("fetch", e => {

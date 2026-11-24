@@ -1,0 +1,1 @@
+{"private": true, "description": "translation check for the game (not deployed)", "dependencies": {"acorn": "8.14.0", "acorn-walk": "8.3.4"}}

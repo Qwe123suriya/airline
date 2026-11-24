@@ -9,3 +9,5 @@ CNAME
 node_modules
 src
 src/**
+tools
+tools/**
