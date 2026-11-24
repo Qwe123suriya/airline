@@ -539,13 +539,14 @@ const RIVALS=[_T("นภาคราม แอร์ไลน์"),_T("โกล
 /* 🧪 Test server (test.skyseatycoon.com): new versions go here first. It shows a badge and has an admin panel for
    testing (money, skip days, unlock everything). The live site never shows either. Saves are separate (other domain). */
 const IS_TEST=/^test\./.test(location.hostname)||/airline-test/.test(location.hostname)||(!/^https?:$/.test(location.protocol)||location.hostname==="localhost")&&/[?&]stage=test/.test(location.search);
-const GAME_VERSION="1.65";
+const GAME_VERSION="1.66";
 const CHANGELOG=[
+ ["1.66",_T("25 พ.ย. 2569"),[_T("หน้าแรกใหม่ (แท็บ “หน้าหลัก”): แผนที่สะอาดขึ้น · กล่องตัวเลขวันนี้ (คนหรือตัน ลำที่บินหรือตู้เรือ รายได้ รายจ่าย) คู่กับกำไรวันนี้ · คำขอความร่วมมือ · อัปเกรดแต่ละด้าน · ภารกิจคู่กับข่าวสาร · ควรปรับอะไรบ้าง · ทุกกล่องมุมโค้งมน"),_T("ปุ่ม 💬 ส่งความเห็น และ ⚙️ ตั้งค่า อยู่บนแถบด้านบนแล้ว · โหมด AFK และเต็มจอย้ายไปอยู่ในเมนู ···")]],
  ["1.65",_T("24 พ.ย. 2569"),[_T("ปรับปรุงเบื้องหลัง: เวอร์ชันใหม่จะผ่านเซิร์ฟเวอร์ทดสอบก่อนขึ้นเว็บจริง เพื่อลดบัคที่ผู้เล่นจะเจอ")]],
  ["1.64",_T("24 พ.ย. 2569"),[_T("🌐 เกมมีภาษาอังกฤษแล้ว: เปิดครั้งแรกจะใช้ภาษาตามที่ตั้งไว้ในเครื่อง เปลี่ยนได้ที่ ⚙️ ตั้งค่า → การแสดงผล → ภาษา · เซฟเดิมเล่นต่อได้ทั้งสองภาษา")]],
  ["1.63",_T("23 พ.ย. 2569"),[_T("แก้หน้าต่างกะพริบเวลากดปรับค่า: ตารางการบิน การออกเดินทาง บริการบนเส้นทาง ราคาตั๋ว ค่าระวาง การออกเรือ และปุ่มอื่นๆ ในหน้าต่าง ไม่วูบหายแล้วจางกลับมาอีกต่อไป")]],
  ["1.62",_T("23 พ.ย. 2569"),[_T("แก้หน้าซื้อเครื่องบิน/เรือกะพริบไม่หยุด: ปุ่มซื้อเปลี่ยนเป็นกดได้หรือกดไม่ได้ตามเงินทันที โดยไม่วาดทั้งหน้าใหม่ (เลื่อนดูรายการได้นิ่งๆ)")]],
- ["1.61",_T("23 พ.ย. 2569"),[_T("ไม่พลาดคำขอความร่วมมือและอัปเกรดอีกต่อไป: หน้าภาพรวมมีการ์ดแจ้งว่ามีคำขอความร่วมมือกี่รายการ (หมดอายุในกี่วัน) และเมื่อเงินพออัปเกรดศูนย์พัฒนา พร้อมปุ่มพาไปทันที"),_T("แท็บบริษัทขึ้นจุดแดงเมื่อมีคำขอรออยู่ หรือมีอัปเกรดที่เพิ่งซื้อได้")]],
+ ["1.61",_T("23 พ.ย. 2569"),[_T("ไม่พลาดคำขอความร่วมมือและอัปเกรดอีกต่อไป: หน้าหลักมีการ์ดแจ้งว่ามีคำขอความร่วมมือกี่รายการ (หมดอายุในกี่วัน) และเมื่อเงินพออัปเกรดศูนย์พัฒนา พร้อมปุ่มพาไปทันที"),_T("แท็บบริษัทขึ้นจุดแดงเมื่อมีคำขอรออยู่ หรือมีอัปเกรดที่เพิ่งซื้อได้")]],
  ["1.60",_T("23 พ.ย. 2569"),[_T("🛟 กดที่ฐานสำรองบนแผนที่ (หรือในแท็บสาขา) ได้แล้ว: ดูว่าแต่ละลำกำลังช่วยเส้นไหน กำลังเดินทาง (ถึงในอีกกี่ชั่วโมง) จอดรอ หรืออยู่ในโรงซ่อม แตะที่ลำไหนเพื่อเปิดหน้าของลำนั้น")]],
  ["1.59",_T("23 พ.ย. 2569"),[_T("เกมมีชื่อใหม่ตรงกับเว็บ: Sky & Sea Tycoon · เจ้าของสายการบิน (ชื่อแท็บเบราว์เซอร์ ผลค้นหา Google ชื่อแอปบนหน้าจอโฮม และหน้าเริ่มเกม) · เซฟและระบบในเกมไม่เปลี่ยน")]],
  ["1.58",_T("23 พ.ย. 2569"),[_T("หน้าแผนที่กับหน้าสาขาบอกเรื่องของค้างตรงกันแล้ว: หลังช่วงสินค้าเยอะ (เช่น ช้อปปิ้ง 11.11) เส้นทางอาจระวางพอกับของใหม่ แต่ยังมีของค้างเหลือ เกมจะบอกว่าของค้างกี่ตัน และต้องใช้กี่วันกว่าจะหมด (เดิมแผนที่บอกว่า “พอดี” แต่สาขาบอกว่า “ล้น”)"),_T("ของค้างเล็กน้อยจากเมื่อวาน (ไม่ถึง 30% ของสินค้าต่อวัน) ไม่นับว่าล้นแล้ว")]],
@@ -580,7 +581,7 @@ const CHANGELOG=[
  ["1.29",_T("20 พ.ย. 2569"),[_T("กล่องเส้นทางบนแผนที่แนะนำว่าควรซื้อเครื่องรุ่นไหนกี่ลำถึงจะรับคนที่รอได้หมด")]],
  ["1.28",_T("19 พ.ย. 2569"),[_T("ช่วงพายุไม่ทำให้ทุกรุ่นขึ้น “ไม่คุ้ม” อีก"),_T("เต็มลำ % ของเครื่องขนสินค้าแสดงระวางที่ถูกต้อง"),_T("โหลดไฟล์ใหม่ทันทีหลังอัปเดต")]],
  ["1.27",_T("19 พ.ย. 2569"),[_T("บอกแยกประเภทว่าค้างอะไร (พัสดุ อาหาร รถ)"),_T("ท่าเรือบอกว่าตู้ล้นที่ไหน"),_T("สาขาสนามบินในโหมดสินค้าบอกว่าสินค้าล้นที่ไหน"),_T("แก้ปุ่มส้มยักษ์ในกล่องคำแนะนำ")]],
- ["1.26",_T("19 พ.ย. 2569"),[_T("🤖 จัดการอัตโนมัติทุกวัน ในกล่องคำแนะนำหน้าภาพรวม"),_T("สนามบินขนสินค้าล้วนมีสินค้ามากขึ้น 3 เท่า")]],
+ ["1.26",_T("19 พ.ย. 2569"),[_T("🤖 จัดการอัตโนมัติทุกวัน ในกล่องคำแนะนำหน้าหลัก"),_T("สนามบินขนสินค้าล้วนมีสินค้ามากขึ้น 3 เท่า")]],
  ["1.25",_T("19 พ.ย. 2569"),[_T("ฝูงบินแยกจอดว่าง / ซ่อม / ทำงาน พร้อมช่องค้นหา"),_T("เลือกความยากของคู่แข่งได้"),_T("เครื่องบินโดยสารใหม่ 9 รุ่น")]],
  ["1.24",_T("18 พ.ย. 2569"),[_T("ปรับราคาตั๋วทุกเส้นทีเดียว"),_T("ที่นั่งเต็มเป็นตัวเลขแทนกราฟ")]],
  ["1.23",_T("18 พ.ย. 2569"),[_T("หัวข้อที่เปิดไว้ไม่ปิดเอง ที่เลื่อนไว้ไม่เด้งกลับ")]],
@@ -1641,7 +1642,7 @@ const ICONS={
  map:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg>',
  company:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg>',
  money:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5M4 19h16M8 15l4-4 3 3 5-6"/></svg>'};
-const TABS_ALL=[["home",_T("ภาพรวม")],["map",_T("แผนที่")],["routes",_T("เส้นทาง")],["branch",_T("สาขา")],["fleet",_T("ฝูงบิน")],["cargo",_T("สินค้า")],["money",_T("การเงิน")],["company",_T("บริษัท")]];
+const TABS_ALL=[["home",_T("หน้าหลัก")],["map",_T("แผนที่")],["routes",_T("เส้นทาง")],["branch",_T("สาขา")],["fleet",_T("ฝูงบิน")],["cargo",_T("สินค้า")],["money",_T("การเงิน")],["company",_T("บริษัท")]];
 const TABS=TABS_ALL.filter(t=>t[0]!=="cargo");   // freight lives in the routes / fleet tabs (cargo mode)
 
 function renderApp(){
@@ -1654,11 +1655,12 @@ function renderApp(){
      <button class="barminb" id="barmin" aria-label="ย่อแถบด้านบน" aria-expanded="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
    </div><div class="wrap row2">
      ${bmHTML()}
-     <div class="clock"><button id="pp" aria-label="หยุด/เล่น"></button>${SPEEDS.map(s=>`<button data-sp="${s}">${s}×</button>`).join("")}<button class="spdc" id="spdc" aria-label="เปลี่ยนความเร็ว"></button><button class="qbtn afkb" id="afkbtn" aria-label="โหมด AFK" title="โหมด AFK">💤</button><button class="qbtn fsq" id="fsq" aria-label="เต็มจอ" title="เต็มจอ"></button>
+     <div class="clock"><button id="pp" aria-label="หยุด/เล่น"></button>${SPEEDS.map(s=>`<button data-sp="${s}">${s}×</button>`).join("")}<button class="spdc" id="spdc" aria-label="เปลี่ยนความเร็ว"></button><button class="qbtn" id="fbq" aria-label="ส่งความเห็นถึงผู้พัฒนา" title="ส่งความเห็นถึงผู้พัฒนา">💬</button><button class="qbtn" id="setq" aria-label="ตั้งค่า" title="ตั้งค่า">⚙️</button>
       <div class="moreb"><button class="qbtn" id="morebtn" aria-label="เมนูเพิ่มเติม" aria-expanded="false" aria-haspopup="true">⋯</button>
        <div class="moremenu" id="moremenu" hidden role="menu">
         <div class="muted small" id="hubl"></div>
         <button role="menuitem" id="setbtn"><span class="mi">⚙️</span>ตั้งค่า</button>
+        <button role="menuitem" id="afkbtn"><span class="mi">💤</span>โหมด AFK</button>
         ${IS_TEST?_T`<button role="menuitem" id="testbtn"><span class="mi">🧪</span>แผงทดสอบ (เฉพาะเว็บทดสอบ)</button>`:""}
         <button role="menuitem" id="fbbtn"><span class="mi">💬</span>ส่งความเห็นถึงผู้พัฒนา</button>
         <button role="menuitem" id="themebtn"><span class="mi">${themeIcon()}</span><span id="themelbl">โหมดแสง</span></button>
@@ -1684,9 +1686,10 @@ function renderApp(){
   $("#restart").onclick=()=>{closeMore();openSheet(resetSheet)};
   $("#savebtn").onclick=()=>{closeMore();openSheet(saveSheet())};
   const fsToggle=()=>{if(fsEl())fsExit();else if(!fsEnter())toast(_T("เบราว์เซอร์นี้เปิดเต็มจอไม่ได้ · ลองกด “เพิ่มไปยังหน้าจอหลัก” ในเมนูเบราว์เซอร์ แล้วเปิดเกมจากไอคอนนั้น"))};
-  $("#fsbtn").onclick=()=>{closeMore();fsToggle()};$("#fsq").onclick=fsToggle;updFsq();
+  $("#fsbtn").onclick=()=>{closeMore();fsToggle()};{const q=$("#fsq");if(q)q.onclick=fsToggle}updFsq();
   if(!window._fsl){window._fsl=1;const up=()=>{const l=$("#fslbl");if(l)l.textContent=fsEl()?_T("ออกจากเต็มจอ"):_T("เต็มจอ (ซ่อนแถบเบราว์เซอร์)");updFsq();setTimeout(()=>{if($("#mapfull"))sizeFullMap()},250)};document.addEventListener("fullscreenchange",up);document.addEventListener("webkitfullscreenchange",up)}
-  $("#afkbtn").onclick=()=>startAfk();
+  $("#afkbtn").onclick=()=>{closeMore();startAfk()};
+  $("#setq").onclick=()=>{closeMore();openSheet(settingsSheet())};$("#fbq").onclick=()=>{closeMore();openSheet(feedbackSheet())};
   $("#themebtn").onclick=cycleTheme;
   $("#setbtn").onclick=()=>{closeMore();openSheet(settingsSheet())};
   {const tb=$("#testbtn");if(tb)tb.onclick=()=>{closeMore();openSheet(testSheet())}}
@@ -1741,7 +1744,7 @@ const opLanes=()=>S.lanes.filter(l=>l.ships.length).length;
 const lanesOK=()=>S.lanes.filter(l=>l.ships.length).reduce((a,l)=>a+laneAvg(l),0)>0;
 const lv=()=>S.lvl||1;
 const FEATS=[
- {id:"missions",n:_T("🎯 ภารกิจ"),d:_T("ทำตามเป้าหมายแล้วได้เงินรางวัล ดูได้ในหน้าภาพรวม"),ok:()=>!firstSteps(),go:"home",need:_T("เที่ยวบินแรกลงจอด")},
+ {id:"missions",n:_T("🎯 ภารกิจ"),d:_T("ทำตามเป้าหมายแล้วได้เงินรางวัล ดูได้ในหน้าหลัก"),ok:()=>!firstSteps(),go:"home",need:_T("เที่ยวบินแรกลงจอด")},
  {id:"map",n:_T("🗺️ แผนที่เต็มจอ"),d:_T("แท็บแผนที่ใหม่ ดูเครื่องบินทุกลำบนแผนที่ใหญ่ แตะสนามบินเพื่อเปิดเส้นทางหรือเพิ่มเครื่อง"),ok:()=>opRoutes()>=2,go:"map",need:_T("มีเส้นทางที่มีเครื่องบิน 2 เส้น")},
  {id:"money",n:_T("📈 การเงิน"),d:_T("แท็บการเงินใหม่ กู้เงิน ทำการตลาด ล็อกราคาน้ำมัน และดูกราฟรายได้"),ok:()=>S.day>=4,go:"money",need:_T("ผ่านไป 4 วัน")},
  {id:"branch",n:_T("🏢 สาขา"),d:_T("แท็บสาขาใหม่ เปิดสาขาที่เมืองอื่น เปิดเส้นทางจากที่นั่นได้ และผู้โดยสารจะต่อเครื่องที่สาขา"),ok:()=>opRoutes()>=3&&solid(),go:"branch",need:_T("3 เส้นทาง และกำไรเฉลี่ย 7 วันเป็นบวก")},
@@ -1811,13 +1814,12 @@ function noticeHTML(){const R=pendingReqs(),P=perkReady();if(!R.length&&!P)retur
   const soon=R.length?Math.min(...R.map(q=>q.until-S.day)):0;
   return `<div class="panel stack notice">${R.length?_T`<div class="row between" style="gap:10px"><div><b>📨 มีคำขอความร่วมมือ ${R.length} รายการ</b><div class="small muted">${R.slice(0,2).map(q=>`${partnerOf(q.p).e} ${esc(partnerOf(q.p).n)} · ${DEALS[q.k].n}`).join(" · ")}${R.length>2?" …":""} · หมดอายุใน ${soon} วัน</div></div><button class="btn sm primary" id="ntreq">ดูคำขอ</button></div>`:""}
    ${P?_T`<div class="row between" style="gap:10px"><div><b>🔬 อัปเกรดศูนย์พัฒนาได้แล้ว</b><div class="small muted">${P.p[1]} ${P.p[2]} ระดับ ${pkLv(P.p[0])+1} · ${money(P.c,true)} · ${P.p[3]} ${P.p[4]>0?"+":""}${Math.round(P.p[4]*100)}% ถาวร</div></div><button class="btn sm" id="ntperk">ไปอัปเกรด</button></div>`:""}</div>`}
-function bindNotice(){const a=$("#ntreq");if(a)a.onclick=()=>{tab="company";renderApp();setTimeout(()=>{const el=$("#co-deals");if(el)el.scrollIntoView({behavior:reduce?"auto":"smooth",block:"start"})},60)};
+function bindNotice(){const go=()=>{tab="company";renderApp();setTimeout(()=>{const el=$("#co-deals");if(el)el.scrollIntoView({behavior:reduce?"auto":"smooth",block:"start"})},60)};
+  const a=$("#ntreq");if(a)a.onclick=go;$$("[data-reqgo]").forEach(b=>b.onclick=go);
   const b=$("#ntperk");if(b)b.onclick=()=>openSheet(perkSheet())}
 function homeHTML(){
-  return _T`${firstStepsHTML()}<div id="noticebox">${noticeHTML()}</div><div class="mapbox"><canvas id="map" aria-label="แผนที่โลก ลากเพื่อเลื่อน บีบหรือกดปุ่มเพื่อซูม"></canvas><canvas id="mapbase" aria-hidden="true"></canvas>
-   <div class="maplegend" id="legend">${legendHTML()}</div>
-   ${mapCtlHTML(true)}
-   ${modeHTML()}<button class="mapunlock" id="regbtn">🔓 ปลดล็อกแผนที่ <span class="num">${S.unlocked.length}/${REGIONS.length}</span></button></div>
+  return _T`${firstStepsHTML()}<div class="mapbox homemap"><canvas id="map" aria-label="แผนที่โลก ลากเพื่อเลื่อน บีบหรือกดปุ่มเพื่อซูม"></canvas><canvas id="mapbase" aria-hidden="true"></canvas>
+   ${modeHTML()}</div>
   <div id="homeRest" class="stack" style="gap:14px">${homeRestHTML()}</div>`}
 function mapCtlHTML(withFull){return _T`<div class="mapctl"><button data-cam="in" aria-label="ซูมเข้า">+</button><button data-cam="out" aria-label="ซูมออก">−</button>
     <button data-cam="world" aria-label="ดูทั้งโลก" class="${camMode==="world"?"on":""}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></button>
@@ -1914,8 +1916,7 @@ function rankPanelHTML(){const v=S.ui_mrace||"ov",L=catList(),cur=v==="ov"||L.so
    <details class="more"><summary>คะแนนของคุณมาจากอะไร ▾</summary><div class="rparts">${mine.map(([n,v])=>`<div class="row between small"><span class="muted">${n}</span><span class="num">${Math.round(v).toLocaleString()}</span></div>`).join("")}</div></details>`}
 const niceShort=v=>v>=1e6?(v/1e6).toFixed(1)+"M":v>=1e4?Math.round(v/1e3)+"K":v>=1e3?(v/1e3).toFixed(1)+"K":Math.round(v).toString();
 function legendHTML(){const v=vmode();return _T`${v!=="sea"?_T`<span><i style="background:var(--accent)"></i>ฐาน</span>`:""}${v!=="air"?_T`<span><i style="background:var(--port);border-radius:2px"></i>ท่าเรือ</span>`:""}${v!=="sea"?(bm()==="cargo"?_T`<span><i style="background:var(--cargo)"></i>ปลายทางสินค้า</span><span><i style="background:var(--cargo);border-radius:1px"></i>ฮับสินค้า</span>`:_T`<span><i style="background:var(--route)"></i>ปลายทาง</span>`):""}<span><i style="background:var(--fog);outline:1px solid var(--border)"></i>ยังล็อก</span>${S.events.length?_T`<span><i style="background:var(--bad)"></i>เหตุการณ์</span>`:""}`}
-function refreshHome(){const r=$("#homeRest");if(!r){renderView();return}r.innerHTML=homeRestHTML();{const nb=$("#noticebox");if(nb){const h=noticeHTML();if(nb.innerHTML!==h)nb.innerHTML=h}}$("#legend").innerHTML=legendHTML();
-  $("#regbtn").innerHTML=_T`🔓 ปลดล็อกแผนที่ <span class="num">${S.unlocked.length}/${REGIONS.length}</span>`;bindView(true);if(pop)renderPop()}
+function refreshHome(){const r=$("#homeRest");if(!r){renderView();return}r.innerHTML=homeRestHTML();bindView(true);if(pop)renderPop()}
 /* Lifetime milestones: a celebration + bonus each time total passengers / air cargo passes a round number */
 const MS={pax:{L:[1e3,5e3,2e4,5e4,1e5,2.5e5,5e5,1e6,2.5e6,5e6,1e7,2.5e7,5e7,1e8,2.5e8,5e8,1e9],v:()=>S.totPax||0,x:30,nm:_T("ผู้โดยสารสะสม"),u:_T("คน"),e:"👥",c:_T("ผู้โดยสารคนที่")},
  cargo:{L:[100,500,2e3,5e3,1e4,2.5e4,5e4,1e5,2.5e5,5e5,1e6,2.5e6,5e6,1e7],v:()=>S.totCargo||0,x:400,nm:_T("สินค้าทางอากาศสะสม"),u:_T("ตัน"),e:"📦",c:_T("สินค้าตันที่")}};
@@ -2082,24 +2083,28 @@ function adviceHTML(){const K=bm(),KC=K==="cargo";if(!S.routes.some(r=>r.planes.
     <div class="advtiles">${tiles.map(([k,v,c])=>`<div><span class="muted small">${k}</span><b class="num ${c}">${v}</b></div>`).join("")}</div>
     ${out.length?out.slice(0,6).map(x=>`<div class="advrow"><span class="adve">${x.e}</span><div style="min-width:0"><b class="small">${x.t}</b><div class="small muted">${x.d}</div></div><button class="btn sm primary" data-adv="${x.a}">${x.btn}</button></div>`).join(""):_T`<div class="small good">ทุกอย่างเรียบร้อยดี ยังไม่มีอะไรต้องปรับ</div>`}
     ${ok.length?_T`<div class="small advok">✅ <b>ไม่ต้องปรับ:</b> ${ok.join(" · ")}</div>`:""}</div>`}
-function heroHTML(F){const T=S.today||blankT(),net=todayNet(T),K=bm()==="cargo";
-  return _T`<div class="hero ${K?"cg":""}"><div class="hk"><span>ทำเงินวันนี้ · ทั้งบริษัท</span><span class="live"><i></i>สด</span></div>
-   <div class="hv num" id="heroNet">${net>=0?"+":""}${money(net,true)}</div><div class="hnote">ก่อนหักค่าคงที่ตอนเที่ยงคืน${S.last&&S.day>0?_T` · เมื่อวานสุทธิ <b class="num">${S.last.rev-S.last.cost>=0?"+":""}${money(S.last.rev-S.last.cost,true)}</b>`:""}</div>
-   <div class="hrow"><div><b class="num" id="heroAir">${movingNow(F)}</b><span>${K?_T("ลำกำลังเดินทาง"):_T("ลำกำลังบิน")}</span></div><div><b class="num" id="heroPax">${K?Math.round(T.cargo).toLocaleString():T.pax.toLocaleString()}</b><span>${K?_T("ตันวันนี้"):_T("คนวันนี้")}</span></div><div><b class="num" id="heroLegs">${K?Math.round(T.teu||0).toLocaleString():T.legs}</b><span>${K?_T("ตู้เรือวันนี้"):_T("เที่ยวลงจอด")}</span></div></div>
-   <div class="hms" id="heroMs">${msLineHTML()}</div></div>`}
+function heroHTML(F){const T=S.today||blankT(),net=todayNet(T),K=bm()==="cargo",rev=T.tix+T.crev+(T.srev||0),cost=rev-net;
+  const card=(id,v,l,cls)=>`<div class="hcard"><b class="num ${cls||""}" id="${id}">${v}</b><span>${l}</span></div>`;
+  return `<div class="homestats"><div class="hcards">${card("heroPax",K?Math.round(T.cargo).toLocaleString():T.pax.toLocaleString(),K?_T("ตันวันนี้"):_T("คนวันนี้"))}${card("heroLegs",K?Math.round(T.teu||0).toLocaleString():String(movingNow(F)),K?_T("ตู้เรือวันนี้"):_T("ลำกำลังบิน"))}
+   ${card("heroRev",money(rev,true),_T("รายได้วันนี้"),"good")}${card("heroCost",money(cost,true),_T("รายจ่ายวันนี้"),"bad")}</div>
+   <div class="hero hnet ${K?"cg":""}"><div class="hk"><span>${_T("กำไรวันนี้")}</span><span class="live"><i></i>${_T("สด")}</span></div>
+   <div class="hv num" id="heroNet">${net>=0?"+":""}${money(net,true)}</div><div class="hnote">${_T("บาท · ก่อนหักค่าคงที่ตอนเที่ยงคืน")}${S.last&&S.day>0?_T`<br>เมื่อวานสุทธิ <b class="num">${S.last.rev-S.last.cost>=0?"+":""}${money(S.last.rev-S.last.cost,true)}</b>`:""}</div></div></div>
+   <div class="hms" id="heroMs">${msLineHTML()}</div>`}
+/* partner requests waiting for an answer (always shown once partnerships are open) */
+function reqBoxHTML(){if(!has("deals"))return "";const R=pendingReqs();
+  return _T`<div class="panel stack hreq"><div class="row between"><b>📨 คำขอความร่วมมือ${R.length?` <span class="chip">${R.length}</span>`:""}</b><button class="btn sm" id="ntreq">ดูทั้งหมด ›</button></div>
+   ${R.length?`<div class="hreqs">${R.slice(0,3).map(q=>{const P=partnerOf(q.p);return `<button class="hreqc" data-reqgo><span class="he">${P.e}</span><b>${esc(P.n)}</b><span class="small muted">${DEALS[q.k].n}</span><span class="small warn">${_T`หมดอายุใน ${q.until-S.day} วัน`}</span></button>`}).join("")}</div>`:_T`<div class="muted small">ยังไม่มีคำขอเข้ามา · คู่ค้าจะส่งคำขอมาเป็นระยะ</div>`}</div>`}
 function boardHTML(F){const h=boardRowsHTML();return _T`<div class="fboard"><div class="fbh"><span>${bm()==="cargo"?_T("📦 ขนส่งสด"):_T("🛫 เที่ยวบินสด")}</span><span id="fbclk">${bm()==="cargo"?_T("เดินทางอยู่"):_T("บินอยู่")} ${movingNow(F)} ลำ</span></div>
    <div class="fbc"><span>เที่ยว</span><span>เส้นทาง</span><span>${bm()==="cargo"?_T("กำไร"):_T("วันนี้")}</span></div><div id="fboard">${h}</div></div>`}
-function liveHome(){if(tab!=="home"||!S||afk)return;const bd=$("#fboard");if(!bd)return;const F=liveFlights(),T=S.today||blankT(),net=todayNet(T),K=bm()==="cargo";
+function liveHome(){if(tab!=="home"||!S||afk)return;if(!$("#heroNet"))return;const F=liveFlights(),T=S.today||blankT(),net=todayNet(T),K=bm()==="cargo",rev=T.tix+T.crev+(T.srev||0);
   const set=(id,v)=>{const e=$(id);if(e&&e.textContent!==v){e.textContent=v;return e}};
   const hn=set("#heroNet",(net>=0?"+":"")+money(net,true));if(hn){hn.classList.remove("tk");void hn.offsetWidth;hn.classList.add("tk")}
-  const mv=String(movingNow(F));set("#heroAir",mv);set("#heroPax",K?Math.round(T.cargo).toLocaleString():T.pax.toLocaleString());set("#heroLegs",K?Math.round(T.teu||0).toLocaleString():String(T.legs));
-  const ms=$("#heroMs"),mh=msLineHTML();if(ms&&ms.dataset.h!==mh){ms.dataset.h=mh;ms.innerHTML=mh}
-  set("#fbclk",_T`${K?_T("เดินทางอยู่"):_T("บินอยู่")} ${mv} ลำ`);const h=boardRowsHTML();if(bd.dataset.h==null)bd.dataset.h=h;else if(bd.dataset.h!==h){bd.dataset.h=h;bd.innerHTML=h}
-  boardMoney();liveBoard();
-  if(!bd.onclick)bd.onclick=e=>{if(e.target.closest("[data-fbgo]")){tab="routes";renderView(true);return}const ln=e.target.closest("[data-fbl]");if(ln){if(S.lanes.some(l=>l.id===+ln.dataset.fbl))openSheet(laneSheet(+ln.dataset.fbl,{}));return}const b=e.target.closest("[data-fbr]");if(b&&S.routes.some(r=>r.id===+b.dataset.fbr))openSheet(routeSheet(+b.dataset.fbr,{}))}}
+  set("#heroPax",K?Math.round(T.cargo).toLocaleString():T.pax.toLocaleString());set("#heroLegs",K?Math.round(T.teu||0).toLocaleString():String(movingNow(F)));
+  set("#heroRev",money(rev,true));set("#heroCost",money(rev-net,true));
+  const ms=$("#heroMs"),mh=msLineHTML();if(ms&&ms.dataset.h!==mh){ms.dataset.h=mh;ms.innerHTML=mh}}
 const ACHI={plane1:"✈️",route1:"🛫",fleet10:"🛩️",routes8:"🗺️",long:"🌏",a380:"🐋",cargo:"📦",star5:"⭐",ship1:"🚢",teu:"🏗️",pax1m:"👥",base2:"🏢",world:"🧭",year:"🎂",top1:"🏆"};
 function perksHTML(){if(!has("perks"))return "";const cheap=PERKS.filter(p=>pkLv(p[0])<PERK_MAX).map(p=>pkCost(p[0])).sort((a,b)=>a-b)[0],can=cheap!=null&&S.cash>=cheap;
-  return _T`<button class="panel perkp" id="perkbtn"><span class="row between"><span class="eyebrow">🔬 ศูนย์พัฒนา${can?_T` · <span style="color:var(--accent)">อัปเกรดได้</span>`:""}</span><span class="muted small">อัปเกรดถาวร ›</span></span>
+  return _T`<button class="panel perkp" id="perkbtn"><span class="row between"><span class="eyebrow">🔬 อัปเกรดแต่ละด้าน · ศูนย์พัฒนา${can?_T` · <span style="color:var(--accent)">อัปเกรดได้</span>`:""}</span><span class="muted small">อัปเกรดถาวร ›</span></span>
    <span class="perkrow">${PERKS.map(p=>`<span class="pkt"><b>${p[1]}</b><span class="small">${p[6]}</span>${pkPips(p[0])}</span>`).join("")}</span></button>`}
 function perkSheet(){const pc=(st,v)=>`${st>0?"+":"−"}${Math.abs(Math.round(st*v*100))}%`;
   const fn=()=>head(_T("🔬 ศูนย์พัฒนา"),_T("อัปเกรดถาวรของบริษัท มีผลกับทุกเส้นทางทันที อยู่กับคุณตลอดเกม"))+
@@ -2118,16 +2123,15 @@ const VOICES=[[_T("เครื่องดีเลย์อีกแล้ว 
 const voiceHTML=()=>{const R=S.rating;if(!R||!S.totPax)return "";const g=VOICES[R.overall<2.6?0:R.overall<3.8?1:2];return _T`<div class="voice"><span>💬</span><span>“${g[S.day%g.length]}” <i>ผู้โดยสารวันนี้</i></span></div>`};
 function homeRestHTML(){
   const fresh=S.news.length?S.news[0].id:0;const isFresh=n=>n.id>seenNews;
-  const F=liveFlights();
+  const F=liveFlights(),mis=missionsHTML();
+  const news=_T`<div class="stack" style="gap:8px">${secHead("📰",_T("ข่าวสาร"))}<div class="panel"><ul class="news">${S.news.filter(newsShown).slice(0,6).map(n=>`<li class="${isFresh(n)?"fresh":""}"><span class="when">${dateOf(n.d)}</span><span>${esc(n.t)}</span></li>`).join("")}</ul></div></div>`;
   const out=_T`${heroHTML(F)}
   ${S.fleet.length===0?_T`<div class="panel row between"><span>ยังไม่มีเครื่องบินเลย เริ่มจากซื้อลำแรก</span><button class="btn primary sm" data-go="fleet">ไปซื้อ</button></div>`:
     !S.routes.some(r=>r.planes.length)?_T`<div class="panel row between"><span>มีเครื่องแล้ว ต่อไปเปิดเส้นทางแล้วใส่เครื่องบิน</span><button class="btn primary sm" data-go="routes">ไปเส้นทาง</button></div>`:""}
-  ${adviceHTML()}
-  ${boardHTML(F)}
-  ${missionsHTML()}
-  <div class="panel stack" id="aplist">${airportListHTML()}</div>
-  ${secHead("📰",_T("ข่าวล่าสุด"))}<div class="panel"><ul class="news">${S.news.filter(newsShown).slice(0,6).map(n=>`<li class="${isFresh(n)?"fresh":""}"><span class="when">${dateOf(n.d)}</span><span>${esc(n.t)}</span></li>`).join("")}</ul></div>
-  <button class="panel row between cogo" data-go="company"><span>${S.rating&&has("rank")?`${starsHTML(S.rating.overall,14)} <b class="num">${S.rating.overall.toFixed(1)}</b> · `:""}ดูเรตติ้ง ความคิดเห็นลูกค้า อันดับ และเป้าหมายของบริษัท</span><span class="muted">บริษัท ›</span></button>`;
+  ${reqBoxHTML()}
+  ${perksHTML()}
+  ${mis?`<div class="homeduo"><div>${mis}</div>${news}</div>`:news}
+  ${adviceHTML()}`;
   seenNews=fresh;return out;
 }
 const secHead=(e,t,sub)=>`<div class="sec"><span class="sec-e">${e}</span><h3>${t}</h3>${sub?`<span class="muted small">${sub}</span>`:""}</div>`;
@@ -2496,7 +2500,7 @@ function bindMap(){
   $$("[data-cam]").forEach(b=>b.onclick=()=>{const k=b.dataset.cam;
     if(k==="full"){tab="map";renderView(true);window.scrollTo(0,0);return}
     if(k==="in"||k==="out"){const W=cv.clientWidth,H=cv.clientHeight;zoom(k==="in"?.6:1.6,W/2,H/2)}else setCam(k)});
-  $("#regbtn").onclick=()=>openSheet(regionSheet({}));
+  {const rg=$("#regbtn");if(rg)rg.onclick=()=>openSheet(regionSheet({}))}
   $$("[data-night]").forEach(b=>b.onclick=()=>{S.night=S.night===false;save();$$("[data-night]").forEach(x=>{x.classList.toggle("on",S.night);x.setAttribute("aria-pressed",S.night);x.setAttribute("aria-label",S.night?_T("ปิดเงากลางวันกลางคืน"):_T("เปิดเงากลางวันกลางคืน"))});toast(S.night?_T("🌙 เปิดกลางวัน-กลางคืนบนแผนที่"):_T("☀️ ปิดเงากลางคืนแล้ว · เวลาในเกมยังเดินตามปกติ"))});
   $$("[data-vm]").forEach(b=>b.onclick=()=>setMode(b.dataset.vm));
   const wb=$("#wishbtn");if(wb)wb.onclick=()=>{S.ui_wish=!S.ui_wish;save();const wp=$("#wishpanel");wp.hidden=!S.ui_wish;if(S.ui_wish){wp.innerHTML=mapWishHTML();bindWishes()}wb.classList.toggle("on",S.ui_wish);wb.setAttribute("aria-expanded",S.ui_wish);wb.textContent=wishLbl()};
@@ -2779,7 +2783,7 @@ function checkMissions(){if(!S)return;progCheck();if(!has("missions"))return;
   if(!S.missions){S.missions=[];if(!S.fleet.length&&!S.routes.length)S.missions=[mkMission("fleet",1,0),mkMission("routes",1,0),mkMission("pax",1000,0)]}
   let changed=false;
   S.missions=S.missions.filter(m=>{if(!m.done&&S.day>m.until){addNews(_T`⌛ ภารกิจ "${mTitle(m)}" หมดเวลา`);changed=true;return false}return true});
-  for(const m of S.missions)if(!m.done&&mProg(m)>=m.target){m.done=true;changed=true;toast(_T`🎯 ภารกิจสำเร็จ: ${mTitle(m)} · กดรับรางวัลในหน้าภาพรวม`)}
+  for(const m of S.missions)if(!m.done&&mProg(m)>=m.target){m.done=true;changed=true;toast(_T`🎯 ภารกิจสำเร็จ: ${mTitle(m)} · กดรับรางวัลในหน้าหลัก`)}
   while(S.missions.length<3){S.missions.push(genMission());changed=true}
   if(changed){save();if(tab==="home"&&!sheetFn)refreshHome();updateTop()}}
 function claimMission(id,el){const m=S.missions.find(x=>x.id===id);if(!m||!m.done)return;
@@ -3177,7 +3181,7 @@ function airBranchHTML(){const KC=bm()==="cargo";
   const ov=KC?cargoOverAll():[];
   return _T`<div class="row between"><h2>สาขาของคุณ <span class="muted num small">${S.bases.length} แห่ง</span></h2><span class="muted small num">ค่าดูแลรวม ${money(totalUpkeep(),true)}/วัน</span></div>
   ${KC&&has("sea")&&seaOverAll().length?_T`<button class="panel row between cogo" data-brseg="sea"><span>🚢 ตู้สินค้าล้นที่ท่าเรือ ${seaOverAll().slice(0,3).map(x=>port(x.code).n).join(", ")}</span><span class="muted">สาขาท่าเรือ ›</span></button>`:""}
-  ${KC?_T`<div class="panel cgover"><b>📦 สนามบินที่สินค้าล้น</b>${ov.length?_T`<div class="cgchips">${ov.map(x=>_T`<span class="chip warn">${x.code} ${city(x.code).n} · ล้น ${x.n} เส้น · ค้าง ~${Math.round(x.t).toLocaleString()} ตัน</span>`).join("")}</div><div class="small muted">กด “เพิ่มเครื่อง” ในการ์ดสาขาด้านล่าง หรือเปิด 🤖 จัดการอัตโนมัติในหน้าภาพรวม</div>`:_T`<div class="small good">ไม่มีสาขาไหนที่สินค้าล้น ขนได้ครบทุกเส้น 😊</div>`}</div>`:""}
+  ${KC?_T`<div class="panel cgover"><b>📦 สนามบินที่สินค้าล้น</b>${ov.length?_T`<div class="cgchips">${ov.map(x=>_T`<span class="chip warn">${x.code} ${city(x.code).n} · ล้น ${x.n} เส้น · ค้าง ~${Math.round(x.t).toLocaleString()} ตัน</span>`).join("")}</div><div class="small muted">กด “เพิ่มเครื่อง” ในการ์ดสาขาด้านล่าง หรือเปิด 🤖 จัดการอัตโนมัติในหน้าหลัก</div>`:_T`<div class="small good">ไม่มีสาขาไหนที่สินค้าล้น ขนได้ครบทุกเส้น 😊</div>`}</div>`:""}
   <div class="brgrid">${mine}</div>
   <div class="row between" style="margin-top:6px"><h2>เปิดสาขาใหม่</h2><span class="muted small">สนามบิน ${CITIES.length} แห่ง · ${REGIONS.length} ภูมิภาค</span></div>
   <div class="seg scrollx">${REGIONS.map(R=>`<button data-brreg="${R.id}" class="${R===reg?"on":""}">${S.unlocked.includes(R.id)?"":"🔒 "}${R.n} <span class="num muted" style="font-size:11px">${R.c.length}</span></button>`).join("")}</div>
@@ -4154,7 +4158,7 @@ function settingsSheet(){
     ${S?tg("cel",!S.celOff,_T("ป๊อปอัปปลดล็อกและความสำเร็จ"),_T("การ์ดกลางจอตอนปลดล็อกระบบใหม่หรือได้ความสำเร็จ (ปิดแล้วยังดูได้ในข่าว)")):""}
     ${row(_T("รางวัลเข้าเกมรายวัน"),"",seg("daily",[["popup",_T("แสดงหน้าต่าง")],["silent",_T("รับให้อัตโนมัติ")]],PREF.daily))}
     ${row(_T("สรุปรายได้ตอนกลับมาเล่น"),_T("รายได้ระหว่างปิดเกมได้เท่าเดิมทั้งสองแบบ"),seg("away",[["popup",_T("แสดงหน้าต่าง")],["silent",_T("แค่ใส่ในข่าว")]],PREF.away))}
-    <div class="setrow col"><div><b>ข่าวที่แสดงในหน้าภาพรวม</b><div class="small muted">ข่าวที่ปิดไว้ยังเกิดขึ้นตามปกติ แค่ไม่แสดงในรายการ</div></div>
+    <div class="setrow col"><div><b>ข่าวที่แสดงในหน้าหลัก</b><div class="small muted">ข่าวที่ปิดไว้ยังเกิดขึ้นตามปกติ แค่ไม่แสดงในรายการ</div></div>
      <div class="setchips">${NEWS_CATS.map(([k,n])=>`<label class="tg"><input type="checkbox" data-pnews="${k}" ${PREF.news[k]!==false?"checked":""}> ${n}</label>`).join("")}</div></div></div>
   <div class="setsec"><div class="eyebrow">🎮 การเล่น</div>
     ${row(_T("ความเร็วตอนเปิดเกม"),"",seg("speed0",SPEEDS.map(v=>[v,v+"×"]),PREF.speed0))}
@@ -4213,7 +4217,7 @@ function guideSheet(){return head(_T("คู่มือระบบ"),_T("ท�
 <details class="g"><summary>เที่ยวบินต่อวันและที่นั่ง</summary><div><p>เครื่องบินจริงไม่ได้บิน 24 ชม. ต้องพักกลางคืน ซ่อมบำรุง และใช้เวลาบนพื้นระหว่างเที่ยว (ทำความสะอาด เติมน้ำมัน ขึ้นลงผู้โดยสาร) เกมจึงคิดตามประเภทเครื่อง:</p>
 <ul><li>ใบพัด: บินได้ ~15 ชม./วัน · พักระหว่างเที่ยว ~25 นาที</li><li>ลำตัวแคบ (A320, 737): ~17.5 ชม./วัน · พัก ~45 นาที</li><li>ลำตัวกว้างและเครื่องขนสินค้าใหญ่: ~20 ชม./วัน · พัก ~1.8 ชม.</li></ul>
 <p><code>เที่ยว/วัน = ชม.ทำงาน ÷ (ระยะทาง ÷ ความเร็ว + 0.5 + เวลาพัก)</code> สูงสุดวันละ 12 เที่ยว · เส้นทางไกลมาก (เช่น กรุงเทพ–ลอนดอน) บินได้วันละเที่ยวเดียว เหมือนจริง</p><p>ตารางบินแบบ "ปรับตามผู้โดยสาร" (ค่าเริ่มต้น) จะลดเที่ยวบินลงเมื่อคนน้อย ให้แต่ละเที่ยวเต็มราว 85% ส่วน "บินเต็มตาราง" บินทุกเที่ยวเสมอ เหมาะตอนมีเทศกาลหรือแคมเปญ</p><p>เส้นทางสั้นใช้เครื่องลำเล็กคุ้มเพราะบินได้หลายรอบ เส้นทางไกลต้องใช้เครื่องที่พิสัยถึงและจุคนเยอะ ใส่เครื่องหลายลำในเส้นทางเดียวได้</p></div></details>
-<details class="g"><summary>ราคาตั๋ว</summary><div><p>หน้าเส้นทางมีกล่องคาดการณ์บอกกำไรหรือขาดทุนต่อวันแบบดูง่าย ปรับราคาด้วยแถบเลื่อนหรือปุ่มลัด (−10%, ราคากลาง, +10%, กำไรสูงสุด) และเลือกบริการแยกเฉพาะเส้นทางได้ ใต้ปุ่มบริการบอกกำไรที่คาดว่าจะได้</p><p>เส้นทางใหม่ใช้ "ราคาอัตโนมัติตามคน" ระบบขึ้นราคาเมื่อคนอยากบินมากกว่าที่นั่ง (เช่น ช่วงเทศกาลหรือแคมเปญ) และลดราคาเมื่อคนน้อย ให้เครื่องเต็มราว 90% ตารางราคาในหน้าเส้นทางบอกว่าราคาแต่ละระดับมีคนบินกี่คน ที่นั่งเต็มกี่ % และกำไรเท่าไร แถว ★ คือราคาที่กำไรสูงสุด แตะแถวเพื่อลองราคา · ปุ่ม 🏷️ ปรับราคาทุกเส้น ในแท็บเส้นทางหรือหน้าภาพรวมเปลี่ยนราคาหลายเส้นพร้อมกันได้</p><p>ราคากลางคำนวณจากระยะทาง ตั้งได้ตั้งแต่ครึ่งหนึ่งถึงสองเท่าของราคากลาง ถ้าที่นั่งเต็มเกือบ 100% แปลว่าขึ้นราคาได้อีก ถ้าเต็มแค่ครึ่งเดียว ลองลดราคาหรือเปลี่ยนเป็นเครื่องลำเล็กลง หน้าต่างเส้นทางจะคำนวณกำไรให้ดูทันทีที่เลื่อนราคา</p></div></details>
+<details class="g"><summary>ราคาตั๋ว</summary><div><p>หน้าเส้นทางมีกล่องคาดการณ์บอกกำไรหรือขาดทุนต่อวันแบบดูง่าย ปรับราคาด้วยแถบเลื่อนหรือปุ่มลัด (−10%, ราคากลาง, +10%, กำไรสูงสุด) และเลือกบริการแยกเฉพาะเส้นทางได้ ใต้ปุ่มบริการบอกกำไรที่คาดว่าจะได้</p><p>เส้นทางใหม่ใช้ "ราคาอัตโนมัติตามคน" ระบบขึ้นราคาเมื่อคนอยากบินมากกว่าที่นั่ง (เช่น ช่วงเทศกาลหรือแคมเปญ) และลดราคาเมื่อคนน้อย ให้เครื่องเต็มราว 90% ตารางราคาในหน้าเส้นทางบอกว่าราคาแต่ละระดับมีคนบินกี่คน ที่นั่งเต็มกี่ % และกำไรเท่าไร แถว ★ คือราคาที่กำไรสูงสุด แตะแถวเพื่อลองราคา · ปุ่ม 🏷️ ปรับราคาทุกเส้น ในแท็บเส้นทางหรือหน้าหลักเปลี่ยนราคาหลายเส้นพร้อมกันได้</p><p>ราคากลางคำนวณจากระยะทาง ตั้งได้ตั้งแต่ครึ่งหนึ่งถึงสองเท่าของราคากลาง ถ้าที่นั่งเต็มเกือบ 100% แปลว่าขึ้นราคาได้อีก ถ้าเต็มแค่ครึ่งเดียว ลองลดราคาหรือเปลี่ยนเป็นเครื่องลำเล็กลง หน้าต่างเส้นทางจะคำนวณกำไรให้ดูทันทีที่เลื่อนราคา</p></div></details>
 <details class="g"><summary>ขนส่งทางเรือ</summary><div><p>สลับเป็นโหมดสินค้า แล้วไปที่แท็บเส้นทาง → ทางเรือ เพื่อเปิดเส้นทางเรือระหว่างท่าเรือ ${PORTS.length} แห่งทั่วโลก (ต้องปลดล็อกภูมิภาคก่อน) แล้วซื้อเรือใส่ เรือวิ่งตามเส้นทางทะเลจริง ผ่านช่องแคบมะละกา คลองสุเอซ คลองปานามา หรืออ้อมแหลม</p><p>เรือแล่นราว ${Math.min(...SHIPS.map(m=>m.speed))}–${Math.max(...SHIPS.map(m=>m.speed))} กม./ชม. เที่ยวยุโรป–เอเชียใช้ราว 2–3 สัปดาห์ในเกม แล้วจอดขนตู้ที่ท่า 1–2 วัน ได้เงินเมื่อเรือถึงท่า ค่าระวางต่อตู้ = ฿${Math.round(TEU_RATE(0)).toLocaleString()} + ฿${(TEU_RATE(1000)/1000-TEU_RATE(0)/1000).toFixed(1)} ต่อกม. เรือห้องเย็นได้ 1.8 เท่าแต่ตลาดเล็กกว่า เรือ ULCV ต้องใช้ท่าเรือน้ำลึกทั้งสองฝั่ง</p><p>เหตุการณ์: คลองสุเอซปิด (เรืออ้อมแหลมกู๊ดโฮป) และท่าเรือนัดหยุดงาน</p></div></details>
 <details class="g"><summary>ขนส่งสินค้า</summary><div><p><b>ระยะทางกับความต้องการ:</b> สินค้าทางอากาศและทางเรือแทบไม่ลดลงตามระยะทาง เส้นทางไกลจึงคุ้มกับเครื่องบินขนสินค้าและเรือลำใหญ่ ส่วนผู้โดยสารจะค่อย ๆ น้อยลงเมื่อไกลมาก และเมืองเล็กมีความต้องการน้อยกว่าเมืองใหญ่เสมอ</p><p>เส้นทางแบ่งเป็น 2 แบบ ใช้สาขาเดียวกัน: <b>เส้นทางผู้โดยสาร</b> ใส่ได้เฉพาะเครื่องบินโดยสาร (ขนพัสดุใต้ท้องเครื่องได้ราวครึ่งหนึ่งของตลาด) และ <b>เส้นทางขนสินค้า</b> ใส่ได้เฉพาะเครื่องบินขนสินค้า เลขเที่ยวบินขึ้นต้น 8xx เส้นบนแผนที่เป็นสีม่วง เปิดทั้งสองแบบไปเมืองเดียวกันได้</p><p>มีเครื่องขนสินค้า ${MODELS.filter(m=>!m.seats).length} รุ่น ตั้งแต่ ${(()=>{const L=MODELS.filter(m=>!m.seats).sort((a,b)=>a.cargo-b.cargo);return _T`${L[0].name} (${L[0].cargo} ตัน) ถึง ${L[L.length-1].name} (${L[L.length-1].cargo} ตัน)`})()} แต่ละเส้นทางตั้งค่าระวางได้เองหรือให้ระบบตั้งอัตโนมัติ ช่วงฤดูผลไม้ไทย ช้อปปิ้ง 11.11 และปลายปี สินค้าจะเยอะขึ้น ดูปฏิทินได้ในแท็บเส้นทาง (โหมดสินค้า)</p><p>ทุกเที่ยวบินขนสินค้าใต้ท้องเครื่องได้ ส่วน Boeing 777F ขนสินค้าอย่างเดียว 100 ตันต่อเที่ยว รายได้สินค้าคิดค่าจัดการต่อตันบวกตามระยะทาง (ราว ฿${Math.round(cgRate(1500)/1000)}/กก. ที่ 1,500 กม. และ ฿${Math.round(cgRate(9000)/1000)}/กก. ที่ 9,000 กม.) ความต้องการสินค้าขึ้นกับขนาดเมืองและระยะทาง สินค้าไม่สนราคาตั๋วหรือชื่อเสียง</p></div></details>
 <details class="g"><summary>เงินเข้าออกตอนไหน</summary><div><p>ทุกครั้งที่เครื่องบินลงจอด คุณได้ค่าตั๋วและค่าขนสินค้าของเที่ยวนั้นทันที และจ่ายค่าน้ำมัน ค่าสนามบิน และค่าบริการบนเครื่องของเที่ยวนั้นไปพร้อมกัน ตัวเลขเขียวหรือแดงจะลอยขึ้นจากสนามบินที่ลงจอดบนแผนที่</p><p>ตอนเที่ยงคืนระบบหักค่าใช้จ่ายคงที่ ได้แก่ ค่าดูแลเครื่องบิน ค่าลูกเรือ และดอกเบี้ย แล้วสรุปเป็นงบเมื่อวานในแท็บการเงิน</p></div></details>
@@ -4232,16 +4236,16 @@ function guideSheet(){return head(_T("คู่มือระบบ"),_T("ท�
 <details class="g"><summary>✨ ฟีเจอร์ที่ค่อย ๆ ปลดล็อก</summary><div><p>เกมใหม่จะเริ่มแค่ ภาพรวม เส้นทาง และฝูงบิน ระบบอื่นจะเปิดทีละอย่าง (ไม่เกินวันละอย่าง) พร้อมกล่องแจ้งเตือน ✨ แยกจากภารกิจ:</p><ol>${FEATS.filter(f=>has(f.id)).map(f=>`<li><b>${f.n}</b></li>`).join("")}</ol>${FEATS.some(f=>!has(f.id))?_T`<p>🔒 ยังมีอีก ${FEATS.filter(f=>!has(f.id)).length} อย่าง · อย่างต่อไปจะเปิดเมื่อ: ${FEATS.filter(f=>!has(f.id)&&(f.after||[]).every(has)).map(f=>`<b>${f.need}</b>`).join(_T(" หรือ "))}</p>`:""}<p class="small">ทุกการขยายกิจการต้องมีฐานที่มั่นคงก่อน คือกำไรเฉลี่ย 7 วันเป็นบวก สินค้าทางอากาศเริ่มจากพัสดุกับเครื่องลำเล็ก แล้วค่อยเปิดอาหาร เครื่องลำใหญ่ ชิ้นส่วน/รถ ส่วนเรือเริ่มจากเรือเล็กขนตู้พัสดุ แล้วค่อยเปิดเรือห้องเย็น เรือใหญ่ และเรือขนรถ</p><p class="muted small">เซฟเก่าก่อนมีระบบนี้เปิดครบทุกอย่างอยู่แล้ว</p></div></details>
 <details class="g"><summary>🧭 พิสัยบิน/แล่น 🔗 ต่อเครื่อง และถ่ายลำ</summary><div><ul><li>เครื่องบินทุกรุ่นมีระยะบินไกลสุด เครื่องโดยสารไกลสุด ${AIR_MAX_P.toLocaleString()} กม. เครื่องขนสินค้า ${AIR_MAX_C.toLocaleString()} กม. ปลายทางที่ไกลกว่านั้นเปิดเส้นทางบินตรงไม่ได้</li><li>เรือก็มีระยะแล่นไกลสุด เรือชายฝั่งและฟีดเดอร์วิ่งได้แค่ในภูมิภาค เส้นทางข้ามทวีปต้องใช้เรือใหญ่ ดูได้ที่ “แล่นได้ไกล” ในอู่ต่อเรือ</li><li>🔗 ต่อเครื่อง: ผู้โดยสาร (และสินค้า) ระหว่างสองเมืองที่เราไม่มีเที่ยวบินตรง จะต่อเครื่องที่<b>สาขา</b>ของเราได้สูงสุด 2 ครั้ง (3 เที่ยวบิน) ถ้าทางอ้อมไม่ไกลเกินไป เช่น กรุงเทพ → ดูไบ → เซาเปาโล</li><li>คนต่อเครื่องจะเพิ่มเข้าไปในทุกเส้นทางที่ใช้ จ่ายค่าตั๋วตามราคาของแต่ละช่วง ดูได้ที่กล่อง 🔗 ในหน้าเส้นทาง</li><li>🚢 ถ่ายลำ: เรือก็เหมือนกัน ตู้สินค้าระหว่างท่าที่ไม่มีเรือวิ่งตรง จะขนต่อกันที่<b>สาขาท่าเรือ</b>ได้สูงสุด 2 ครั้ง ดูได้ที่กล่อง 🔗 ในส่วนเส้นทางเรือ</li><li>อยากไปที่ไกลเกินบินตรง: เปิดสาขาที่เมืองกลางทาง แล้วเปิดเส้นทางทั้งสองช่วง หน้าเปิดเส้นทางจะแนะนำเมืองให้</li></ul></div></details>
 <details class="g"><summary>📥 ระบบสะสม (คนและสินค้าที่รอ)</summary><div><ul><li>ทันทีที่<b>เปิดเส้นทาง</b> ระบบสะสมของเส้นนั้นจะเริ่มทำงาน แม้ยังไม่มีเครื่องบินหรือเรือวิ่งเลยก็ตาม</li><li>ทุกสิ้นวัน คนหรือสินค้าที่ไม่มีใครขนไป ส่วนหนึ่งจะรอไว้: ผู้โดยสาร 35% (สะสมได้สูงสุดเท่ากับความต้องการ 3 วัน) · สินค้าทางอากาศ 60% (สูงสุด 6 วัน) · ตู้สินค้าทางเรือ 60% (สูงสุด 8 วัน)</li><li>เมื่อมีเครื่องบินหรือเรือที่มีที่ว่าง ของที่สะสมจะถูกขนไปเองและได้เงินเพิ่ม โดยจ่ายไม่เกินราคากลาง ตารางบินแบบปรับตามคนจะเพิ่มเที่ยวให้เองระหว่างที่ยังมีของสะสม</li><li>ดูยอดสะสมได้จากป้าย 📥 บนการ์ดเส้นทาง และในหน้ารายละเอียดเส้นทาง</li><li><b>ปิดเส้นทางเมื่อไร ของที่สะสมไว้จะหายไปทั้งหมด</b></li></ul></div></details>
-<details class="g"><summary>✨ โบนัส: ฉลองยอดสะสม รางวัลรายวัน และเลเวล</summary><div><ul><li>🎉 เมื่อผู้โดยสารสะสม (หรือสินค้าทางอากาศสะสม) ถึงหลักสำคัญ เช่น 1,000 · 5,000 · 20,000 ไปจนถึงหลักล้าน จะได้โบนัสฉลองทันที ดูความคืบหน้าได้ในการ์ดบนสุดของหน้าภาพรวม</li><li>🔬 ศูนย์พัฒนาในแท็บบริษัท: จ่ายเงินอัปเกรดถาวร 4 อย่าง (ประหยัดน้ำมัน · คนอยากบินเพิ่ม · รายได้สินค้าเพิ่ม · ค่าธรรมเนียมถูกลง) อย่างละ 5 ระดับ</li><li>🛫 เที่ยวบินสดในหน้าภาพรวม เห็นเครื่องบินวิ่งไปกลับบนแต่ละเส้นทาง พร้อมเงินที่เส้นทางนั้นทำได้วันนี้ แตะแถวเพื่อเปิดเส้นทางนั้น</li><li>🎁 เข้าเกมทุกวัน (วันจริง) รับรางวัลรายวัน ต่อเนื่องครบ 7 วันได้ก้อนใหญ่</li><li>Lv ข้างชื่อสายการบินคือเลเวล คิดจากคะแนนการแข่งขัน ขึ้นเลเวลแต่ละครั้งได้โบนัส แถบเล็กใต้ Lv บอกว่าใกล้เลเวลถัดไปแค่ไหน</li></ul></div></details>
+<details class="g"><summary>✨ โบนัส: ฉลองยอดสะสม รางวัลรายวัน และเลเวล</summary><div><ul><li>🎉 เมื่อผู้โดยสารสะสม (หรือสินค้าทางอากาศสะสม) ถึงหลักสำคัญ เช่น 1,000 · 5,000 · 20,000 ไปจนถึงหลักล้าน จะได้โบนัสฉลองทันที ดูความคืบหน้าได้ในการ์ดบนสุดของหน้าหลัก</li><li>🔬 ศูนย์พัฒนาในแท็บบริษัท: จ่ายเงินอัปเกรดถาวร 4 อย่าง (ประหยัดน้ำมัน · คนอยากบินเพิ่ม · รายได้สินค้าเพิ่ม · ค่าธรรมเนียมถูกลง) อย่างละ 5 ระดับ</li><li>🛫 เที่ยวบินสดในหน้าหลัก เห็นเครื่องบินวิ่งไปกลับบนแต่ละเส้นทาง พร้อมเงินที่เส้นทางนั้นทำได้วันนี้ แตะแถวเพื่อเปิดเส้นทางนั้น</li><li>🎁 เข้าเกมทุกวัน (วันจริง) รับรางวัลรายวัน ต่อเนื่องครบ 7 วันได้ก้อนใหญ่</li><li>Lv ข้างชื่อสายการบินคือเลเวล คิดจากคะแนนการแข่งขัน ขึ้นเลเวลแต่ละครั้งได้โบนัส แถบเล็กใต้ Lv บอกว่าใกล้เลเวลถัดไปแค่ไหน</li></ul></div></details>
 <details class="g"><summary>🧭 ช่วยเลือกเครื่องบินและเรือ</summary><div><p>ไม่รู้จะซื้อรุ่นไหน ให้กดปุ่ม 🧭 ในแท็บฝูงบิน (เรืออยู่ในโหมดสินค้า) หรือกด "ดูทุกรุ่น" ในกล่องเพิ่มเครื่องบิน/เรือบนแผนที่ เลือกเส้นทาง แล้วเกมจะเรียงทุกรุ่นตามกำไรต่อวันที่จะเพิ่มขึ้น</p><ul><li>⭐ คุ้มที่สุด: ทำกำไรเพิ่มได้มากที่สุด</li><li>⚡ คืนทุนเร็วสุด: ราคาซื้อคืนกลับมาเร็วที่สุด</li><li>รุ่นที่บินไม่ถึง หรือเทียบท่าไม่ได้ จะแยกไว้ด้านล่างพร้อมบอกเหตุผล</li></ul><p>ชนิดเรือ: 📦 ตู้คอนเทนเนอร์ ขนสินค้าทั่วไป · ❄ ห้องเย็น ขนผลไม้และอาหาร ค่าระวาง 1.8 เท่า · 🚗 ขนรถ ค่าระวาง 1.5 เท่า แต่ละชนิดมีสินค้าของตัวเอง เรือต่างชนิดเลยไม่แย่งสินค้ากันบนเส้นทางเดียวกัน</p><p>บนแผนที่ กดปุ่มลูกศรที่มุมแถบด้านบนเพื่อย่อแถบให้เหลือแค่ชื่อกับเงิน</p></div></details>
 <details class="g"><summary>โหมดคน และ โหมดสินค้า</summary><div><p>ปุ่มใต้แถบด้านบนสลับทั้งเกมระหว่าง 2 โหมด</p><ul><li>👥 โหมดคน: แผนที่ เส้นทาง ฝูงบิน และกล่องข้อมูลสนามบิน แสดงเฉพาะเครื่องบินโดยสารและเส้นทางผู้โดยสาร ป้ายบนแผนที่บอกจำนวนคนขึ้นเครื่อง</li><li>📦 โหมดสินค้า: แสดงเฉพาะเครื่องบินขนสินค้า เส้นทางสินค้า และเรือ ป้ายบนแผนที่บอกสินค้าเป็นตัน กดสนามบินแล้ว + เพิ่มเครื่องบิน จะขึ้นเฉพาะเครื่องขนสินค้า</li></ul><p>เงิน สาขา และเวลาใช้ร่วมกันทั้ง 2 โหมด เครื่องบินทุกลำยังบินและทำเงินตลอด ไม่ว่าจะเปิดโหมดไหน</p></div></details>
 <details class="g"><summary>ประเภทสนามบิน</summary><div><ul><li>✈📦 สนามบินส่วนใหญ่รับทั้งผู้โดยสารและสินค้า</li><li>✈ สนามบินเล็กเมืองท่องเที่ยว เช่น สมุย ฟูก๊วก ควีนส์ทาวน์ รับเฉพาะผู้โดยสาร</li><li>📦 ฮับสินค้า เช่น เมมฟิส หลุยส์วิลล์ ลีแยฌ ไลพ์ซิก เออโจว ดูไบเวิลด์เซ็นทรัล รับเฉพาะสินค้า (จุดสี่เหลี่ยมสีม่วงบนแผนที่)</li></ul><p>ป้าย 👥 บนแผนที่ข้างสนามบินของคุณคือจำนวนคนที่ขึ้นเครื่องที่นั่นวันนี้ แตะสนามบินเพื่อดูคนขึ้น คนลง และสินค้าเข้าออก เทียบกับเมื่อวาน</p></div></details>
 <details class="g"><summary>โหมด AFK และรายได้ตอนไม่อยู่</summary><div><p>กดปุ่ม 💤 บนแถบด้านบนเพื่อเข้าโหมด AFK เกมจะเดินต่อเอง ตัดสินใจเหตุการณ์แบบปลอดภัย และรับรางวัลภารกิจให้ โดยไม่วาดแผนที่เพื่อประหยัดแบต</p><p>ถ้าไม่แตะจอ 10 วินาที (หรือกด 🌙 หรี่จอเลย) จอจะมืดเหมือนโหมดนอนหลับ เหลือแค่นาฬิกาจาง ๆ กับเงิน แตะจอครั้งเดียวเพื่อปลุก</p><p>ถ้าปิดเกมหรือสลับไปแอปอื่นเกิน 2 นาที กลับมาจะได้รายได้ตามกำไรเฉลี่ย 7 วันล่าสุด</p><ul><li>ปกติ: 12 วันของกำไรต่อชั่วโมง สูงสุด 8 ชม.</li><li>เปิด AFK ไว้ก่อนออก: 24 วันต่อชั่วโมง สูงสุด 12 ชม.</li><li>ถ้ากำไรเฉลี่ยติดลบจะไม่ได้รายได้ แต่ก็ไม่หักเงิน</li><li>เวลาในเกมไม่เดินระหว่างที่ไม่อยู่</li></ul></div></details>
 <details class="g"><summary>การแข่งขันและคะแนน</summary><div><p>แข่งกับสายการบินคู่แข่ง 5 เจ้าด้วยคะแนนรวม ดูได้จากปุ่ม 🏆 มุมขวาบนของแผนที่ หรือในแท็บบริษัท</p><ul><li>มูลค่ากิจการ 1 คะแนนต่อ ฿2 ล้าน</li><li>ผู้โดยสารสะสม 1 คะแนนต่อ 70 คน</li><li>สินค้าทางอากาศ 1 คะแนนต่อ 1.4 ตัน</li><li>ตู้ทางเรือ 1 คะแนนต่อ 10 TEU</li><li>เรตติ้ง 1,000 คะแนนต่อดาว</li><li>ภารกิจ 120 คะแนนต่อภารกิจ</li></ul><p>ลูกศร ▲▼ บอกว่าอันดับเปลี่ยนไปเท่าไรจากเมื่อวาน</p></div></details>
 <details class="g"><summary>เรตติ้ง 5 ดาว</summary><div><p>เรตติ้งโดยรวมคือค่าเฉลี่ยของ 4 ด้านที่เริ่มทำแล้ว:</p><ul><li><b>สายการบิน</b> จำนวนปลายทาง ที่นั่งเต็มใกล้ 85% สภาพเครื่อง และสัดส่วนเส้นทางที่มีกำไร</li><li><b>การเดินเรือ</b> ตู้เต็ม เส้นทางเรือที่มีกำไร ขนาดกองเรือ และระดับสาขาท่าเรือ</li><li><b>สินค้าทางอากาศ</b> ระวางเต็ม ปริมาณสินค้า และจำนวนเครื่องขนสินค้า</li><li><b>ความพอใจของผู้โดยสาร</b> ชื่อเสียง ระดับบริการ ความคุ้มค่าของราคาตั๋ว ความแออัด และเหตุเครื่องขัดข้อง</li></ul><p>เรตติ้งคำนวณใหม่ทุกวัน 0 ดาวทำให้ผู้โดยสารลด 10% ส่วน 5 ดาวเพิ่ม 10% คู่แข่งก็มีเรตติ้งในตารางอันดับ</p></div></details>
-<details class="g"><summary>ภารกิจและการตัดสินใจ</summary><div><p>หน้าภาพรวมมีภารกิจ 3 อย่างเสมอ ทำสำเร็จแล้วกดรับรางวัลเป็นเงินและชื่อเสียง บางภารกิจมีเวลาจำกัด ทุก 1–2 สัปดาห์ในเกมจะมีเรื่องให้ตัดสินใจ เช่น งานเหมาลำ สหภาพลูกเรือ ดีลลดราคาเครื่องบิน หรือโค้ดแชร์ เกมจะหยุดรอจนกว่าคุณเลือก</p></div></details>
+<details class="g"><summary>ภารกิจและการตัดสินใจ</summary><div><p>หน้าหลักมีภารกิจ 3 อย่างเสมอ ทำสำเร็จแล้วกดรับรางวัลเป็นเงินและชื่อเสียง บางภารกิจมีเวลาจำกัด ทุก 1–2 สัปดาห์ในเกมจะมีเรื่องให้ตัดสินใจ เช่น งานเหมาลำ สหภาพลูกเรือ ดีลลดราคาเครื่องบิน หรือโค้ดแชร์ เกมจะหยุดรอจนกว่าคุณเลือก</p></div></details>
 <details class="g"><summary>สาขา</summary><div><p>สาขาท่าเรือทำงานแบบเดียวกับสาขาสนามบิน เรือต้องออกจากสาขาท่าเรือของคุณ อัปเกรดแล้วตู้สินค้าเพิ่ม 8% และค่าท่าเรือลด 15% ต่อระดับ</p><p>ทุกเส้นทางต้องออกจากสาขา เปิดสาขาได้ที่สนามบินใดก็ได้ในภูมิภาคที่ปลดล็อกแล้ว ในแท็บ "สาขา" หรือแตะสนามบินบนแผนที่ ราคาสาขาขึ้นกับขนาดเมือง และแพงขึ้น 30% ต่อสาขาที่มีอยู่</p><p>แต่ละสาขามีค่าดูแลรายวัน (สำนักงานใหญ่ฟรี) อัปเกรดได้ถึงระดับ 3 แต่ละระดับเพิ่มผู้โดยสาร 8% และลดค่าสนามบิน 15% ของทุกเส้นทางที่บินเข้าออกสนามบินนั้น แต่ค่าดูแลก็เพิ่มตามระดับ</p></div></details>
-<details class="g"><summary>แผนที่และการปลดล็อก</summary><div><p>โลกแบ่งเป็น 9 ภูมิภาค มีสนามบินทั้งหมด ${CITIES.length} แห่ง เริ่มเกมคุณเห็นแค่ภูมิภาคของเมืองฐาน ที่เหลือถูกหมอกบัง เปิดเส้นทางหรือตั้งฐานได้เฉพาะเมืองในภูมิภาคที่ปลดล็อกแล้ว แตะป้าย 🔒 บนแผนที่หรือปุ่ม "ปลดล็อกแผนที่" เพื่อจ่ายเงินปลดล็อก ราคาขึ้นกับระยะทางจากฐานแรก</p><p>แท็บ "แผนที่" เปิดแผนที่ใหญ่เต็มจอ หรือกดปุ่มขยายมุมแผนที่ในหน้าภาพรวม ลากเพื่อเลื่อนแผนที่ บีบสองนิ้วหรือกด + − เพื่อซูม ปุ่มลูกโลกดูทั้งโลก ปุ่มเป้าซูมไปที่เส้นทางของคุณ</p><p>แผนที่ใช้แนวชายฝั่งและพรมแดนจริงจาก Natural Earth เส้นทางบินวาดตามเส้นวงกลมใหญ่ (great circle) แบบที่เครื่องบินจริงใช้ เส้นทางไกลจึงโค้งขึ้นไปทางขั้วโลก เงาสีเข้มคือด้านกลางคืนของโลก คำนวณจากเวลาในเกมและฤดูกาล</p></div></details>
+<details class="g"><summary>แผนที่และการปลดล็อก</summary><div><p>โลกแบ่งเป็น 9 ภูมิภาค มีสนามบินทั้งหมด ${CITIES.length} แห่ง เริ่มเกมคุณเห็นแค่ภูมิภาคของเมืองฐาน ที่เหลือถูกหมอกบัง เปิดเส้นทางหรือตั้งฐานได้เฉพาะเมืองในภูมิภาคที่ปลดล็อกแล้ว แตะป้าย 🔒 บนแผนที่หรือปุ่ม "ปลดล็อกแผนที่" เพื่อจ่ายเงินปลดล็อก ราคาขึ้นกับระยะทางจากฐานแรก</p><p>แท็บ "แผนที่" เปิดแผนที่ใหญ่เต็มจอ หรือกดปุ่มขยายมุมแผนที่ในหน้าหลัก ลากเพื่อเลื่อนแผนที่ บีบสองนิ้วหรือกด + − เพื่อซูม ปุ่มลูกโลกดูทั้งโลก ปุ่มเป้าซูมไปที่เส้นทางของคุณ</p><p>แผนที่ใช้แนวชายฝั่งและพรมแดนจริงจาก Natural Earth เส้นทางบินวาดตามเส้นวงกลมใหญ่ (great circle) แบบที่เครื่องบินจริงใช้ เส้นทางไกลจึงโค้งขึ้นไปทางขั้วโลก เงาสีเข้มคือด้านกลางคืนของโลก คำนวณจากเวลาในเกมและฤดูกาล</p></div></details>
 <details class="g"><summary>เหตุการณ์สุ่ม</summary><div><ul><li>เทศกาล: คนและสินค้าเพิ่ม 60% 7 วัน</li><li>พายุ: งดบินเข้าออกเมืองนั้น 2 วัน แต่ค่าดูแลเครื่องยังเดิน</li><li>คู่แข่งเปิดเส้นทาง: คนลด 25% 30 วัน</li><li>น้ำมันพุ่งหรือร่วง, คลิปไวรัล, นกชนเครื่อง, คู่แข่งมีปัญหาการเงิน</li></ul><p>เมืองที่มีเหตุการณ์จะมีวงสีกระพริบบนแผนที่</p></div></details>
 </div>`}
 
