@@ -73,6 +73,12 @@ export default {
       if (url.pathname === "/api/feedback" && req.method === "POST") return await postFeedback(req, env);
       if (url.pathname === "/admin") return await admin(req, env, url);
     } catch (e) { return json({ok: false, error: "เซิร์ฟเวอร์ขัดข้อง"}, 500) }
+    // test server (STAGE=test): keep it out of search engines
+    if (env.STAGE === "test") {
+      if (url.pathname === "/robots.txt") return new Response("User-agent: *\nDisallow: /\n", {headers: {"content-type": "text/plain"}});
+      const r = await env.ASSETS.fetch(req), h = new Headers(r.headers); h.set("x-robots-tag", "noindex, nofollow");
+      return new Response(r.body, {status: r.status, statusText: r.statusText, headers: h});
+    }
     return env.ASSETS.fetch(req);
   }
 };

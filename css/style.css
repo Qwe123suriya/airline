@@ -974,3 +974,4 @@ main .wrap>.row.between>h2{flex:1 1 auto}
 @media (max-width:400px){.wizbar button span{display:none}.wizbar button{padding:8px 0}}
 .brgrid{grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr))}
 .notice{border-left:4px solid var(--accent)}
+.testbadge{display:inline-block;background:#C2410C;color:#fff;font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;vertical-align:2px}

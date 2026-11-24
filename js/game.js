@@ -536,8 +536,12 @@ const RIVALS=[_T("นภาคราม แอร์ไลน์"),_T("โกล
 /* ---------- version and updates ----------
    GAME_VERSION must match version.json on the server. The game checks version.json now and then; when the server
    has a newer version than the one running, a bar offers to load it. After loading, a card lists what changed. */
-const GAME_VERSION="1.64";
+/* 🧪 Test server (test.skyseatycoon.com): new versions go here first. It shows a badge and has an admin panel for
+   testing (money, skip days, unlock everything). The live site never shows either. Saves are separate (other domain). */
+const IS_TEST=/^test\./.test(location.hostname)||/airline-test/.test(location.hostname)||(!/^https?:$/.test(location.protocol)||location.hostname==="localhost")&&/[?&]stage=test/.test(location.search);
+const GAME_VERSION="1.65";
 const CHANGELOG=[
+ ["1.65",_T("24 พ.ย. 2569"),[_T("ปรับปรุงเบื้องหลัง: เวอร์ชันใหม่จะผ่านเซิร์ฟเวอร์ทดสอบก่อนขึ้นเว็บจริง เพื่อลดบัคที่ผู้เล่นจะเจอ")]],
  ["1.64",_T("24 พ.ย. 2569"),[_T("🌐 เกมมีภาษาอังกฤษแล้ว: เปิดครั้งแรกจะใช้ภาษาตามที่ตั้งไว้ในเครื่อง เปลี่ยนได้ที่ ⚙️ ตั้งค่า → การแสดงผล → ภาษา · เซฟเดิมเล่นต่อได้ทั้งสองภาษา")]],
  ["1.63",_T("23 พ.ย. 2569"),[_T("แก้หน้าต่างกะพริบเวลากดปรับค่า: ตารางการบิน การออกเดินทาง บริการบนเส้นทาง ราคาตั๋ว ค่าระวาง การออกเรือ และปุ่มอื่นๆ ในหน้าต่าง ไม่วูบหายแล้วจางกลับมาอีกต่อไป")]],
  ["1.62",_T("23 พ.ย. 2569"),[_T("แก้หน้าซื้อเครื่องบิน/เรือกะพริบไม่หยุด: ปุ่มซื้อเปลี่ยนเป็นกดได้หรือกดไม่ได้ตามเงินทันที โดยไม่วาดทั้งหน้าใหม่ (เลื่อนดูรายการได้นิ่งๆ)")]],
@@ -1645,7 +1649,7 @@ function renderApp(){
   dispCash=S.cash;
   $("#app").innerHTML=_T`<header class="top"><div class="wrap">
      <button class="badge" id="badge" style="background:${S.livery.tail};border:0;padding:0" aria-label="ลายเครื่องบินและโลโก้">${logoSVG(S.livery,24,onCol(S.livery.tail))}</button>
-     <div class="brand"><b>${esc(S.name)} <span id="hstar" class="hstar"></span></b><small id="dt"></small></div>
+     <div class="brand"><b>${IS_TEST?_T`<span class="testbadge">🧪 ทดสอบ</span> `:""}${esc(S.name)} <span id="hstar" class="hstar"></span></b><small id="dt"></small></div>
      <div class="cash"><div class="v" id="cs"></div><div class="d num" id="cd"></div></div>
      <button class="barminb" id="barmin" aria-label="ย่อแถบด้านบน" aria-expanded="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
    </div><div class="wrap row2">
@@ -1655,6 +1659,7 @@ function renderApp(){
        <div class="moremenu" id="moremenu" hidden role="menu">
         <div class="muted small" id="hubl"></div>
         <button role="menuitem" id="setbtn"><span class="mi">⚙️</span>ตั้งค่า</button>
+        ${IS_TEST?_T`<button role="menuitem" id="testbtn"><span class="mi">🧪</span>แผงทดสอบ (เฉพาะเว็บทดสอบ)</button>`:""}
         <button role="menuitem" id="fbbtn"><span class="mi">💬</span>ส่งความเห็นถึงผู้พัฒนา</button>
         <button role="menuitem" id="themebtn"><span class="mi">${themeIcon()}</span><span id="themelbl">โหมดแสง</span></button>
         <button role="menuitem" id="verbtn"><span class="mi">ℹ️</span>เวอร์ชัน v${GAME_VERSION} · มีอะไรใหม่${updAvail?_T` <b class="warn">มีอัปเดต</b>`:""}</button>
@@ -1684,6 +1689,7 @@ function renderApp(){
   $("#afkbtn").onclick=()=>startAfk();
   $("#themebtn").onclick=cycleTheme;
   $("#setbtn").onclick=()=>{closeMore();openSheet(settingsSheet())};
+  {const tb=$("#testbtn");if(tb)tb.onclick=()=>{closeMore();openSheet(testSheet())}}
   $("#fbbtn").onclick=()=>{closeMore();openSheet(feedbackSheet())};
   $("#badge").onclick=()=>openSheet(liverySheet({}));
   $$("[data-sp]").forEach(b=>b.onclick=()=>{speed=+b.dataset.sp;paused=false;updateTop()});
@@ -4099,12 +4105,36 @@ function feedbackSheet(st){st=st||{cat:"idea",msg:""};const fn=()=>head(_T("💬
       if(st.msg.length<5){st.err=_T("เขียนอีกนิดนะครับ (อย่างน้อย 5 ตัวอักษร)");drawSheet();return}
       if(!location.protocol.startsWith("http")){st.err=_T("ส่งได้เฉพาะตอนเล่นบนเว็บ skyseatycoon.com");drawSheet();return}
       st.busy=true;drawSheet();
-      try{const r=await fetch("/api/feedback",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({cat:st.cat,msg:st.msg,ver:GAME_VERSION,day:S?S.day:null,dev:devKind(),hp:($("#fbhp")||{}).value||""})});
+      try{const r=await fetch("/api/feedback",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({cat:st.cat,msg:st.msg,ver:GAME_VERSION+(IS_TEST?"-test":""),day:S?S.day:null,dev:devKind(),hp:($("#fbhp")||{}).value||""})});
         const j=await r.json().catch(()=>({ok:false,error:_T("เซิร์ฟเวอร์ตอบกลับผิดรูปแบบ")}));
         if(j.ok){st.sent=true;st.msg="";sfx("win")}else st.err=tr(j.error)||_T("ส่งไม่สำเร็จ")}catch(e){st.err=_T("ส่งไม่สำเร็จ ตรวจอินเทอร์เน็ตแล้วลองใหม่")}
       st.busy=false;drawSheet()}}};
   return fn}
 /* ⚙️ Settings: everything the player can switch, in one place */
+/* 🧪 Admin panel, test server only: shortcuts for checking new things quickly. Never reachable on the live site. */
+function testDays(n){for(let i=0;i<n&&S&&!S.over;i++){settleFlights(S.day+1-1e-7);settleShips(S.day+1-1e-7);ferryTick(S.day+1-1e-7);simDay();pendingDec=null}acc=0;save();renderApp()}
+function testSheet(){if(!IS_TEST)return ()=>"";
+  const B=(id,t)=>`<button class="btn sm" data-tst="${id}">${t}</button>`;
+  const fn=()=>head(_T("🧪 แผงทดสอบ"),_T("มีเฉพาะเว็บทดสอบ เว็บจริงไม่มี · เซฟของเว็บทดสอบแยกจากเว็บจริง"))+
+   _T`<div class="setsec"><div class="eyebrow">💰 เงิน</div><div style="display:flex;flex-wrap:wrap;gap:6px">${B("m100",_T("+฿100 ล้าน"))}${B("m1b",_T("+฿1,000 ล้าน"))}${B("m0",_T("ตั้งเงินเป็น 0"))}${B("mneg",_T("ตั้งเงินติดลบ ฿50 ล้าน"))}</div>
+    <div class="small muted">เงินตอนนี้ ${money(S.cash)}</div></div>
+   <div class="setsec"><div class="eyebrow">⏩ ข้ามเวลา</div><div style="display:flex;flex-wrap:wrap;gap:6px">${B("d1",_T("+1 วัน"))}${B("d7",_T("+7 วัน"))}${B("d30",_T("+30 วัน"))}${B("d100",_T("+100 วัน"))}</div>
+    <div class="small muted">คำนวณทุกวันตามจริง (รายได้ เหตุการณ์ คู่แข่ง) · เรื่องให้ตัดสินใจระหว่างข้ามจะถูกข้ามไป</div></div>
+   <div class="setsec"><div class="eyebrow">🔓 ปลดล็อก</div><div style="display:flex;flex-wrap:wrap;gap:6px">${B("feat",_T("ปลดล็อกทุกระบบ"))}${B("reg",_T("ปลดล็อกทุกภูมิภาค"))}${B("lv",_T("เลเวล +1"))}${B("relock",_T("ล็อกระบบกลับเหมือนเกมใหม่"))}</div>
+    <div class="small muted">ปลดล็อกแล้ว ${S.prog?S.prog.length:FEATS.length}/${FEATS.length} ระบบ · ภูมิภาค ${S.unlocked.length}/${REGIONS.length}</div></div>
+   <div class="setsec"><div class="eyebrow">🛠️ อื่นๆ</div><div style="display:flex;flex-wrap:wrap;gap:6px">${B("fix",_T("ซ่อมทุกลำเป็น 100%"))}${B("dec",_T("เรียกเรื่องให้ตัดสินใจ"))}${B("rep",_T("ชื่อเสียง 100"))}</div></div>`;
+  fn.bind=()=>{$$("[data-tst]").forEach(b=>b.onclick=()=>{const k=b.dataset.tst;
+    if(k==="m100")S.cash+=1e8;else if(k==="m1b")S.cash+=1e9;else if(k==="m0")S.cash=0;else if(k==="mneg")S.cash=-5e7;
+    else if(k[0]==="d"&&k!=="dec"){closeSheet();testDays(+k.slice(1));toast(_T`⏩ ข้ามไป ${k.slice(1)} วัน`);return}
+    else if(k==="feat"){S.prog=FEATS.map(f=>f.id);applyFeat();refreshChrome()}
+    else if(k==="relock"){S.prog=[];applyFeat();refreshChrome()}
+    else if(k==="reg"){S.unlocked=REGIONS.map(R=>R.id);baseKey="";fogKey=""}
+    else if(k==="lv")S.lvl=(S.lvl||1)+1;
+    else if(k==="fix")S.fleet.forEach(p=>{p.cond=100;p.down=0});
+    else if(k==="rep")S.rep=100;
+    else if(k==="dec"){const d=pickDecision();if(d){closeSheet();openDecision(d);return}toast(_T("ตอนนี้ไม่มีเรื่องที่เข้าเงื่อนไข"));return}
+    dispCash=S.cash;save();updateTop();toast(_T("🧪 ทำแล้ว"));drawSheet()})};
+  return fn}
 function settingsSheet(){
   const seg=(key,opts,val)=>`<div class="seg setseg">${opts.map(([v,n])=>`<button type="button" data-pset="${key}" data-v="${v}" class="${String(val)===String(v)?"on":""}">${n}</button>`).join("")}</div>`;
   const tg=(id,on,label,sub)=>`<label class="tg setrow"><input type="checkbox" data-ptg="${id}" ${on?"checked":""}><span><b>${label}</b>${sub?`<br><span class="small muted">${sub}</span>`:""}</span></label>`;
