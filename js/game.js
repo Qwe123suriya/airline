@@ -2039,8 +2039,8 @@ function adviceList(){const out=[],ok=[],K=bm(),KC=K==="cargo",R=advRoutes(K),W=
   const loss=R.filter(r=>r.last.profit<0),mine=p=>(KC)===!model(p.m).seats,idle=S.fleet.filter(p=>mine(p)&&!p.route&&!p.reserve&&p.down<=S.day),worn=S.fleet.filter(p=>mine(p)&&p.cond<45&&p.down<=S.day),fights=KC?[]:S.routes.filter(r=>r.cmp);
   const names=L=>L.slice(0,3).map(r=>r.dest).join(", ")+(L.length>3?"…":"");
   if(fullM.length)out.push({e:"📈",t:_T`${fullM.length} เส้นทางตั้งราคาเอง ${W}เต็มเกือบ 100% (${names(fullM)})`,d:_T`${unit}ล้น ขึ้นราคาได้อีก หรือเปลี่ยนเป็นราคาอัตโนมัติ`,btn:_T("ขึ้นราคา 5%"),a:"bulk:full"});
-  if(KC){const ov=cargoOverAll();if(ov.length)out.push({e:"📦",t:_T`สินค้าล้นที่ ${ov.slice(0,3).map(x=>x.code).join(", ")}${ov.length>3?"…":""} (ค้างรวม ~${Math.round(ov.reduce((a,x)=>a+x.t,0)).toLocaleString()} ตัน)`,d:_T("เครื่องขนสินค้าไม่พอ ดูรายเส้นในแท็บสาขา"),btn:_T("ดูสาขา"),a:"go:branch"})}
-  if(fullA.length)out.push({e:"🛫",t:_T`${fullA.length} เส้นทาง${W}เต็มเกือบ 100% (${names(fullA)})`,d:KC?_T`${unit}ล้น ควรเพิ่มเครื่องขนสินค้า หรือย้ายเครื่องจากเส้นที่ว่าง`:_T`ระบบตั้งราคาให้อัตโนมัติอยู่แล้ว แต่${unit}ยังล้น ควรเพิ่มเครื่อง หรือย้ายเครื่องจากเส้นที่ว่างมาช่วย`,btn:_T("ย้ายเครื่องมาช่วย"),a:"move"});
+  if(KC){const ov=cargoOverAll();if(ov.length)out.push({tag:"over",e:"📦",t:_T`สินค้าล้นที่ ${ov.slice(0,3).map(x=>x.code).join(", ")}${ov.length>3?"…":""} (ค้างรวม ~${Math.round(ov.reduce((a,x)=>a+x.t,0)).toLocaleString()} ตัน)`,d:_T("เครื่องขนสินค้าไม่พอ ดูรายเส้นในแท็บสาขา"),btn:_T("ดูสาขา"),a:"go:branch"})}
+  if(fullA.length)out.push({tag:"over",e:"🛫",t:_T`${fullA.length} เส้นทาง${W}เต็มเกือบ 100% (${names(fullA)})`,d:KC?_T`${unit}ล้น ควรเพิ่มเครื่องขนสินค้า หรือย้ายเครื่องจากเส้นที่ว่าง`:_T`ระบบตั้งราคาให้อัตโนมัติอยู่แล้ว แต่${unit}ยังล้น ควรเพิ่มเครื่อง หรือย้ายเครื่องจากเส้นที่ว่างมาช่วย`,btn:_T("ย้ายเครื่องมาช่วย"),a:"move"});
   if(emptyM.length)out.push({e:"📉",t:_T`${emptyM.length} เส้นทางตั้งราคาเอง ${W}เต็มไม่ถึง 60% (${names(emptyM)})`,d:_T("ราคาแพงไป ลดราคาเพื่อดึงคน หรือเปลี่ยนเป็นราคาอัตโนมัติ"),btn:_T("ลดราคา 5%"),a:"bulk:empty"});
   if(emptyA.length)out.push({e:"🪑",t:_T`${emptyA.length} เส้นทาง${W}เต็มไม่ถึง 60% (${names(emptyA)})`,d:_T`${unit}น้อยกว่าเครื่องที่ใส่ไว้ ย้ายเครื่องส่วนเกินไปเส้นที่${unit}ล้น`,btn:_T("ย้ายเครื่อง"),a:"move"});
   {const empty=S.routes.filter(r=>(rkind(r)==="cargo")===KC&&!r.planes.length);if(empty.length)out.push({e:"🚫",t:_T`${empty.length} เส้นทางยังไม่มีเครื่อง (${names(empty)})`,d:_T`ยังเสียค่าเช่าช่องจอดวันละ ${money(ROUTE_SLOT,true)} ต่อเส้น ใส่เครื่องหรือปิดเส้นทาง`,btn:_T("ดูเส้นทาง"),a:"go:routes"})}
@@ -2048,7 +2048,7 @@ function adviceList(){const out=[],ok=[],K=bm(),KC=K==="cargo",R=advRoutes(K),W=
   if(idle.length)out.push({e:"🅿️",t:_T`เครื่อง${KC?_T("ขนสินค้า"):""}จอดว่าง ${idle.length} ลำ`,d:_T("ยังเสียค่าคงที่ทุกวัน ใส่เข้าเส้นที่ล้น หรือขายทิ้ง"),btn:_T("ใส่เส้นที่ล้น"),a:"move"});
   if(worn.length&&!S.autoMx)out.push({e:"🔧",t:_T`เครื่องสภาพต่ำกว่า 45% ${worn.length} ลำ`,d:_T("เสี่ยงเสียกลางทาง เปิดซ่อมอัตโนมัติไว้จะง่ายกว่า"),btn:_T("เปิดซ่อมอัตโนมัติ"),a:"amx"});
   if(KC){const ln=S.lanes.filter(l=>l.ships.length),eL=ln.filter(l=>{const c=laneCalc(l);return Math.max(c.load,c.loadr)<.5}),iS=S.ships.filter(sh=>!S.lanes.some(l=>l.id===sh.lane));
-    const so=seaOverAll();if(so.length)out.push({e:"🚢",t:_T`ตู้สินค้าล้นที่ท่าเรือ ${so.slice(0,3).map(x=>port(x.code).n).join(", ")}${so.length>3?"…":""} (ค้างรวม ~${Math.round(so.reduce((a,x)=>a+x.t,0)).toLocaleString()} TEU)`,d:_T("เรือไม่พอ ดูรายเส้นในแท็บสาขา → สาขาท่าเรือ"),btn:_T("ดูท่าเรือ"),a:"port"});
+    const so=seaOverAll();if(so.length)out.push({tag:"over",e:"🚢",t:_T`ตู้สินค้าล้นที่ท่าเรือ ${so.slice(0,3).map(x=>port(x.code).n).join(", ")}${so.length>3?"…":""} (ค้างรวม ~${Math.round(so.reduce((a,x)=>a+x.t,0)).toLocaleString()} TEU)`,d:_T("เรือไม่พอ ดูรายเส้นในแท็บสาขา → สาขาท่าเรือ"),btn:_T("ดูท่าเรือ"),a:"port"});
     if(eL.length)out.push({e:"🚢",t:_T`${eL.length} เส้นทางเรือระวางเต็มไม่ถึง 50%`,d:_T("ตั้งให้เรือรอสินค้าก่อนออก หรือย้ายเรือ"),btn:_T("ดูเรือ"),a:"go:fleet"});
     if(iS.length)out.push({e:"⚓",t:_T`เรือจอดว่าง ${iS.length} ลำ`,d:_T("ใส่เข้าเส้นทางเรือ หรือขายทิ้ง"),btn:_T("ไปกองเรือ"),a:"go:fleet"})}
   if(fights.length)out.push({e:"⚔️",t:_T`คู่แข่งบุก ${fights.length} เส้นทาง`,d:_T("ลดราคาสู้ หรือใช้บริการพรีเมียมบนเส้นนั้น"),btn:_T("ดูเส้นทาง"),a:"go:routes"});
@@ -2058,14 +2058,25 @@ function adviceList(){const out=[],ok=[],K=bm(),KC=K==="cargo",R=advRoutes(K),W=
   const fineP=S.fleet.filter(p=>mine(p)&&p.route&&p.cond>=60).length;if(fineP)ok.push(_T`เครื่อง ${fineP} ลำสภาพดี`);
   if(S.loan===0&&S.fleet.length)ok.push(_T("ไม่มีหนี้"));
   return {out,ok}}
+/* three cards on the home screen: where people, ship containers and air cargo are overflowing (whatever mode is on) */
+function advCardsHTML(){
+  const pr=advRoutes("pax"),pov=pr.filter(r=>rLoad(r)>=.95),pbk=S.routes.filter(r=>rkind(r)==="pax").reduce((a,r)=>a+bkPax(r),0);
+  const card=(e,t,body,ok,btn,act,lock)=>`<div class="advcard ${lock?"lock":ok?"ok":"bad"}"><b>${e} ${t}</b><div class="small ${lock?"muted":ok?"good":""}">${body}</div>${!lock&&!ok?`<button class="btn sm primary" data-adv="${act}">${btn}</button>`:""}</div>`;
+  const c1=card("👥",_T("คนล้น"),pr.length?(pov.length?_T`ล้น ${pov.length} เส้น · คนรอบิน ~${pbk.toLocaleString()} คน`:_T("✅ ที่นั่งพอทุกเส้น")):_T("ยังไม่มีเส้นทางผู้โดยสาร"),!pov.length,_T("ดูเส้นทาง"),"gom:pax");
+  let c2,c3;
+  if(has("sea")){const so=seaOverAll(),t=Math.round(so.reduce((a,x)=>a+x.t,0));c2=card("🚢",_T("ตู้สินค้าเรือ"),so.length?_T`ล้น ${so.length} ท่า · ค้าง ~${t.toLocaleString()} TEU`:S.lanes.length?_T("✅ ตู้ขนได้ครบ"):_T("ยังไม่มีเส้นทางเรือ"),!so.length,_T("ดูท่าเรือ"),"gom:sea")}
+  else c2=card("🚢",_T("ตู้สินค้าเรือ"),_T("🔒 ยังไม่ปลดล็อก"),true,"","",true);
+  if(has("cargo")){const ov=cargoOverAll(),t=Math.round(ov.reduce((a,x)=>a+x.t,0));c3=card("✈️",_T("สินค้าเครื่องบิน"),ov.length?_T`ล้น ${ov.length} สนามบิน · ค้าง ~${t.toLocaleString()} ตัน`:advRoutes("cargo").length?_T("✅ ระวางพอ"):_T("ยังไม่มีเส้นทางสินค้า"),!ov.length,_T("ดูสาขา"),"gom:air")}
+  else c3=card("✈️",_T("สินค้าเครื่องบิน"),_T("🔒 ยังไม่ปลดล็อก"),true,"","",true);
+  return c1+c2+c3}
 function adviceHTML(){const K=bm(),KC=K==="cargo";if(!S.routes.some(r=>r.planes.length&&r.last))return "";const {out,ok}=adviceList(),L=S.last||{},R=advRoutes(K);
   const ld=R.length?R.reduce((a,r)=>a+rLoad(r),0)/R.length:0;
   const tiles=[[_T("กำไรเมื่อวาน"),`${L.rev-L.cost>=0?"+":""}${money((L.rev||0)-(L.cost||0),true)}`,(L.rev||0)>=(L.cost||0)?"good":"bad"],[KC?_T("ระวางเต็มเฉลี่ย"):_T("ที่นั่งเต็มเฉลี่ย"),`${Math.round(ld*100)}%`,ld>=.75?"good":ld>=.5?"warn":"bad"],
     [KC?_T("เส้นสินค้า / เครื่อง"):_T("เส้นทาง / เครื่อง"),`${R.length} / ${S.fleet.filter(p=>KC===!model(p.m).seats).length}`,""],has("rank")?[_T("อันดับ"),_T`#${rank()} จาก ${S.rivals.length+1}`,rank()===1?"good":""]:[_T("เงินสด"),money(S.cash,true),""]];
   return _T`<div class="panel stack advbox"><div class="row between advhead"><b>💡 ควรปรับอะไรบ้าง${KC?_T(" · โหมดสินค้า"):""}</b>${!KC&&R.length>1?_T`<button class="btn sm" data-adv="bulk:all">🏷️ ปรับราคาตั๋วทุกเส้น</button>`:""}</div>
     <label class="tg advauto"><input type="checkbox" id="autoadv" ${S.autoAdv?"checked":""}><span><b>🤖 จัดการอัตโนมัติทุกวัน</b><br><span class="small muted">ระบบจะ: เปลี่ยนเส้นที่ตั้งราคาเองแล้วเต็มเกินหรือว่างเกินเป็นราคาอัตโนมัติ · ย้ายเครื่องจากเส้นที่ว่างไปเส้นที่ล้นวันละ 2 ลำ · ใส่เครื่องจอดว่างเข้าเส้นที่ล้น · ส่งซ่อมอัตโนมัติ ทุกอย่างที่ทำจะขึ้นในข่าว</span></span></label>
-    <div class="advtiles">${tiles.map(([k,v,c])=>`<div><span class="muted small">${k}</span><b class="num ${c}">${v}</b></div>`).join("")}</div>
-    ${out.length?out.slice(0,6).map(x=>`<div class="advrow"><span class="adve">${x.e}</span><div style="min-width:0"><b class="small">${x.t}</b><div class="small muted">${x.d}</div></div><button class="btn sm primary" data-adv="${x.a}">${x.btn}</button></div>`).join(""):_T`<div class="small good">ทุกอย่างเรียบร้อยดี ยังไม่มีอะไรต้องปรับ</div>`}
+    <div class="eyebrow">สิ่งควรปรับ</div><div class="advcards">${advCardsHTML()}</div>
+    ${out.filter(x=>!x.tag).length?out.filter(x=>!x.tag).slice(0,6).map(x=>`<div class="advrow"><span class="adve">${x.e}</span><div style="min-width:0"><b class="small">${x.t}</b><div class="small muted">${x.d}</div></div><button class="btn sm primary" data-adv="${x.a}">${x.btn}</button></div>`).join(""):_T`<div class="small good">ทุกอย่างเรียบร้อยดี ยังไม่มีอะไรต้องปรับ</div>`}
     ${ok.length?_T`<div class="small advok">✅ <b>ไม่ต้องปรับ:</b> ${ok.join(" · ")}</div>`:""}</div>`}
 function heroHTML(F){const T=S.today||blankT(),net=todayNet(T),K=bm()==="cargo",rev=T.tix+T.crev+(T.srev||0),cost=rev-net;
   const card=(id,v,l,cls)=>`<div class="hcard"><b class="num ${cls||""}" id="${id}">${v}</b><span>${l}</span></div>`;
@@ -2076,8 +2087,14 @@ function heroHTML(F){const T=S.today||blankT(),net=todayNet(T),K=bm()==="cargo",
    <div class="hms" id="heroMs">${msLineHTML()}</div>`}
 /* partner requests waiting for an answer (always shown once partnerships are open) */
 function reqBoxHTML(){if(!has("deals"))return "";const R=pendingReqs();
+  const card=q=>{const p=partnerOf(q.p),d=DEALS[q.k],ch=dealChance(q.k,q.p,.15);
+    return _T`<div class="hreqc"><div class="row" style="gap:8px;align-items:center"><span class="he">${p.e}</span><div style="min-width:0;flex:1"><b>${esc(p.n)}</b><div class="small">เสนอ <b>${d.e} ${d.n}</b></div></div></div>
+     <div class="small muted">${dealFx(q.k,dealTier(q.k).pw)} · ${d.days} วัน</div>
+     <div class="small">${q.bonus?_T`<b class="good">เขาจ่ายให้เรา ${money(q.bonus,true)}</b>`:_T`เราจ่าย <b>${money(q.cost,true)}</b>`} · <span class="warn">หมดอายุใน ${q.until-S.day} วัน</span></div>
+     <div class="hreqb"><button class="btn sm primary" data-req="${q.id}:yes" ${S.cash<q.cost?"disabled":""}>✓ ตกลง</button><button class="btn sm" data-req="${q.id}:counter">↩ ต่อรอง<small class="muted">${Math.round(ch*100)}%</small></button><button class="btn sm" data-req="${q.id}:no">✕ ปฏิเสธ</button></div></div>`};
   return _T`<div class="panel stack hreq"><div class="row between"><b>📨 คำขอความร่วมมือ${R.length?` <span class="chip">${R.length}</span>`:""}</b><button class="btn sm" id="ntreq">ดูทั้งหมด ›</button></div>
-   ${R.length?`<div class="hreqs">${R.slice(0,3).map(q=>{const P=partnerOf(q.p);return `<button class="hreqc" data-reqgo><span class="he">${P.e}</span><b>${esc(P.n)}</b><span class="small muted">${DEALS[q.k].n}</span><span class="small warn">${_T`หมดอายุใน ${q.until-S.day} วัน`}</span></button>`}).join("")}</div>`:_T`<div class="muted small">ยังไม่มีคำขอเข้ามา · คู่ค้าจะส่งคำขอมาเป็นระยะ</div>`}</div>`}
+   ${R.length?`<div class="hreqs">${R.slice(0,3).map(card).join("")}</div>${R.length>3?_T`<div class="small muted">และอีก ${R.length-3} คำขอ ในแท็บบริษัท</div>`:""}`:_T`<div class="muted small">ยังไม่มีคำขอเข้ามา · คู่ค้าจะส่งคำขอมาเป็นระยะ</div>`}
+   ${R.length?_T`<div class="small muted">↩ ต่อรอง = ขอถูกลง 20% และนานขึ้น 50% (ตัวเลขคือโอกาสที่เขายอม) ถ้าไม่ยอม คำขอจะหาย · ✕ ปฏิเสธ = ความสัมพันธ์ลดเล็กน้อย</div>`:""}</div>`}
 function boardHTML(F){const h=boardRowsHTML();return _T`<div class="fboard"><div class="fbh"><span>${bm()==="cargo"?_T("📦 ขนส่งสด"):_T("🛫 เที่ยวบินสด")}</span><span id="fbclk">${bm()==="cargo"?_T("เดินทางอยู่"):_T("บินอยู่")} ${movingNow(F)} ลำ</span></div>
    <div class="fbc"><span>เที่ยว</span><span>เส้นทาง</span><span>${bm()==="cargo"?_T("กำไร"):_T("วันนี้")}</span></div><div id="fboard">${h}</div></div>`}
 function liveHome(){if(tab!=="home"||!S||afk)return;if(!$("#heroNet"))return;const F=liveFlights(),T=S.today||blankT(),net=todayNet(T),K=bm()==="cargo",rev=T.tix+T.crev+(T.srev||0);
@@ -3612,6 +3629,7 @@ function bindView(rest){
     else if(k==="go"){tab=v;renderView(true);window.scrollTo(0,0)}else if(k==="newr")openSheet(newRouteSheet({from:S.hub,kind:bm()}));
     else if(k==="move"){const n=rebalance(10);toast(n?_T`ย้ายเครื่อง ${n} ลำไปเส้นที่ล้นแล้ว`:_T("ไม่มีเครื่องที่ย้ายได้ (เส้นที่ล้นอยู่ไกลเกินพิสัย หรือเส้นที่ว่างมีเครื่องลำเดียว) ลองซื้อเครื่องเพิ่ม"));save();renderView()}
     else if(k==="port"){tab="branch";brSeg="sea";renderView(true);window.scrollTo(0,0)}
+    else if(k==="gom"){S.bmode=v==="pax"?"pax":"cargo";save();if(v==="pax")tab="routes";else{tab="branch";brSeg=v}renderApp();window.scrollTo(0,0)}
     else if(k==="amx"){S.autoMx=true;save();toast(_T("เปิดส่งซ่อมอัตโนมัติแล้ว"));renderView()}});
   const aa=$("#autoadv");if(aa)aa.onchange=()=>{S.autoAdv=aa.checked;if(S.autoAdv){S.autoMx=true;autoAdvTick()}save();toast(S.autoAdv?_T("🤖 เปิดจัดการอัตโนมัติแล้ว ดูสิ่งที่ระบบทำได้ในข่าว"):_T("ปิดจัดการอัตโนมัติแล้ว"));renderView()};
   bindWishes();const nr=$("#newr");if(nr)nr.onclick=()=>openSheet(newRouteSheet({from:S.hub,kind:rseg}));const bp=$("#bulkp");if(bp)bp.onclick=()=>openSheet(bulkPriceSheet({mode:"auto",f:1,flt:"all"}));

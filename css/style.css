@@ -990,3 +990,8 @@ main .wrap>.row.between>h2{flex:1 1 auto}
 .hreqc b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}.hreqc .he{font-size:20px}
 .homeduo{display:grid;grid-template-columns:4fr 6fr;gap:12px;align-items:start}
 @media (max-width:620px){.homeduo{grid-template-columns:1fr}.hreqs{grid-template-columns:1fr}.homestats{grid-template-columns:1fr}.hnet{order:-1}}
+.hreqc{gap:6px}.hreqb{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}.hreqb .btn{flex:1;min-width:0;white-space:nowrap;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;padding:6px 4px}.hreqb .btn small{font-size:11px;font-weight:500}
+.advcards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.advcard{display:flex;flex-direction:column;gap:6px;background:var(--sky);border:1px solid var(--line);border-radius:14px;padding:10px 12px;min-width:0}
+.advcard.bad{border-color:color-mix(in srgb,var(--bad,#d64545) 45%,var(--line))}.advcard.lock{opacity:.6}.advcard .btn{align-self:flex-start}
+@media (max-width:620px){.advcards{grid-template-columns:1fr}}
