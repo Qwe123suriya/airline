@@ -6,4 +6,4 @@
 - This folder is not deployed (see `.assetsignore`).
 
 ## Test server
-New versions go to the `test` branch first. Cloudflare Worker `airline-test` builds it (`npx wrangler deploy --env test`) and serves test.skyseatycoon.com, which shows a 🧪 badge and the admin test panel. When it looks good, `test` is merged into `main` (the live Worker `airline`).
+New versions go to the `test` branch first. Cloudflare Worker `airline-test` builds it (`npx wrangler deploy -e test`) and serves test.skyseatycoon.com, which shows a 🧪 badge and the admin test panel. When it looks good, `test` is merged into `main` (the live Worker `airline`).
