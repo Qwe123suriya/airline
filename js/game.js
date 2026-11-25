@@ -1660,10 +1660,8 @@ function renderApp(){
       <div class="moreb"><button class="qbtn" id="morebtn" aria-label="เมนูเพิ่มเติม" aria-expanded="false" aria-haspopup="true">⋯</button>
        <div class="moremenu" id="moremenu" hidden role="menu">
         <div class="muted small" id="hubl"></div>
-        <button role="menuitem" id="setbtn"><span class="mi">⚙️</span>ตั้งค่า</button>
         <button role="menuitem" id="afkbtn"><span class="mi">💤</span>โหมด AFK</button>
         ${IS_TEST?_T`<button role="menuitem" id="testbtn"><span class="mi">🧪</span>แผงทดสอบ (เฉพาะเว็บทดสอบ)</button>`:""}
-        <button role="menuitem" id="fbbtn"><span class="mi">💬</span>ส่งความเห็นถึงผู้พัฒนา</button>
         <button role="menuitem" id="themebtn"><span class="mi">${themeIcon()}</span><span id="themelbl">โหมดแสง</span></button>
         <button role="menuitem" id="verbtn"><span class="mi">ℹ️</span>เวอร์ชัน v${GAME_VERSION} · มีอะไรใหม่${updAvail?_T` <b class="warn">มีอัปเดต</b>`:""}</button>
         <button role="menuitem" id="help"><span class="mi">?</span>คู่มือระบบ</button>
@@ -1692,9 +1690,9 @@ function renderApp(){
   $("#afkbtn").onclick=()=>{closeMore();startAfk()};
   $("#setq").onclick=()=>{closeMore();openSheet(settingsSheet())};$("#fbq").onclick=()=>{closeMore();openSheet(feedbackSheet())};
   $("#themebtn").onclick=cycleTheme;
-  $("#setbtn").onclick=()=>{closeMore();openSheet(settingsSheet())};
+  {const b=$("#setbtn");if(b)b.onclick=()=>{closeMore();openSheet(settingsSheet())}}
   {const tb=$("#testbtn");if(tb)tb.onclick=()=>{closeMore();openSheet(testSheet())}}
-  $("#fbbtn").onclick=()=>{closeMore();openSheet(feedbackSheet())};
+  {const b=$("#fbbtn");if(b)b.onclick=()=>{closeMore();openSheet(feedbackSheet())}}
   $("#badge").onclick=()=>openSheet(liverySheet({}));
   $$("[data-sp]").forEach(b=>b.onclick=()=>{speed=+b.dataset.sp;paused=false;updateTop()});
   $$("[data-tab]").forEach(b=>b.onclick=()=>{if(b.dataset.tab!==tab){fSelMode=false;fSel.clear();rSelMode=false;rSel.clear()}tab=b.dataset.tab;renderView(true);window.scrollTo(0,0)});
@@ -1819,8 +1817,7 @@ function bindNotice(){const go=()=>{tab="company";renderApp();setTimeout(()=>{co
   const a=$("#ntreq");if(a)a.onclick=go;$$("[data-reqgo]").forEach(b=>b.onclick=go);
   const b=$("#ntperk");if(b)b.onclick=()=>openSheet(perkSheet())}
 function homeHTML(){
-  return _T`${firstStepsHTML()}<div class="mapbox homemap"><canvas id="map" aria-label="แผนที่โลก ลากเพื่อเลื่อน บีบหรือกดปุ่มเพื่อซูม"></canvas><canvas id="mapbase" aria-hidden="true"></canvas>
-   ${modeHTML()}</div>
+  return _T`${firstStepsHTML()}<div class="mapbox homemap"><canvas id="map" aria-label="แผนที่โลก ลากเพื่อเลื่อน บีบหรือกดปุ่มเพื่อซูม"></canvas><canvas id="mapbase" aria-hidden="true"></canvas></div>
   <div id="homeRest" class="stack" style="gap:14px">${homeRestHTML()}</div>`}
 function mapCtlHTML(withFull){return _T`<div class="mapctl"><button data-cam="in" aria-label="ซูมเข้า">+</button><button data-cam="out" aria-label="ซูมออก">−</button>
     <button data-cam="world" aria-label="ดูทั้งโลก" class="${camMode==="world"?"on":""}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></button>
