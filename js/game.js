@@ -542,7 +542,7 @@ const IS_TEST=/^test\./.test(location.hostname)||/airline-test/.test(location.ho
 const GAME_VERSION="1.67";
 const CHANGELOG=[
  ["1.67",_T("25 พ.ย. 2569"),[_T("ปรับปรุงเบื้องหลังเล็กน้อย")]],
- ["1.66",_T("25 พ.ย. 2569"),[_T("หน้าแรกใหม่ (แท็บ “หน้าหลัก”): แผนที่สะอาดขึ้น · กล่องตัวเลขวันนี้ (คนหรือตัน ลำที่บินหรือตู้เรือ รายได้ รายจ่าย) คู่กับกำไรวันนี้ · คำขอความร่วมมือ · อัปเกรดแต่ละด้าน · ภารกิจคู่กับข่าวสาร · ควรปรับอะไรบ้าง · ทุกกล่องมุมโค้งมน"),_T("ปุ่ม 💬 ส่งความเห็น และ ⚙️ ตั้งค่า อยู่บนแถบด้านบนแล้ว · โหมด AFK และเต็มจอย้ายไปอยู่ในเมนู ···")]],
+ ["1.66",_T("25 พ.ย. 2569"),[_T("หน้าแรกใหม่ (แท็บ “หน้าหลัก”): แผนที่สะอาดขึ้น · กล่องตัวเลขวันนี้ (คนหรือตัน ลำที่บินหรือตู้เรือ รายได้ รายจ่าย) คู่กับกำไรวันนี้ · คำขอความร่วมมือ · อัปเกรดแต่ละด้าน · ภารกิจคู่กับข่าวสาร · ควรปรับอะไรบ้าง · ทุกกล่องมุมโค้งมน"),_T("ปุ่ม 💬 ส่งความเห็น ⚙️ ตั้งค่า และเต็มจอ อยู่บนแถบด้านบน · ไม่มีเมนู ··· แล้ว ของที่เคยอยู่ในเมนู (โหมดแสง เวอร์ชัน คู่มือ สำรองเซฟ โหมด AFK เริ่มเกมใหม่) ย้ายไปอยู่ใน ⚙️ ตั้งค่า")]],
  ["1.65",_T("24 พ.ย. 2569"),[_T("ปรับปรุงเบื้องหลัง: เวอร์ชันใหม่จะผ่านเซิร์ฟเวอร์ทดสอบก่อนขึ้นเว็บจริง เพื่อลดบัคที่ผู้เล่นจะเจอ")]],
  ["1.64",_T("24 พ.ย. 2569"),[_T("🌐 เกมมีภาษาอังกฤษแล้ว: เปิดครั้งแรกจะใช้ภาษาตามที่ตั้งไว้ในเครื่อง เปลี่ยนได้ที่ ⚙️ ตั้งค่า → การแสดงผล → ภาษา · เซฟเดิมเล่นต่อได้ทั้งสองภาษา")]],
  ["1.63",_T("23 พ.ย. 2569"),[_T("แก้หน้าต่างกะพริบเวลากดปรับค่า: ตารางการบิน การออกเดินทาง บริการบนเส้นทาง ราคาตั๋ว ค่าระวาง การออกเรือ และปุ่มอื่นๆ ในหน้าต่าง ไม่วูบหายแล้วจางกลับมาอีกต่อไป")]],
@@ -1657,39 +1657,25 @@ function renderApp(){
    </div><div class="wrap row2">
      ${bmHTML()}
      <div class="clock"><button id="pp" aria-label="หยุด/เล่น"></button>${SPEEDS.map(s=>`<button data-sp="${s}">${s}×</button>`).join("")}<button class="spdc" id="spdc" aria-label="เปลี่ยนความเร็ว"></button><button class="qbtn" id="fbq" aria-label="ส่งความเห็นถึงผู้พัฒนา" title="ส่งความเห็นถึงผู้พัฒนา">💬</button><button class="qbtn" id="setq" aria-label="ตั้งค่า" title="ตั้งค่า">⚙️</button>
-      <div class="moreb"><button class="qbtn" id="morebtn" aria-label="เมนูเพิ่มเติม" aria-expanded="false" aria-haspopup="true">⋯</button>
-       <div class="moremenu" id="moremenu" hidden role="menu">
-        <div class="muted small" id="hubl"></div>
-        <button role="menuitem" id="afkbtn"><span class="mi">💤</span>โหมด AFK</button>
-        ${IS_TEST?_T`<button role="menuitem" id="testbtn"><span class="mi">🧪</span>แผงทดสอบ (เฉพาะเว็บทดสอบ)</button>`:""}
-        <button role="menuitem" id="themebtn"><span class="mi">${themeIcon()}</span><span id="themelbl">โหมดแสง</span></button>
-        <button role="menuitem" id="verbtn"><span class="mi">ℹ️</span>เวอร์ชัน v${GAME_VERSION} · มีอะไรใหม่${updAvail?_T` <b class="warn">มีอัปเดต</b>`:""}</button>
-        <button role="menuitem" id="help"><span class="mi">?</span>คู่มือระบบ</button>
-        <button role="menuitem" id="fsbtn"><span class="mi">⛶</span><span id="fslbl">เต็มจอ (ซ่อนแถบเบราว์เซอร์)</span></button>
-        <button role="menuitem" id="savebtn"><span class="mi">💾</span>สำรอง / ย้ายเซฟ (ส่งออก · นำเข้า)</button>
-        <button role="menuitem" id="restart"><span class="mi"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 3.5v5h5"/></svg></span>เริ่มเกมใหม่</button>
-       </div></div></div>
+      <button class="qbtn fsq" id="fsq" aria-label="เต็มจอ" title="เต็มจอ"></button></div>
    </div></header>
    <main><div class="wrap" id="view"></div></main>
    <nav class="tabs"><div class="wrap">${TABS.filter(t=>tabOK(t[0])).map(([k,n])=>`<button data-tab="${k}">${ICONS[k]}<span>${n}</span></button>`).join("")}</div></nav>
    <div id="sheet"></div>`;
   $("#pp").onclick=()=>{if(S.over)return;paused=!paused;updateTop()};
-  const closeMore=()=>{const m=$("#moremenu");if(m&&!m.hidden){m.hidden=true;$("#morebtn").setAttribute("aria-expanded","false")}};
-  $("#morebtn").onclick=e=>{e.stopPropagation();const m=$("#moremenu");m.hidden=!m.hidden;$("#morebtn").setAttribute("aria-expanded",String(!m.hidden));updateTop()};
-  if(!window._moreDoc){window._moreDoc=1;document.addEventListener("click",e=>{if(!e.target.closest(".moreb")){const m=$("#moremenu");if(m&&!m.hidden){m.hidden=true;$("#morebtn").setAttribute("aria-expanded","false")}}})}
+  // the ··· menu is gone (v1.68): its items live in ⚙️ Settings; the bar keeps 💬, ⚙️ and full screen
+  const closeMore=()=>{},on=(id,f)=>{const e=$(id);if(e)e.onclick=f};
   $("#spdc").onclick=()=>{const i=SPEEDS.indexOf(speed);speed=SPEEDS[(i+1)%SPEEDS.length];paused=false;updateTop()};
-  $("#help").onclick=()=>{closeMore();openSheet(guideSheet)};
-  $("#verbtn").onclick=()=>{closeMore();openSheet(changelogSheet(null))};
+  on("#help",()=>openSheet(guideSheet));on("#verbtn",()=>openSheet(changelogSheet(null)));
   $$("[data-bm]").forEach(b=>b.onclick=()=>setBM(b.dataset.bm));
   $("#barmin").onclick=()=>{S.ui_barmin=!S.ui_barmin;save();applyBarMin()};applyBarMin();
-  $("#restart").onclick=()=>{closeMore();openSheet(resetSheet)};
-  $("#savebtn").onclick=()=>{closeMore();openSheet(saveSheet())};
+  on("#restart",()=>openSheet(resetSheet));on("#savebtn",()=>openSheet(saveSheet()));
   const fsToggle=()=>{if(fsEl())fsExit();else if(!fsEnter())toast(_T("เบราว์เซอร์นี้เปิดเต็มจอไม่ได้ · ลองกด “เพิ่มไปยังหน้าจอหลัก” ในเมนูเบราว์เซอร์ แล้วเปิดเกมจากไอคอนนั้น"))};
-  $("#fsbtn").onclick=()=>{closeMore();fsToggle()};{const q=$("#fsq");if(q)q.onclick=fsToggle}updFsq();
+  on("#fsbtn",fsToggle);{const q=$("#fsq");if(q)q.onclick=fsToggle}updFsq();
   if(!window._fsl){window._fsl=1;const up=()=>{const l=$("#fslbl");if(l)l.textContent=fsEl()?_T("ออกจากเต็มจอ"):_T("เต็มจอ (ซ่อนแถบเบราว์เซอร์)");updFsq();setTimeout(()=>{if($("#mapfull"))sizeFullMap()},250)};document.addEventListener("fullscreenchange",up);document.addEventListener("webkitfullscreenchange",up)}
-  $("#afkbtn").onclick=()=>{closeMore();startAfk()};
+  on("#afkbtn",()=>startAfk());
   $("#setq").onclick=()=>{closeMore();openSheet(settingsSheet())};$("#fbq").onclick=()=>{closeMore();openSheet(feedbackSheet())};
-  $("#themebtn").onclick=cycleTheme;
+  on("#themebtn",cycleTheme);
   {const b=$("#setbtn");if(b)b.onclick=()=>{closeMore();openSheet(settingsSheet())}}
   {const tb=$("#testbtn");if(tb)tb.onclick=()=>{closeMore();openSheet(testSheet())}}
   {const b=$("#fbbtn");if(b)b.onclick=()=>{closeMore();openSheet(feedbackSheet())}}
@@ -1703,7 +1689,7 @@ function updateTop(){if(S&&S.livery){const k=S.livery.tail+S.livery.stripe;if(up
   if(!S||!$("#cs"))return;
   const p=S.last?S.last.rev-S.last.cost:0;
   $("#cd").textContent=(p>=0?"+":"")+money(p,true)+_T("/วัน");$("#cd").className="d num "+(p>=0?"good":"bad");
-  $("#hubl").textContent=_T`${S.bases.length>1?_T`สาขา ${S.bases.length} แห่ง`:_T`ฐาน ${S.hub}`} · ชื่อเสียง ${Math.round(S.rep)} · น้ำมัน ${fuelNow().toFixed(2)}${S.hedge?" 🔒":""}`;
+  {const hl=$("#hubl");if(hl)hl.textContent=_T`${S.bases.length>1?_T`สาขา ${S.bases.length} แห่ง`:_T`ฐาน ${S.hub}`} · ชื่อเสียง ${Math.round(S.rep)} · น้ำมัน ${fuelNow().toFixed(2)}${S.hedge?" 🔒":""}`;}
   $("#pp").textContent=paused?"▶":"❚❚";$("#pp").classList.toggle("on",paused);
   $$("[data-sp]").forEach(b=>b.classList.toggle("on",!paused&&+b.dataset.sp===speed));
   {const c=$("#spdc");if(c){c.textContent=speed+"×";c.classList.toggle("on",!paused)}const tl=$("#themelbl");if(tl){const t=THEMES.find(x=>x[0]===themePref())||THEMES[0];tl.textContent=_T("โหมดแสง: ")+t[2]}}
@@ -4172,7 +4158,7 @@ function settingsSheet(){
     ${row(_T("ความดัง"),"",`<input type="range" id="pvol" min="0" max="1" step=".05" value="${PREF.vol}" style="max-width:180px">`)}
     ${S?tg("hap",S.haptic!==false,_T("สั่นเมื่อซื้อหรือได้รางวัล"),_T("ใช้ได้บนมือถือที่รองรับ")):""}</div>
   <div class="setsec"><div class="eyebrow">💾 ข้อมูลและเวอร์ชัน</div>
-    <div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn sm" id="pset-save">💾 สำรอง / ย้ายเซฟ</button><button class="btn sm" id="pset-ver">ℹ️ v${GAME_VERSION} · มีอะไรใหม่</button><button class="btn sm" id="pset-help">❓ คู่มือระบบ</button><button class="btn sm" id="pset-fb">💬 ส่งความเห็นถึงผู้พัฒนา</button>${S?_T`<button class="btn sm danger" id="pset-reset">เริ่มเกมใหม่</button>`:""}<button class="btn sm" id="pset-def">คืนค่าเริ่มต้นการตั้งค่า</button></div></div>`;
+    <div class="row" style="gap:6px;flex-wrap:wrap">${has("afk")?_T`<button class="btn sm" id="pset-afk">💤 โหมด AFK</button>`:""}${IS_TEST?_T`<button class="btn sm" id="pset-test">🧪 แผงทดสอบ</button>`:""}<button class="btn sm" id="pset-save">💾 สำรอง / ย้ายเซฟ</button><button class="btn sm" id="pset-ver">ℹ️ v${GAME_VERSION} · มีอะไรใหม่</button><button class="btn sm" id="pset-help">❓ คู่มือระบบ</button><button class="btn sm" id="pset-fb">💬 ส่งความเห็นถึงผู้พัฒนา</button>${S?_T`<button class="btn sm danger" id="pset-reset">เริ่มเกมใหม่</button>`:""}<button class="btn sm" id="pset-def">คืนค่าเริ่มต้นการตั้งค่า</button></div></div>`;
   fn.bind=()=>{
     $$("[data-pset]").forEach(b=>b.onclick=()=>{const k=b.dataset.pset,v=b.dataset.v;
       if(k==="lang"){if(v!==LANG){try{localStorage.setItem("airline-lang",v)}catch(e){}if(S)save();location.reload()}return}
@@ -4189,6 +4175,7 @@ function settingsSheet(){
     $$("[data-pnews]").forEach(c=>c.onchange=()=>{PREF.news={...PREF.news,[c.dataset.pnews]:c.checked};savePref();if(S)renderView()});
     {const v=$("#pvol");if(v){v.oninput=()=>{PREF.vol=+v.value;savePref()};v.onchange=()=>sfx("buy")}}
     $("#pset-save").onclick=()=>openSheet(saveSheet());
+    {const b=$("#pset-afk");if(b)b.onclick=()=>{closeSheet();startAfk()}}{const b=$("#pset-test");if(b)b.onclick=()=>openSheet(testSheet())}
     $("#pset-ver").onclick=()=>openSheet(changelogSheet(null));
     $("#pset-help").onclick=()=>openSheet(guideSheet);
     $("#pset-fb").onclick=()=>openSheet(feedbackSheet());

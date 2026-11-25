@@ -3057,5 +3057,6 @@ var EN_DICT={
 "ปุ่ม 💬 ส่งความเห็น และ ⚙️ ตั้งค่า อยู่บนแถบด้านบนแล้ว · โหมด AFK และเต็มจอย้ายไปอยู่ในเมนู ···":"💬 Feedback and ⚙️ Settings buttons are now on the top bar · AFK mode and full screen moved into the ··· menu",
 "25 พ.ย. 2569":"25 Nov 2026",
 "เกมนับจำนวนคนที่เปิดเล่นอยู่แบบไม่ระบุตัวตน (ส่งแค่รหัสสุ่มของเครื่อง เวอร์ชัน ภาษา และชนิดอุปกรณ์ ไม่ส่งชื่อหรือเซฟ) เพื่อให้ผู้พัฒนารู้ว่ามีคนเล่นกี่คน":"The game counts how many people are playing, anonymously (only a random device code, version, language and device type are sent, never your name or save), so the developer knows how many people play",
-"ปรับปรุงเบื้องหลังเล็กน้อย":"Small behind-the-scenes improvements"
+"ปรับปรุงเบื้องหลังเล็กน้อย":"Small behind-the-scenes improvements",
+"ปุ่ม 💬 ส่งความเห็น ⚙️ ตั้งค่า และเต็มจอ อยู่บนแถบด้านบน · ไม่มีเมนู ··· แล้ว ของที่เคยอยู่ในเมนู (โหมดแสง เวอร์ชัน คู่มือ สำรองเซฟ โหมด AFK เริ่มเกมใหม่) ย้ายไปอยู่ใน ⚙️ ตั้งค่า":"💬 Feedback, ⚙️ Settings and full screen are now on the top bar · the ··· menu is gone; what was in it (light mode, version, guide, save backup, AFK mode, new game) moved into ⚙️ Settings"
 };
