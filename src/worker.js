@@ -1,7 +1,7 @@
 // Sky & Sea Tycoon: static game files + a small feedback API.
 //   POST /api/feedback   player sends a message (checked, filtered, rate limited, stored in D1)
 //   POST /api/ping       "I'm playing" every 90 s from an open game: a random device id only (no name, no save)
-//   GET  /admin          developer page: players online + messages (needs ADMIN_KEY, set as a secret in Cloudflare)
+//   GET  /admin          developer page: document links, players online, messages (needs ADMIN_KEY, set as a secret in Cloudflare)
 // Everything else is served from the static assets (the game).
 const CATS = ["bug", "idea", "balance", "other"];
 const MAX_LEN = 1000, PER_HOUR = 5;
@@ -17,7 +17,13 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "
 async function ensure(db) {
   await db.exec("CREATE TABLE IF NOT EXISTS feedback (id INTEGER PRIMARY KEY AUTOINCREMENT, t INTEGER NOT NULL, cat TEXT, msg TEXT NOT NULL, ver TEXT, day INTEGER, dev TEXT, iph TEXT, done INTEGER DEFAULT 0)");
   await db.exec("CREATE TABLE IF NOT EXISTS presence (id TEXT NOT NULL, stage TEXT NOT NULL, t INTEGER NOT NULL, first INTEGER NOT NULL, ver TEXT, lang TEXT, dev TEXT, PRIMARY KEY (id, stage))");
+  // document links on the admin page; kept in the database (not in this public code), added and edited on the page
+  await db.exec("CREATE TABLE IF NOT EXISTS doclinks (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, note TEXT, url TEXT, pos INTEGER DEFAULT 0)");
+  if (!(await db.prepare("SELECT COUNT(*) AS n FROM doclinks").first()).n)
+    await db.batch(DOC_SLOTS.map(([t, n], i) => db.prepare("INSERT INTO doclinks (title,note,url,pos) VALUES (?,?,'',?)").bind(t, n, i)));
 }
+const DOC_SLOTS = [["📘 เอกสารระบบผู้เล่น", "ระบบในเกมที่ผู้เล่นเห็น"], ["🛠️ เอกสารระบบแอดมิน", "หน้าแอดมิน เซิร์ฟเวอร์ การอัปเดต"], ["🏷️ เอกสารเวอร์ชัน", "ระบบทดสอบ · ระบบจริง"]];
+const okUrl = u => /^https:\/\/[^\s<>"']{4,500}$/.test(u);
 // players online: one row per device (random id made by the game), updated every 90 s while the game is open and visible
 const ONLINE_MS = 3 * 60e3;
 async function postPing(req, env) {
@@ -79,6 +85,10 @@ async function admin(req, env, url) {
     const f = await req.formData(), id = +f.get("id"), act = f.get("act");
     if (act === "done") await env.DB.prepare("UPDATE feedback SET done=1-done WHERE id=?").bind(id).run();
     if (act === "del") await env.DB.prepare("DELETE FROM feedback WHERE id=?").bind(id).run();
+    const lu = String(f.get("url") || "").trim(), lt = String(f.get("title") || "").trim().slice(0, 60), ln = String(f.get("note") || "").trim().slice(0, 80);
+    if (act === "linkset" && (lu === "" || okUrl(lu))) await env.DB.prepare("UPDATE doclinks SET url=? WHERE id=?").bind(lu, id).run();
+    if (act === "linkadd" && lt && (lu === "" || okUrl(lu))) await env.DB.prepare("INSERT INTO doclinks (title,note,url,pos) VALUES (?,?,?,(SELECT COALESCE(MAX(pos),0)+1 FROM doclinks))").bind(lt, ln, lu).run();
+    if (act === "linkdel") await env.DB.prepare("DELETE FROM doclinks WHERE id=?").bind(id).run();
     return Response.redirect(url.origin + "/admin?key=" + encodeURIComponent(key) + (url.searchParams.get("cat") ? "&cat=" + url.searchParams.get("cat") : ""), 303);
   }
   const cat = url.searchParams.get("cat");
@@ -86,17 +96,33 @@ async function admin(req, env, url) {
   const cnt = (await env.DB.prepare("SELECT cat, COUNT(*) AS n, SUM(done) AS d FROM feedback GROUP BY cat").all()).results || [];
   const N = {bug: "🐞 บัค", idea: "💡 ไอเดีย", balance: "⚖️ ความสมดุล", other: "💬 อื่น ๆ"}, k = encodeURIComponent(key);
   const P = await presenceStats(env.DB);
-  const html = `<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>ความเห็นผู้เล่น · Sky &amp; Sea Tycoon</title>
-<style>body{font-family:system-ui,sans-serif;margin:0;background:#0f1825;color:#e5ecf5}main{max-width:820px;margin:auto;padding:16px}a{color:#ee9b45}.f{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.f a{padding:6px 10px;border:1px solid #28394f;border-radius:8px;text-decoration:none}.c{background:#16233a;border:1px solid #28394f;border-radius:12px;padding:12px;margin:8px 0}.c.d{opacity:.5}.m{white-space:pre-wrap;margin:6px 0 8px;line-height:1.5}.s{font-size:12px;color:#8d9cb1}button{background:#28394f;color:#e5ecf5;border:0;border-radius:8px;padding:6px 10px;margin-right:6px}</style></head>
-<body><main><h1>👥 ผู้เล่น</h1>
-<div class="c"><div style="font-size:28px;font-weight:700">🟢 ออนไลน์ตอนนี้ ${P.live.online} คน</div>
-<div class="s">ภาษาอังกฤษ ${P.live.en} คน · นับคนที่เปิดเกมอยู่ในช่วง 3 นาทีล่าสุด (กดรีเฟรชหน้านี้เพื่ออัปเดต)</div>
-<div style="margin-top:8px">วันนี้ ${P.live.today} คน (คนใหม่ ${P.live.newToday}) · 7 วันล่าสุด ${P.live.week} คน · ทั้งหมด ${P.live.all} เครื่อง</div>
-<div class="s" style="margin-top:6px">🧪 เว็บทดสอบ: ออนไลน์ ${P.test.online} · วันนี้ ${P.test.today} · ทั้งหมด ${P.test.all} · นับเป็นเครื่อง (คนเดียวเล่นสองเครื่องนับ 2)</div></div>
-<h1>💬 ความเห็นผู้เล่น</h1><div class="s">${cnt.map(c => `${N[c.cat] || c.cat}: ${c.n} (อ่านแล้ว ${c.d || 0})`).join(" · ") || "ยังไม่มีความเห็น"}</div>
+  const L = (await env.DB.prepare("SELECT * FROM doclinks ORDER BY pos, id").all()).results || [];
+  const back = `/admin?key=${k}${cat ? "&cat=" + cat : ""}`;
+  const doc = d => `<div class="dc">${d.url ? `<a class="go" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer"><b>${esc(d.title)}</b><span class="s">${esc(d.note)}</span><span class="op">เปิด ›</span></a>` : `<b>${esc(d.title)}</b><span class="s">${esc(d.note)}</span>`}
+<details${d.url ? "" : " open"}><summary class="s">${d.url ? "แก้ลิงก์" : "ยังไม่ได้ใส่ลิงก์"}</summary><form method="post" action="${back}"><input type="hidden" name="id" value="${d.id}"><input name="url" type="url" placeholder="https://…" value="${esc(d.url)}"><button name="act" value="linkset">บันทึก</button><button name="act" value="linkdel" onclick="return confirm('ลบช่องเอกสารนี้?')">🗑️</button></form></details></div>`;
+  const stat = (e, l, v, sub) => `<div class="st"><span>${e} ${l}</span><b>${v}</b><span class="s">${sub}</span></div>`;
+  const html = `<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>ระบบแอดมิน · Sky &amp; Sea Tycoon</title>
+<style>body{font-family:system-ui,sans-serif;margin:0;background:#0f1825;color:#e5ecf5}main{max-width:900px;margin:auto;padding:16px}a{color:#ee9b45}h1{margin:6px 0 14px;text-align:center}h2{margin:22px 0 8px;font-size:19px}
+.f{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.f a{padding:6px 10px;border:1px solid #28394f;border-radius:8px;text-decoration:none}
+.c,.dc,.st{background:#16233a;border:1px solid #28394f;border-radius:14px;padding:12px;margin:8px 0}.c.d{opacity:.5}.m{white-space:pre-wrap;margin:6px 0 8px;line-height:1.5}.s{font-size:12px;color:#8d9cb1}
+button{background:#28394f;color:#e5ecf5;border:0;border-radius:8px;padding:6px 10px;margin-right:6px}input{background:#0f1825;color:#e5ecf5;border:1px solid #28394f;border-radius:8px;padding:6px 8px;min-width:0;flex:1}
+.docs{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}.dc{margin:0;display:flex;flex-direction:column;gap:6px;min-height:110px}.dc .go{display:flex;flex-direction:column;gap:4px;text-decoration:none;color:inherit;flex:1}.dc .op{color:#ee9b45;font-weight:700;margin-top:auto}
+.dc form,.add form{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}.dc form input,.add form input{flex:1 1 100%}.dc summary{cursor:pointer}.dc.add{border-style:dashed;min-height:0}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.st{margin:0;display:flex;flex-direction:column;gap:4px}.st b{font-size:30px}
+.fb{background:#121d30;border:1px solid #28394f;border-radius:16px;padding:12px}
+@media (max-width:560px){.stats{grid-template-columns:1fr}}</style></head>
+<body><main><h1>🛠️ ระบบแอดมิน</h1>
+<h2>📄 เอกสาร</h2><div class="docs">${L.map(doc).join("")}
+<details class="dc add"><summary><b>＋ เพิ่มเอกสาร</b></summary><form method="post" action="${back}"><input name="title" placeholder="ชื่อเอกสาร" required maxlength="60"><input name="note" placeholder="คำอธิบายสั้น ๆ" maxlength="80"><input name="url" type="url" placeholder="https://… (ใส่ทีหลังได้)"><button name="act" value="linkadd">เพิ่ม</button></form></details></div>
+<h2>👥 ผู้เล่น (เว็บจริง)</h2><div class="stats">
+${stat("🟢", "กำลังออนไลน์อยู่", P.live.online + " คน", `ภาษาอังกฤษ ${P.live.en} คน · ในช่วง 3 นาทีล่าสุด`)}
+${stat("📅", "ผู้เล่น / วัน", P.live.today + " คน", `วันนี้ · คนใหม่ ${P.live.newToday} คน`)}
+${stat("🗓️", "ผู้เล่น / สัปดาห์", P.live.week + " คน", `7 วันล่าสุด · ทั้งหมด ${P.live.all} เครื่อง`)}</div>
+<div class="s" style="margin-top:6px">🧪 เว็บทดสอบ: ออนไลน์ ${P.test.online} · วันนี้ ${P.test.today} · ทั้งหมด ${P.test.all} · นับเป็นเครื่อง (คนเดียวเล่นสองเครื่องนับ 2) · กดรีเฟรชหน้านี้เพื่ออัปเดต</div>
+<h2>💬 ความคิดเห็น</h2><div class="fb"><div class="s">${cnt.map(c => `${N[c.cat] || c.cat}: ${c.n} (อ่านแล้ว ${c.d || 0})`).join(" · ") || "ยังไม่มีความเห็น"}</div>
 <div class="f"><a href="/admin?key=${k}">ทั้งหมด</a>${CATS.map(c => `<a href="/admin?key=${k}&cat=${c}">${N[c]}</a>`).join("")}</div>
 ${rows.map(r => `<div class="c ${r.done ? "d" : ""}"><div class="s">#${r.id} · ${N[r.cat] || esc(r.cat)} · ${new Date(r.t).toLocaleString("th-TH", {timeZone: "Asia/Bangkok"})} · v${esc(r.ver)} · วันที่ ${esc(r.day)} · ${esc(r.dev)}</div><div class="m">${esc(r.msg)}</div>
-<form method="post" action="/admin?key=${k}${cat ? "&cat=" + cat : ""}"><input type="hidden" name="id" value="${r.id}"><button name="act" value="done">${r.done ? "↩️ ยังไม่อ่าน" : "✅ อ่านแล้ว"}</button><button name="act" value="del" onclick="return confirm('ลบความเห็นนี้?')">🗑️ ลบ</button></form></div>`).join("")}
+<form method="post" action="/admin?key=${k}${cat ? "&cat=" + cat : ""}"><input type="hidden" name="id" value="${r.id}"><button name="act" value="done">${r.done ? "↩️ ยังไม่อ่าน" : "✅ อ่านแล้ว"}</button><button name="act" value="del" onclick="return confirm('ลบความเห็นนี้?')">🗑️ ลบ</button></form></div>`).join("") || `<div class="s" style="padding:10px 0">ยังไม่มีความเห็นในหมวดนี้</div>`}</div>
 </main></body></html>`;
   return new Response(html, {headers: {"content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex"}});
 }
