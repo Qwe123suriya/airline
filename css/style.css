@@ -995,3 +995,51 @@ main .wrap>.row.between>h2{flex:1 1 auto}
 .advcard{display:flex;flex-direction:column;gap:6px;background:var(--sky);border:1px solid var(--line);border-radius:14px;padding:10px 12px;min-width:0}
 .advcard.bad{border-color:color-mix(in srgb,var(--bad,#d64545) 45%,var(--line))}.advcard.lock{opacity:.6}.advcard .btn{align-self:flex-start}
 @media (max-width:620px){.advcards{grid-template-columns:1fr}}
+/* ---- v1.68 "game look": brighter, rounder, more depth (test) ---- */
+:root{--glow:0 1px 0 rgba(255,255,255,.7) inset;--c1:#2F80ED;--c2:#F2994A;--sky2:#DDE9F6}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--glow:0 1px 0 rgba(255,255,255,.05) inset;--c1:#6FA8FF;--c2:#FFB066;--sky2:#13213A}}
+:root[data-theme="dark"]{--glow:0 1px 0 rgba(255,255,255,.05) inset;--c1:#6FA8FF;--c2:#FFB066;--sky2:#13213A}
+main{background:radial-gradient(120% 60% at 0% 0%,color-mix(in srgb,var(--c1) 14%,transparent),transparent 60%),radial-gradient(90% 50% at 100% 0%,color-mix(in srgb,var(--accent) 12%,transparent),transparent 60%),linear-gradient(180deg,var(--sky2),var(--sky) 420px)}
+.panel{border-color:color-mix(in srgb,var(--line) 70%,transparent);box-shadow:var(--glow),var(--shadow)}
+h2{font-weight:700;letter-spacing:-.01em}
+.eyebrow{font-weight:700;color:color-mix(in srgb,var(--accent) 70%,var(--muted))}
+/* top bar: soft glass with a brand glow */
+.top{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 7%,var(--paper)),var(--paper))}
+.top::after{height:3px;bottom:-2px;border-radius:0 3px 3px 0}
+.badge{box-shadow:0 4px 12px -4px var(--accent),0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.clock button,.qbtn{border-radius:11px;background:var(--paper);box-shadow:0 2px 0 color-mix(in srgb,var(--line) 80%,transparent);transition:transform .1s,box-shadow .1s}
+.clock button:active,.qbtn:active{transform:translateY(2px);box-shadow:none}
+.clock button.on{background:linear-gradient(180deg,color-mix(in srgb,var(--route) 85%,#fff),var(--route));border-color:var(--route);color:#fff;box-shadow:0 2px 0 color-mix(in srgb,var(--route) 60%,#000)}
+.bmode{border-radius:14px;padding:4px}
+.bmode button{border-radius:10px!important}
+/* buttons: chunky and tappable */
+.btn{border-radius:12px;box-shadow:0 2px 0 color-mix(in srgb,var(--line) 90%,transparent)}
+.btn:active:not(:disabled){transform:translateY(2px);box-shadow:none}
+.btn.primary{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 80%,#fff),var(--accent) 70%);border-color:color-mix(in srgb,var(--accent) 85%,#000);box-shadow:0 3px 0 color-mix(in srgb,var(--accent) 60%,#000),0 8px 16px -10px var(--accent)}
+.btn.primary:active:not(:disabled){box-shadow:0 1px 0 color-mix(in srgb,var(--accent) 60%,#000)}
+.btn:disabled{box-shadow:none}
+.chip{border-radius:999px}
+/* home stat cards: each with its own colour and icon */
+.hcards{border:0;box-shadow:var(--glow),var(--shadow);gap:10px}
+.hcard{position:relative;overflow:hidden;padding:12px 14px 11px;border-radius:16px;--hc:var(--c1);background:linear-gradient(145deg,color-mix(in srgb,var(--hc) 16%,var(--paper)),color-mix(in srgb,var(--hc) 6%,var(--paper)));border:1px solid color-mix(in srgb,var(--hc) 24%,transparent)}
+.hcard.c2{--hc:var(--c2)}.hcard.good{--hc:var(--good)}.hcard.bad{--hc:var(--bad)}
+.hcard .hci{position:absolute;right:8px;top:6px;font-style:normal;font-size:26px;opacity:.9;filter:drop-shadow(0 2px 3px rgba(0,0,0,.15));pointer-events:none}
+.hcard b{font-size:22px;padding-right:30px}
+.hcard span{font-weight:600}
+.hero{box-shadow:0 14px 30px -14px color-mix(in srgb,var(--route) 70%,#000)}
+.hero .hv{text-shadow:0 2px 12px rgba(0,0,0,.25)}
+/* requests, advice, upgrades: lifted tiles */
+.hreqc,.advcard{background:var(--paper);border-color:color-mix(in srgb,var(--line) 70%,transparent);box-shadow:var(--glow),0 6px 14px -10px rgba(16,32,56,.35);border-radius:16px}
+.hreqc{border-top:3px solid var(--c1)}
+.advcard.ok{border-top:3px solid var(--good)}.advcard.bad{border-top:3px solid var(--bad);background:color-mix(in srgb,var(--bad) 6%,var(--paper))}.advcard.lock{border-top:3px dashed var(--line)}
+.advcard b{font-size:15px}
+.mapbox{border:0;box-shadow:0 0 0 1px color-mix(in srgb,var(--line) 60%,transparent),var(--shadow)}
+.strip,.pcard,.model,.mission{border-radius:16px;box-shadow:var(--glow),var(--shadow)}
+.stats{border-radius:18px}
+.notice{border-left:0;border-top:3px solid var(--accent)}
+/* bottom bar: floating rounded dock */
+nav.tabs{border-top:0;border-radius:22px 22px 0 0;box-shadow:0 -10px 30px -16px rgba(16,32,56,.45)}
+nav.tabs button::before{top:4px;width:52px;height:32px;margin-left:-26px;border-radius:16px;background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 30%,transparent),color-mix(in srgb,var(--accent) 14%,transparent))}
+nav.tabs button.on{font-weight:700}
+nav.tabs button.on svg{transform:translateY(-2px) scale(1.12)}
+nav.tabs button .dot{box-shadow:0 0 0 2px var(--paper)}

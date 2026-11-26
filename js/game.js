@@ -539,9 +539,10 @@ const RIVALS=[_T("นภาคราม แอร์ไลน์"),_T("โกล
 /* 🧪 Test server (test.skyseatycoon.com): new versions go here first. It shows a badge and has an admin panel for
    testing (money, skip days, unlock everything). The live site never shows either. Saves are separate (other domain). */
 const IS_TEST=/^test\./.test(location.hostname)||/airline-test/.test(location.hostname)||(!/^https?:$/.test(location.protocol)||location.hostname==="localhost")&&/[?&]stage=test/.test(location.search);
-const GAME_VERSION="1.67";
+const GAME_VERSION="1.68";
 const CHANGELOG=[
- ["1.67",_T("25 พ.ย. 2569"),[_T("ปรับปรุงเบื้องหลังเล็กน้อย")]],
+ ["1.68",_T("26 พ.ย. 2569"),[_T("หน้าตาเกมสดใสขึ้น: พื้นหลังไล่สี การ์ดมีเงาและมุมโค้ง ปุ่มนูนกดแล้วยุบ แถบเมนูด้านล่างโค้งมน · กล่องตัวเลขวันนี้มีสีและไอคอนแยกกัน")]],
+ ["1.67",_T("25 พ.ย. 2569"),[_T("หน้าหลัก: ตอบคำขอความร่วมมือได้ทันที (ตกลง · ต่อรอง · ปฏิเสธ) · การ์ด 3 ใบบอกว่าคนล้น ตู้สินค้าเรือล้น หรือสินค้าเครื่องบินล้นตรงไหน")]],
  ["1.66",_T("25 พ.ย. 2569"),[_T("หน้าแรกใหม่ (แท็บ “หน้าหลัก”): แผนที่สะอาดขึ้น · กล่องตัวเลขวันนี้ (คนหรือตัน ลำที่บินหรือตู้เรือ รายได้ รายจ่าย) คู่กับกำไรวันนี้ · คำขอความร่วมมือ · อัปเกรดแต่ละด้าน · ภารกิจคู่กับข่าวสาร · ควรปรับอะไรบ้าง · ทุกกล่องมุมโค้งมน"),_T("ปุ่ม 💬 ส่งความเห็น ⚙️ ตั้งค่า และเต็มจอ อยู่บนแถบด้านบน · ไม่มีเมนู ··· แล้ว ของที่เคยอยู่ในเมนู (โหมดแสง เวอร์ชัน คู่มือ สำรองเซฟ โหมด AFK เริ่มเกมใหม่) ย้ายไปอยู่ใน ⚙️ ตั้งค่า")]],
  ["1.65",_T("24 พ.ย. 2569"),[_T("ปรับปรุงเบื้องหลัง: เวอร์ชันใหม่จะผ่านเซิร์ฟเวอร์ทดสอบก่อนขึ้นเว็บจริง เพื่อลดบัคที่ผู้เล่นจะเจอ")]],
  ["1.64",_T("24 พ.ย. 2569"),[_T("🌐 เกมมีภาษาอังกฤษแล้ว: เปิดครั้งแรกจะใช้ภาษาตามที่ตั้งไว้ในเครื่อง เปลี่ยนได้ที่ ⚙️ ตั้งค่า → การแสดงผล → ภาษา · เซฟเดิมเล่นต่อได้ทั้งสองภาษา")]],
@@ -2062,7 +2063,7 @@ function adviceList(){const out=[],ok=[],K=bm(),KC=K==="cargo",R=advRoutes(K),W=
 function advCardsHTML(){
   const pr=advRoutes("pax"),pov=pr.filter(r=>rLoad(r)>=.95),pbk=S.routes.filter(r=>rkind(r)==="pax").reduce((a,r)=>a+bkPax(r),0);
   const card=(e,t,body,ok,btn,act,lock)=>`<div class="advcard ${lock?"lock":ok?"ok":"bad"}"><b>${e} ${t}</b><div class="small ${lock?"muted":ok?"good":""}">${body}</div>${!lock&&!ok?`<button class="btn sm primary" data-adv="${act}">${btn}</button>`:""}</div>`;
-  const c1=card("👥",_T("คนล้น"),pr.length?(pov.length?_T`ล้น ${pov.length} เส้น · คนรอบิน ~${pbk.toLocaleString()} คน`:_T("✅ ที่นั่งพอทุกเส้น")):_T("ยังไม่มีเส้นทางผู้โดยสาร"),!pov.length,_T("ดูเส้นทาง"),"gom:pax");
+  const c1=card("👥",_T("คนล้น"),pr.length?(pov.length?(pbk>0?_T`ล้น ${pov.length} เส้น · คนรอบิน ~${pbk.toLocaleString()} คน`:_T`ล้น ${pov.length} เส้น`):_T("✅ ที่นั่งพอทุกเส้น")):_T("ยังไม่มีเส้นทางผู้โดยสาร"),!pov.length,_T("ดูเส้นทาง"),"gom:pax");
   let c2,c3;
   if(has("sea")){const so=seaOverAll(),t=Math.round(so.reduce((a,x)=>a+x.t,0));c2=card("🚢",_T("ตู้สินค้าเรือ"),so.length?_T`ล้น ${so.length} ท่า · ค้าง ~${t.toLocaleString()} TEU`:S.lanes.length?_T("✅ ตู้ขนได้ครบ"):_T("ยังไม่มีเส้นทางเรือ"),!so.length,_T("ดูท่าเรือ"),"gom:sea")}
   else c2=card("🚢",_T("ตู้สินค้าเรือ"),_T("🔒 ยังไม่ปลดล็อก"),true,"","",true);
@@ -2079,9 +2080,9 @@ function adviceHTML(){const K=bm(),KC=K==="cargo";if(!S.routes.some(r=>r.planes.
     ${out.filter(x=>!x.tag).length?out.filter(x=>!x.tag).slice(0,6).map(x=>`<div class="advrow"><span class="adve">${x.e}</span><div style="min-width:0"><b class="small">${x.t}</b><div class="small muted">${x.d}</div></div><button class="btn sm primary" data-adv="${x.a}">${x.btn}</button></div>`).join(""):_T`<div class="small good">ทุกอย่างเรียบร้อยดี ยังไม่มีอะไรต้องปรับ</div>`}
     ${ok.length?_T`<div class="small advok">✅ <b>ไม่ต้องปรับ:</b> ${ok.join(" · ")}</div>`:""}</div>`}
 function heroHTML(F){const T=S.today||blankT(),net=todayNet(T),K=bm()==="cargo",rev=T.tix+T.crev+(T.srev||0),cost=rev-net;
-  const card=(id,v,l,cls)=>`<div class="hcard"><b class="num ${cls||""}" id="${id}">${v}</b><span>${l}</span></div>`;
-  return `<div class="homestats"><div class="hcards">${card("heroPax",K?Math.round(T.cargo).toLocaleString():T.pax.toLocaleString(),K?_T("ตันวันนี้"):_T("คนวันนี้"))}${card("heroLegs",K?Math.round(T.teu||0).toLocaleString():String(movingNow(F)),K?_T("ตู้เรือวันนี้"):_T("ลำกำลังบิน"))}
-   ${card("heroRev",money(rev,true),_T("รายได้วันนี้"),"good")}${card("heroCost",money(cost,true),_T("รายจ่ายวันนี้"),"bad")}</div>
+  const card=(id,v,l,cls,ic)=>`<div class="hcard ${cls||""}"><i class="hci" aria-hidden="true">${ic}</i><b class="num ${cls||""}" id="${id}">${v}</b><span>${l}</span></div>`;
+  return `<div class="homestats"><div class="hcards">${card("heroPax",K?Math.round(T.cargo).toLocaleString():T.pax.toLocaleString(),K?_T("ตันวันนี้"):_T("คนวันนี้"),"c1",K?"📦":"👥")}${card("heroLegs",K?Math.round(T.teu||0).toLocaleString():String(movingNow(F)),K?_T("ตู้เรือวันนี้"):_T("ลำกำลังบิน"),"c2",K?"🚢":"✈️")}
+   ${card("heroRev",money(rev,true),_T("รายได้วันนี้"),"good","💰")}${card("heroCost",money(cost,true),_T("รายจ่ายวันนี้"),"bad","💸")}</div>
    <div class="hero hnet ${K?"cg":""}"><div class="hk"><span>${_T("กำไรวันนี้")}</span><span class="live"><i></i>${_T("สด")}</span></div>
    <div class="hv num" id="heroNet">${net>=0?"+":""}${money(net,true)}</div><div class="hnote">${_T("บาท · ก่อนหักค่าคงที่ตอนเที่ยงคืน")}${S.last&&S.day>0?_T`<br>เมื่อวานสุทธิ <b class="num">${S.last.rev-S.last.cost>=0?"+":""}${money(S.last.rev-S.last.cost,true)}</b>`:""}</div></div></div>
    <div class="hms" id="heroMs">${msLineHTML()}</div>`}

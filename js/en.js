@@ -3076,5 +3076,9 @@ var EN_DICT={
 "เขาจ่ายให้เรา {0}":"They pay us {0}",
 "{0} · {1} วัน":"{0} · {1} days",
 "และอีก {0} คำขอ ในแท็บบริษัท":"and {0} more requests in the company tab",
-"↩ ต่อรอง = ขอถูกลง 20% และนานขึ้น 50% (ตัวเลขคือโอกาสที่เขายอม) ถ้าไม่ยอม คำขอจะหาย · ✕ ปฏิเสธ = ความสัมพันธ์ลดเล็กน้อย":"↩ Negotiate = ask for 20% cheaper and 50% longer (the number is the chance they agree); if they refuse, the request is gone · ✕ Decline = relations drop slightly"
+"↩ ต่อรอง = ขอถูกลง 20% และนานขึ้น 50% (ตัวเลขคือโอกาสที่เขายอม) ถ้าไม่ยอม คำขอจะหาย · ✕ ปฏิเสธ = ความสัมพันธ์ลดเล็กน้อย":"↩ Negotiate = ask for 20% cheaper and 50% longer (the number is the chance they agree); if they refuse, the request is gone · ✕ Decline = relations drop slightly",
+"26 พ.ย. 2569":"26 Nov 2026",
+"หน้าตาเกมสดใสขึ้น: พื้นหลังไล่สี การ์ดมีเงาและมุมโค้ง ปุ่มนูนกดแล้วยุบ แถบเมนูด้านล่างโค้งมน · กล่องตัวเลขวันนี้มีสีและไอคอนแยกกัน":"A brighter look: gradient background, rounded cards with depth, chunky buttons that press in, a rounded bottom menu · today's number boxes each have their own colour and icon",
+"หน้าหลัก: ตอบคำขอความร่วมมือได้ทันที (ตกลง · ต่อรอง · ปฏิเสธ) · การ์ด 3 ใบบอกว่าคนล้น ตู้สินค้าเรือล้น หรือสินค้าเครื่องบินล้นตรงไหน":"Home: answer partner requests right away (accept · negotiate · decline) · 3 cards show where passengers, ship containers or air cargo are overflowing",
+"ล้น {0} เส้น":"{0} routes overflowing"
 };
