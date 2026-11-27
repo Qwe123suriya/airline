@@ -3083,5 +3083,6 @@ var EN_DICT={
 "ล้น {0} เส้น":"{0} routes overflowing",
 "27 พ.ย. 2569":"27 Nov 2026",
 "แท็บบริษัท: กล่องเรตติ้งใหม่ (ภาพรวมทางซ้าย ดาวแต่ละด้านทางขวา) · ความคิดเห็นเป็นการ์ดเรียงเป็นตาราง แต่ละใบมีดาวของตัวเอง":"Company tab: new rating box (overall on the left, stars for each part on the right) · reviews are cards in a grid, each with its own stars",
-"ปรับความยากของคู่แข่งย้ายไปอยู่ที่ ⚙️ ตั้งค่า → การเล่น อย่างเดียว":"Rival difficulty is now only in ⚙️ Settings → Gameplay"
+"ปรับความยากของคู่แข่งย้ายไปอยู่ที่ ⚙️ ตั้งค่า → การเล่น อย่างเดียว":"Rival difficulty is now only in ⚙️ Settings → Gameplay",
+"เกมช่วงท้ายเร็วขึ้น: คำนวณแต่ละวันเร็วขึ้นราว 40–55% (200 เส้นทางเร็วขึ้นกว่าเท่าตัว) ผลการเล่นเหมือนเดิมทุกตัวเลข · หน้าหลักอัปเดตตัวเลขเร็วขึ้นมากเมื่อมีเครื่องบินเยอะ ลดอาการกระตุกตอนเร่งเวลา":"Faster late game: each day is computed about 40–55% faster (over twice as fast at 200 routes) with exactly the same results · the home screen updates much faster with a big fleet, less stutter at high speed"
 };

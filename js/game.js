@@ -264,7 +264,7 @@ const REGIONS=[
  {id:"sam",n:_T("อเมริกาใต้"),c:["GRU","GIG","EZE","SCL","LIM","BOG","PTY","UIO","BSB","MDE","CTG","GYE","CCS","MVD","ASU","VVI","SSA","REC","POA","CUZ","MAO","BEL","FOR","CWB","CNF","COR","MDZ","LPB","AQP"],lab:[-60,-16],r:2000},
  {id:"af",n:_T("แอฟริกา"),c:["CAI","JNB","CPT","NBO","ADD","LOS","CMN","MRU","DAR","ACC","SEZ","ALG","TUN","RAK","DSS","ABJ","ABV","EBB","KGL","LUN","HRE","DUR","TNR","ZNZ","HRG","LAD","MPM","WDH","MBA","SSH"],lab:[20,4],r:2200},
 ];
-const regionOf=c=>REGIONS.find(R=>R.c.includes(c));
+const _regOf=new Map(),regionOf=c=>{let R=_regOf.get(c);if(R===undefined){R=REGIONS.find(R=>R.c.includes(c))||null;_regOf.set(c,R)}return R||undefined};
 // Airport types: most take passengers and cargo; freight hubs take cargo only; small resort fields take passengers only
 const CARGO_ONLY=new Set(["EHU","DWC","LGG","LEJ","MEM","SDF","CVG","ONT"]);
 const PAX_ONLY=new Set(["USM","PQC","REP","LPQ","ZQN","OGG","CUZ","ZNZ","NAN","PPT","KEF","HRG"]);
@@ -539,8 +539,9 @@ const RIVALS=[_T("นภาคราม แอร์ไลน์"),_T("โกล
 /* 🧪 Test server (test.skyseatycoon.com): new versions go here first. It shows a badge and has an admin panel for
    testing (money, skip days, unlock everything). The live site never shows either. Saves are separate (other domain). */
 const IS_TEST=/^test\./.test(location.hostname)||/airline-test/.test(location.hostname)||(!/^https?:$/.test(location.protocol)||location.hostname==="localhost")&&/[?&]stage=test/.test(location.search);
-const GAME_VERSION="1.69";
+const GAME_VERSION="1.70";
 const CHANGELOG=[
+ ["1.70",_T("27 พ.ย. 2569"),[_T("เกมช่วงท้ายเร็วขึ้น: คำนวณแต่ละวันเร็วขึ้นราว 40–55% (200 เส้นทางเร็วขึ้นกว่าเท่าตัว) ผลการเล่นเหมือนเดิมทุกตัวเลข · หน้าหลักอัปเดตตัวเลขเร็วขึ้นมากเมื่อมีเครื่องบินเยอะ ลดอาการกระตุกตอนเร่งเวลา")]],
  ["1.69",_T("27 พ.ย. 2569"),[_T("แท็บบริษัท: กล่องเรตติ้งใหม่ (ภาพรวมทางซ้าย ดาวแต่ละด้านทางขวา) · ความคิดเห็นเป็นการ์ดเรียงเป็นตาราง แต่ละใบมีดาวของตัวเอง"),_T("ปรับความยากของคู่แข่งย้ายไปอยู่ที่ ⚙️ ตั้งค่า → การเล่น อย่างเดียว")]],
  ["1.68",_T("26 พ.ย. 2569"),[_T("หน้าตาเกมสดใสขึ้น: พื้นหลังไล่สี การ์ดมีเงาและมุมโค้ง ปุ่มนูนกดแล้วยุบ แถบเมนูด้านล่างโค้งมน · กล่องตัวเลขวันนี้มีสีและไอคอนแยกกัน")]],
  ["1.67",_T("25 พ.ย. 2569"),[_T("หน้าหลัก: ตอบคำขอความร่วมมือได้ทันที (ตกลง · ต่อรอง · ปฏิเสธ) · การ์ด 3 ใบบอกว่าคนล้น ตู้สินค้าเรือล้น หรือสินค้าเครื่องบินล้นตรงไหน")]],
@@ -635,8 +636,11 @@ function sfx(k){if(!PREF.sound||!(PREF.vol>0))return;try{AC=AC||new (window.Audi
   const N={tap:[[660,.05]],note:[[880,.07],[1320,.1]],buy:[[523,.06],[784,.06],[1047,.12]],win:[[523,.09],[659,.09],[784,.09],[1047,.25]],cash:[[1568,.05],[2093,.09]],bad:[[247,.14],[196,.22]]}[k]||[[660,.05]];
   let t=AC.currentTime+.01;for(const [f,d] of N){const o=AC.createOscillator(),g=AC.createGain();o.type="triangle";o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.16*PREF.vol,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d+.03);t+=d*.8}}catch(e){}}
 let lastInput=0;addEventListener("pointerdown",()=>{lastInput=performance.now()},true);addEventListener("keydown",()=>{lastInput=performance.now()},true);
-function dist(a,b){const R=6371,r=Math.PI/180,dl=(b.lat-a.lat)*r,dn=(b.lon-a.lon)*r;
-  const h=Math.sin(dl/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dn/2)**2;return Math.round(2*R*Math.asin(Math.sqrt(h)))}
+const _distM=new WeakMap();
+function dist(a,b){let m=_distM.get(a);if(m){const v=m.get(b);if(v!==undefined&&a.lat===m.la&&a.lon===m.lo)return v}
+  const R=6371,r=Math.PI/180,dl=(b.lat-a.lat)*r,dn=(b.lon-a.lon)*r;
+  const h=Math.sin(dl/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dn/2)**2,v=Math.round(2*R*Math.asin(Math.sqrt(h)));
+  if(!m||m.la!==a.lat||m.lo!==a.lon){m=new Map();m.la=a.lat;m.lo=a.lon;_distM.set(a,m)}if(m.size<4000&&b.lat!=null)m.set(b,v);return v}
 const rd=r=>dist(city(r.from),city(r.dest));
 /* economy dial: scales every ticket fare and freight rate (tuned so a good route pays back its aircraft in about a year) */
 let FARE_X=.8;   // freight rate CARGO_RATE (8.0) is scaled by the same 0.8
@@ -921,9 +925,12 @@ const dealPw=k=>{const d=dealsOn().filter(x=>x.k===k);return d.length?Math.max(.
 const dealPax=r=>(dealOn("codeshare")?1+.08*dealPw("codeshare"):1)*(dealsOn().some(d=>d.k==="tourism"&&(d.p==="tour:"+r.dest||d.p==="tour:"+r.from))?1+.35*dealPw("tourism"):1);
 const dealCargo=()=>dealOn("freight")?1+.25*dealPw("freight"):1;
 const CN_HUBS=["PEK","PVG","CAN","SZX","CTU","KMG","XMN","HKG","MFM"];
-function gameDate(){const x=new Date(START);x.setDate(x.getDate()+S.day);return x}
+let _gdK=null,_gdV=null;
+function gameDate(){if(_gdK!==S.day){const x=new Date(START);x.setDate(x.getDate()+S.day);_gdK=S.day;_gdV=x}return new Date(_gdV)}
 // Cargo seasons from the game calendar
-function cargoSeasons(code){const d=gameDate(),mo=d.getMonth(),dd=d.getDate(),out=[];
+let _csD=null;const _csM=new Map();
+function cargoSeasons(code){if(_csD!==S.day){_csD=S.day;_csM.clear()}const hit=_csM.get(code);if(hit)return hit.slice();const out=_cargoSeasons(code);_csM.set(code,out);return out.slice()}
+function _cargoSeasons(code){const d=gameDate(),mo=d.getMonth(),dd=d.getDate(),out=[];
   if(regionOf(code).id==="th"&&mo>=4&&mo<=6)out.push([_T("ฤดูผลไม้ไทย"),1.35]);
   if(CN_HUBS.includes(code)&&mo===10&&dd>=5&&dd<=15)out.push([_T("ช้อปปิ้ง 11.11"),1.8]);
   if(mo===11&&dd<=20)out.push([_T("ส่งของขวัญปลายปี"),1.25]);
@@ -1049,10 +1056,11 @@ function compShare(r,price,svc){if(!r.cmp||rkind(r)==="cargo")return 1;
 const AUTO_SMART=.6;
 function autoPrice(r,quick){const key=(quick?"q":"")+S.day+":"+r.planes.join(".")+":"+svcOf(r)+":"+(r.cmp?r.cmp.fare.toFixed(2):"-")+":"+S.rep.toFixed(0);
   if(r._apk===key)return r._apv;const p0=fillPrice(r);if(!r.planes.length){r._apk=key;r._apv=p0;return p0}
-  const base=baseFare(dist(city(r.from),city(r.dest)));let best=p0,bp=calc(r,p0).profit;
-  if(quick){let bi=-1;for(let i=0;i<=8;i++){const pr=Math.round(base*(.7+1.3*i/8)/10)*10,pf=calc(r,pr).profit;if(pf>bp){bp=pf;best=pr;bi=i}}
-    if(bi>=0)for(const j of [-.5,.5]){const pr=Math.round(base*(.7+1.3*(bi+j)/8)/10)*10,pf=calc(r,pr).profit;if(pf>bp){bp=pf;best=pr}}}
-  else for(let i=0;i<=24;i++){const pr=Math.round(base*(.7+1.3*i/24)/10)*10,pf=calc(r,pr).profit;if(pf>bp){bp=pf;best=pr}}
+  const base=baseFare(dist(city(r.from),city(r.dest))),cr=crateOf(r);xferNet();xfHold++;let best=p0,bp;
+  try{bp=calc(r,p0,cr).profit;
+  if(quick){let bi=-1;for(let i=0;i<=8;i++){const pr=Math.round(base*(.7+1.3*i/8)/10)*10,pf=calc(r,pr,cr).profit;if(pf>bp){bp=pf;best=pr;bi=i}}
+    if(bi>=0)for(const j of [-.5,.5]){const pr=Math.round(base*(.7+1.3*(bi+j)/8)/10)*10,pf=calc(r,pr,cr).profit;if(pf>bp){bp=pf;best=pr}}}
+  else for(let i=0;i<=24;i++){const pr=Math.round(base*(.7+1.3*i/24)/10)*10,pf=calc(r,pr,cr).profit;if(pf>bp){bp=pf;best=pr}}}finally{xfHold--}
   const v=Math.round((p0+AUTO_SMART*(best-p0))/10)*10;r._apk=key;r._apv=v;return v}
 function fillPrice(r){const a=city(r.from),b=city(r.dest),d=dist(a,b),base=baseFare(d);
   const D0=(60*Math.sqrt(a.w*b.w)*distF(d)*evMult(r.dest)*evMult(r.from)*brBoost(r.from)*brBoost(r.dest)*compShare(r,r.price||base)+xferOf(r).pax)*(.6+S.rep/125)*SERVICE[svcOf(r)].f*mktMult()*starMult()*pk("pax")*dealPax(r);
@@ -1075,11 +1083,12 @@ const superCount=()=>S.fleet.filter(p=>model(p.m).super).length+S.ships.filter(s
 const armsK=()=>1+Math.min(SUPER_ARMS_MAX,SUPER_ARMS*superCount());
 const raiderK=r=>r.planes.some(id=>{const p=plane(id);return p&&p.down<=S.day&&model(p.m).super&&model(p.m).seats})?SUPER_SHARE:1;
 const AIR_MAX_P=Math.max(...MODELS.filter(m=>m.seats&&!m.future&&!m.super).map(m=>m.range)),AIR_MAX_C=Math.max(...MODELS.filter(m=>!m.seats&&!m.future&&!m.super).map(m=>m.range));
-let xfCache={k:null};
+let xfCache={k:null},xfHold=0;   // xfHold>0: inside one fare search, the network cannot change
 const XF0={pax:0,cargo:0};
-function xferNet(){const now=performance.now();if(xfCache.k&&xfCache.n===S.routes.length&&xfCache.d===S.day&&now-xfCache.t<40)return xfCache;   // checking the signature is itself O(routes): skip it inside one burst of calls
-  let sig=S.day*1e6+S.bases.length*7919+S.routes.length;for(const r of S.routes)sig+=r.id*31+(r.planes.length?1:0)*(r.kind==="cargo"?7:3);
-  const key=sig+":"+S.bases.join();if(xfCache.k===key){xfCache.t=now;return xfCache}
+function xferNet(){if(xfHold&&xfCache.k)return xfCache;const now=performance.now();if(xfCache.k&&xfCache.n===S.routes.length&&xfCache.d===S.day&&now-xfCache.t<40)return xfCache;   // checking the signature is itself O(routes): skip it inside one burst of calls
+  // the network only changes with routes, branches and branch levels (not with the day), so it is rebuilt only then
+  let sig=S.bases.length*7919+S.routes.length;for(const r of S.routes)sig+=r.id*31+(r.planes.length?1:0)*(r.kind==="cargo"?7:3);
+  const key=sig+":"+S.bases.join()+":"+S.bases.map(blv).join();if(xfCache.k===key){xfCache.t=now;return xfCache}
   const out={k:key,leg:new Map(),its:[]};
   for(const kind of ["pax","cargo"]){
     const adj=new Map(),add=(x,y,r)=>{if(!adj.has(x))adj.set(x,new Map());adj.get(x).set(y,r)};
@@ -1612,7 +1621,9 @@ function randomEvent(){
 /* ---------- effects ---------- */
 const buzz=ms=>{sfx(Array.isArray(ms)?"win":"buy");try{if(S&&S.haptic!==false&&navigator.vibrate)navigator.vibrate(ms)}catch(e){}};
 function toast(t){const mine=performance.now()-lastInput<2500;   // a reply to what the player just did, or news the game announces by itself
-  if(PREF.toast==="off"||(PREF.toast==="mine"&&!mine))return;if(!mine)sfx("note");const el=$("#toast");el.hidden=true;void el.offsetWidth;el.textContent=t;el.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>el.hidden=true,3200)}
+  if(PREF.toast==="off"||(PREF.toast==="mine"&&!mine))return;if(!mine)sfx("note");const el=$("#toast");el.hidden=true;
+  // show it again two frames later so the pop-in animation restarts without forcing a layout of the whole page
+  cancelAnimationFrame(toast.f);toast.f=requestAnimationFrame(()=>toast.f=requestAnimationFrame(()=>{el.textContent=t;el.hidden=false}));clearTimeout(toast.h);toast.h=setTimeout(()=>el.hidden=true,3200)}
 function floatCash(n){const host=$(".cash");if(!host||reduce||!PREF.floats)return;const now=performance.now();if(now-lastFloat<500)return;lastFloat=now;
   const f=document.createElement("span");f.className="float "+(n>=0?"good":"bad");f.textContent=(n>=0?"+":"")+money(n,true);host.appendChild(f);setTimeout(()=>f.remove(),1150)}
 const cel=[];
@@ -1912,12 +1923,12 @@ function msCheck(){S.ms=S.ms||{};for(const k in MS){const M=MS[k],v=M.v();if(S.m
     celebrate(`!🎉 ${M.c} ${m.toLocaleString()}`,_T`โบนัสฉลอง ${money(rw,true)}`);addNews(_T`🎉 ${S.name} ต้อนรับ${M.c} ${m.toLocaleString()} · โบนัสฉลอง ${money(rw)}`)}}}
 const todayNet=T=>T.tix+T.crev+(T.srev||0)-T.fuelC-T.feeC-T.svc-(T.sfuel||0)-(T.sport||0);
 /* Every aircraft of the current mode with its next event (landing or departure), soonest first */
-function liveFlights(){const T=S.day+acc/DAY_MS,out=[];
-  for(const r of visRoutes()){if(!r.planes.length)continue;const a=city(r.from),b=city(r.dest),d=dist(a,b),c=calc(r),gr=grounded(r.from)||grounded(r.dest);
-    r.planes.forEach((id,i)=>{const p=plane(id);if(!p)return;const m=model(p.m),L=c.plan.get(p.id)||legsFor(m,d),fly=flyFrac(m,d,L),x=legPhase(p,L,fly,T),k=Math.floor(x),f=x-k;
-      const shop=p.down>S.day,air=!shop&&!gr&&f<fly,nk=air?k:k+1,to=nk%2===1?a:b,from=nk%2===1?b:a;
-      out.push({no:fno(r)+(r.planes.length>1?String.fromCharCode(65+i%26):""),from:from.c,to:to.c,ton:to.n,air,shop,gr,pr:air?f/fly:0,eta:(air?fly-f:1-f)/L*1440,rid:r.id})})}
-  return out.sort((p,q)=>((p.shop||p.gr)-(q.shop||q.gr))||(p.eta-q.eta))}
+/* planes in the air right now (the home screen shows the count; the flight board that listed them is gone).
+   Same hourly route figures as the map (calcH), so the count matches the planes drawn. */
+function liveFlights(){const T=S.day+acc/DAY_MS;let n=0;
+  for(const r of visRoutes()){if(!r.planes.length||grounded(r.from)||grounded(r.dest))continue;const d=dist(city(r.from),city(r.dest)),c=calcH(r);
+    for(const id of r.planes){const p=plane(id);if(!p||p.down>S.day)continue;const m=model(p.m),L=c.plan.get(p.id)||legsFor(m,d),fly=flyFrac(m,d,L),x=legPhase(p,L,fly,T);if(x-Math.floor(x)<fly)n++}}
+  return n}
 let BRD=[];
 const PLSVG='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12c0 .8-2 1.5-4 1.5h-4L9 21H7l2.5-7.5H5L3.5 15.5H2L3 12 2 8.5h1.5L5 10.5h4.5L7 3h2l5 7.5h4c2 0 4 .7 4 1.5z"/></svg>';
 const SHSVG='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 14h20l-2.5 5h-15zM6 13V9h9v4zM16 13V6h3v7z"/></svg>';
@@ -1944,7 +1955,7 @@ function boardMoney(){const put=(e,t,cn)=>{if(e.textContent!==t)e.textContent=t;
   $$("#fboard [data-fm]").forEach(e=>{const r=S.routes.find(x=>x.id===+e.dataset.fm);if(!r)return;const gr=grounded(r.from)||grounded(r.dest),v=r.today?todayNet(r.today):0;put(e,gr?_T("งดบิน"):(v>=0?"+":"")+money(v,true),"s num"+(gr?" off":v<0?" neg":""))});
   $$("#fboard [data-fml]").forEach(e=>{const l=S.lanes.find(x=>x.id===+e.dataset.fml);if(!l)return;const v=laneAvg(l);put(e,"≈"+money(v,true),"s num"+(v<0?" neg":""))})}
 /* how many vehicles of the current mode are moving right now */
-function movingNow(F){let n=F.filter(f=>f.air).length;if(bm()==="cargo"&&vmode()!=="air"){const T=S.day+acc/DAY_MS;for(const l of S.lanes){const km=laneCalc(l).km;for(const id of l.ships){const sh=shipById(id);if(!sh||sh.down>S.day)continue;const m=shipM(sh.m),Ld=legDaysS(m,km),x=T/Ld+(sh.off||0);if(x-Math.floor(x)<sailDays(m,km)/Ld)n++}}}return n}
+function movingNow(F){let n=F;if(bm()==="cargo"&&vmode()!=="air"){const T=S.day+acc/DAY_MS;for(const l of S.lanes){const km=laneCalc(l).km;for(const id of l.ships){const sh=shipById(id);if(!sh||sh.down>S.day)continue;const m=shipM(sh.m),Ld=legDaysS(m,km),x=T/Ld+(sh.off||0);if(x-Math.floor(x)<sailDays(m,km)/Ld)n++}}}return n}
 function msLineHTML(){const k=bm(),M=MS[k],i=(S.ms&&S.ms[k])||0,v=M.v(),prev=i?M.L[i-1]:0,nx=M.L[i];
   if(nx==null)return `<span>${M.e} ${M.nm} <b class="num">${Math.round(v).toLocaleString()}</b> ${M.u}</span>`;
   return `<span>${M.e} ${M.nm} <b class="num">${Math.round(v).toLocaleString()}</b> / ${nx.toLocaleString()} ${M.u}</span><span class="rw">🎁 ${money(msReward(k,nx),true)}</span><i class="hbar"><i style="width:${clamp((v-prev)/(nx-prev)*100,0,100)}%"></i></i>`}
