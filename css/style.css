@@ -1043,3 +1043,15 @@ nav.tabs button::before{top:4px;width:52px;height:32px;margin-left:-26px;border-
 nav.tabs button.on{font-weight:700}
 nav.tabs button.on svg{transform:translateY(-2px) scale(1.12)}
 nav.tabs button .dot{box-shadow:0 0 0 2px var(--paper)}
+/* v1.69 company tab: rating overview + review cards in a grid */
+.rating{grid-template-columns:minmax(110px,auto) 1fr;gap:16px;align-items:stretch}
+.rbig{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding-right:16px;border-right:1px solid var(--line)}
+.rbig .n{font-size:40px}
+.rsub{justify-content:center}
+.cgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.cgc{display:flex;flex-direction:column;gap:6px;min-width:0;background:var(--paper);border:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-radius:16px;padding:12px;box-shadow:var(--glow),0 6px 14px -10px rgba(16,32,56,.35)}
+.cgh{display:flex;align-items:center;gap:8px;min-width:0}.cgh b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cgh .cav{width:30px;height:30px;font-size:18px;flex:none}
+.cgt{flex:1;line-height:1.45}
+@media (max-width:820px){.cgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:420px){.rating{grid-template-columns:1fr}.rbig{border-right:0;border-bottom:1px solid var(--line);padding:0 0 10px}}

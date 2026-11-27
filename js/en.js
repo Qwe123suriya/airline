@@ -3080,5 +3080,8 @@ var EN_DICT={
 "26 พ.ย. 2569":"26 Nov 2026",
 "หน้าตาเกมสดใสขึ้น: พื้นหลังไล่สี การ์ดมีเงาและมุมโค้ง ปุ่มนูนกดแล้วยุบ แถบเมนูด้านล่างโค้งมน · กล่องตัวเลขวันนี้มีสีและไอคอนแยกกัน":"A brighter look: gradient background, rounded cards with depth, chunky buttons that press in, a rounded bottom menu · today's number boxes each have their own colour and icon",
 "หน้าหลัก: ตอบคำขอความร่วมมือได้ทันที (ตกลง · ต่อรอง · ปฏิเสธ) · การ์ด 3 ใบบอกว่าคนล้น ตู้สินค้าเรือล้น หรือสินค้าเครื่องบินล้นตรงไหน":"Home: answer partner requests right away (accept · negotiate · decline) · 3 cards show where passengers, ship containers or air cargo are overflowing",
-"ล้น {0} เส้น":"{0} routes overflowing"
+"ล้น {0} เส้น":"{0} routes overflowing",
+"27 พ.ย. 2569":"27 Nov 2026",
+"แท็บบริษัท: กล่องเรตติ้งใหม่ (ภาพรวมทางซ้าย ดาวแต่ละด้านทางขวา) · ความคิดเห็นเป็นการ์ดเรียงเป็นตาราง แต่ละใบมีดาวของตัวเอง":"Company tab: new rating box (overall on the left, stars for each part on the right) · reviews are cards in a grid, each with its own stars",
+"ปรับความยากของคู่แข่งย้ายไปอยู่ที่ ⚙️ ตั้งค่า → การเล่น อย่างเดียว":"Rival difficulty is now only in ⚙️ Settings → Gameplay"
 };

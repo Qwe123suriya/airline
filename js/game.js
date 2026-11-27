@@ -539,8 +539,9 @@ const RIVALS=[_T("นภาคราม แอร์ไลน์"),_T("โกล
 /* 🧪 Test server (test.skyseatycoon.com): new versions go here first. It shows a badge and has an admin panel for
    testing (money, skip days, unlock everything). The live site never shows either. Saves are separate (other domain). */
 const IS_TEST=/^test\./.test(location.hostname)||/airline-test/.test(location.hostname)||(!/^https?:$/.test(location.protocol)||location.hostname==="localhost")&&/[?&]stage=test/.test(location.search);
-const GAME_VERSION="1.68";
+const GAME_VERSION="1.69";
 const CHANGELOG=[
+ ["1.69",_T("27 พ.ย. 2569"),[_T("แท็บบริษัท: กล่องเรตติ้งใหม่ (ภาพรวมทางซ้าย ดาวแต่ละด้านทางขวา) · ความคิดเห็นเป็นการ์ดเรียงเป็นตาราง แต่ละใบมีดาวของตัวเอง"),_T("ปรับความยากของคู่แข่งย้ายไปอยู่ที่ ⚙️ ตั้งค่า → การเล่น อย่างเดียว")]],
  ["1.68",_T("26 พ.ย. 2569"),[_T("หน้าตาเกมสดใสขึ้น: พื้นหลังไล่สี การ์ดมีเงาและมุมโค้ง ปุ่มนูนกดแล้วยุบ แถบเมนูด้านล่างโค้งมน · กล่องตัวเลขวันนี้มีสีและไอคอนแยกกัน")]],
  ["1.67",_T("25 พ.ย. 2569"),[_T("หน้าหลัก: ตอบคำขอความร่วมมือได้ทันที (ตกลง · ต่อรอง · ปฏิเสธ) · การ์ด 3 ใบบอกว่าคนล้น ตู้สินค้าเรือล้น หรือสินค้าเครื่องบินล้นตรงไหน")]],
  ["1.66",_T("25 พ.ย. 2569"),[_T("หน้าแรกใหม่ (แท็บ “หน้าหลัก”): แผนที่สะอาดขึ้น · กล่องตัวเลขวันนี้ (คนหรือตัน ลำที่บินหรือตู้เรือ รายได้ รายจ่าย) คู่กับกำไรวันนี้ · คำขอความร่วมมือ · อัปเกรดแต่ละด้าน · ภารกิจคู่กับข่าวสาร · ควรปรับอะไรบ้าง · ทุกกล่องมุมโค้งมน"),_T("ปุ่ม 💬 ส่งความเห็น ⚙️ ตั้งค่า และเต็มจอ อยู่บนแถบด้านบน · ไม่มีเมนู ··· แล้ว ของที่เคยอยู่ในเมนู (โหมดแสง เวอร์ชัน คู่มือ สำรองเซฟ โหมด AFK เริ่มเกมใหม่) ย้ายไปอยู่ใน ⚙️ ตั้งค่า")]],
@@ -1328,7 +1329,7 @@ function leagueTick(){if(!has("rank")||!S.rivals||!S.rivals.length)return;if(S.d
   if(after!==before){const L=leadInfo();addNews(L.rank===1?_T`⚔️ คู่แข่งปรับตัวเป็นระดับ “${after}” เพราะคุณนำอันดับ 2 อยู่ ${L.pct}%`:_T`🙂 คู่แข่งผ่อนลงเป็นระดับ “${after}” คุณตามหลังอันดับ 1 อยู่ ${Math.abs(L.pct)}%`)}}
 const diffPickHTML=()=>_T`<div class="stack" style="gap:4px"><span class="eyebrow">⚙️ ความยากของคู่แข่ง</span><div class="seg">${DIFFS.map(([k,n])=>`<button data-diff="${k}" class="${diffOf()===k?"on":""}">${n}</button>`).join("")}</div><div class="muted small">${DIFFS.find(x=>x[0]===diffOf())[2]} · เปลี่ยนได้ตลอด</div></div>`;
 function competeHTML(){const L=leadInfo(),n=S.rivals.length+1,d=botLv(),pc=clamp((d+.6)/2.2,0,1)*100,sc=has("super")?superCount():0;
-  return _T`<div class="panel stack">${diffPickHTML()}${sc?_T`<div class="small warn">⚔️ การแข่งขันอาวุธ: เรามีฝูงพิเศษ ${sc} ลำ คู่แข่งจึงตั้งเป้าสูงขึ้น +${Math.round((armsK()-1)*100)}% (สูงสุด +${Math.round(SUPER_ARMS_MAX*100)}%)</div>`:""}<div class="row between"><div><span class="eyebrow">📋 อันดับของเรา</span><div class="cbig num">#${L.rank}<small> / ${n}</small></div></div>
+  return _T`<div class="panel stack">${sc?_T`<div class="small warn">⚔️ การแข่งขันอาวุธ: เรามีฝูงพิเศษ ${sc} ลำ คู่แข่งจึงตั้งเป้าสูงขึ้น +${Math.round((armsK()-1)*100)}% (สูงสุด +${Math.round(SUPER_ARMS_MAX*100)}%)</div>`:""}<div class="row between"><div><span class="eyebrow">📋 อันดับของเรา</span><div class="cbig num">#${L.rank}<small> / ${n}</small></div></div>
      <div style="text-align:right"><span class="eyebrow">⚔️ คู่แข่งเล่นระดับ</span><div class="cbig">${botLvTxt()}</div></div></div>
     <div class="diffbar"><i style="left:${pc}%"></i></div><div class="row between small muted"><span>ง่าย</span><span>ปกติ</span><span>โหดสุด</span></div>
     <div class="small">${L.rank===1?_T`คุณนำ <b>${esc(L.vs)}</b> (อันดับ 2) อยู่ <b>${L.pct}%</b>`:_T`คุณตามหลัง <b>${esc(L.vs)}</b> (อันดับ 1) อยู่ <b>${Math.abs(L.pct)}%</b>`} · ยิ่งนำห่าง คู่แข่งยิ่งเก่งขึ้น: โตเร็วขึ้น บุกเส้นทางบ่อยขึ้น ตัดราคาแรงขึ้น · ถ้าตามหลัง คู่แข่งจะผ่อนลง</div>
@@ -2174,7 +2175,7 @@ function suggestList(){const out=[],served=new Set([...S.bases,...S.routes.map(r
 function suggestHTML(){const L=suggestList();if(!L.length)return "";
   return secHead("💡",_T("ลูกค้าอยากให้ทำอะไร"),_T("กดปุ่มเพื่อทำตามคำขอได้เลย"))+`<div class="cmts">${L.map(x=>`<div class="cmt sug"><span class="cav">${x.av}</span><div style="min-width:0"><b class="small">${x.who}</b><div class="small">“${esc(x.t)}”</div></div><button class="btn sm primary" ${x.attr} ${x.dis?"disabled":""}>${x.btn}</button></div>`).join("")}</div>`}
 function commentsHTML(){const C=commentsList();if(!C.length)return _T`<div class="panel muted small">ยังไม่มีความคิดเห็น เริ่มบินหรือเดินเรือแล้วลูกค้าจะเริ่มพูดถึงบริษัท</div>`;
-  return `<div class="cmts">${C.map(c=>`<div class="cmt"><span class="cav">${c.av}</span><div style="min-width:0"><div class="row between"><b class="small">${c.who}</b>${starsHTML(c.st,11)}</div><div class="small">“${esc(c.t)}”</div></div></div>`).join("")}</div>`}
+  return `<div class="cgrid">${C.map(c=>`<div class="cgc"><div class="cgh"><span class="cav">${c.av}</span><b class="small">${c.who}</b></div><div class="small cgt">“${esc(c.t)}”</div>${starsHTML(c.st,14)}</div>`).join("")}</div>`}
 /* Company tab: the airline itself — who you are, how people rate you, how you stand, where you are going */
 function companyHTML(){
   const v=valuation(),l=Math.max(S.lvl||1,lvlOf(xpScore())),xa=lvlXP(l),xb=lvlXP(l+1),xp=xpScore(),pc=clamp((xp-xa)/(xb-xa),0,1)*100;
@@ -3042,7 +3043,7 @@ function rivalStars(rv){rv.st??=+(3+Math.random()*1.4).toFixed(1);return rv.st}
 function ratingHTML(){const R=S.rating;if(!R||!has("rank"))return "";const cats=RCATS.map(([k,n,e])=>{const c=R.cats[k];return `<div class="rrow"><span>${e} ${n}</span>${c?starsHTML(c.v,13):_T('<span class="muted small">ยังไม่เริ่ม</span>')}<span class="num">${c?c.v.toFixed(1):"–"}</span></div>`}).join("");
   const weakest=Object.entries(R.cats).sort((a,b)=>a[1].v-b[1].v)[0];
   return _T`<div class="panel stack"><div class="row between"><span class="eyebrow">⭐ เรตติ้งสายการบิน</span><span class="muted small">ผู้โดยสาร ${R.overall>=2.5?"+":""}${Math.round((starMult()-1)*100)}% จากเรตติ้ง</span></div>
-   <div class="rating"><div class="rbig"><div class="n">${R.overall.toFixed(1)}</div>${starsHTML(R.overall,17)}<div class="muted small">โดยรวม</div></div><div class="rsub">${cats}</div></div>
+   <div class="rating"><div class="rbig"><div class="muted small">ภาพรวม</div><div class="n">${R.overall.toFixed(1)}</div>${starsHTML(R.overall,17)}</div><div class="rsub">${cats}</div></div>
    ${weakest?_T`<div class="rtip">💡 ด้านที่ควรพัฒนา: <b>${RCATS.find(x=>x[0]===weakest[0])[1]}</b> · ${weakest[1].tip}</div>`:_T`<div class="rtip">เริ่มบินหรือเดินเรือเพื่อรับเรตติ้งแรก</div>`}</div>`}
 let brReg=null,brSeg="air";
 function branchHTML(){if(bm()!=="cargo"||!has("sea"))brSeg="air";const seg=bm()!=="cargo"||!has("sea")?"":_T`<div class="seg"><button data-brseg="air" class="${brSeg==="air"?"on":""}">✈ สาขาสนามบิน <span class="num muted small">${S.bases.length}</span></button><button data-brseg="sea" class="${brSeg==="sea"?"on":""}">⚓ สาขาท่าเรือ <span class="num muted small">${pbList().length}</span></button></div>`;
