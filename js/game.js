@@ -4664,11 +4664,11 @@ speed=PREF.speed0||1;
 renderApp();requestAnimationFrame(frame);
 afterUpdate();setTimeout(()=>checkUpdate(),4000);setInterval(()=>checkUpdate(),3*60e3);
 /* "I'm playing" signal for the developer's player count: a random id made on this device, the game version, language
-   and device type. Sent every 90 s only while the game is open and on screen, only on the website. No name, no save. */
+   and device type. Sent every 3 minutes only while the game is open and on screen, only on the website. No name, no save. */
 const PID=(()=>{try{let v=localStorage.getItem("airline-pid");if(!/^[a-z0-9]{12,32}$/.test(v||"")){v=Array.from(crypto.getRandomValues(new Uint8Array(12)),b=>(b%36).toString(36)).join("");localStorage.setItem("airline-pid",v)}return v}catch(e){return null}})();
 function ping(){if(!PID||document.hidden||!/^https?:$/.test(location.protocol)||location.hostname==="localhost")return;
   try{fetch("/api/ping",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:PID,ver:GAME_VERSION,lang:LANG,dev:devKind()}),keepalive:true}).catch(()=>{})}catch(e){}}
-setTimeout(ping,3000);setInterval(ping,90e3);document.addEventListener("visibilitychange",()=>{if(!document.hidden)ping()});
+setTimeout(ping,3000);setInterval(ping,180e3);   // every 3 minutes (the admin page counts a player online for 7)document.addEventListener("visibilitychange",()=>{if(!document.hidden)ping()});
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkUpdate()});
 if(S)setTimeout(()=>awayCheck(S.seen),400);
 let hiddenAt=0;
